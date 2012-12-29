@@ -1,0 +1,74 @@
+
+[Mark]
+
+ 	* Overview
+ 	
+ 		* Marking line.
+ 		
+ 		* print only admin.
+
+	* How to use
+	
+		$op->Mark();
+
+[D]
+
+ 	* Overview
+ 	
+ 		* Dump
+	
+	* How to use
+	
+		$op->D($_SESSION);
+		
+
+[SESSION]
+ 	
+ 	* Overview
+ 	
+ 		* Auto start
+ 		* Name space
+ 	
+ 	* Set
+ 	
+	 	$op->SetSession('key',$value);
+ 	
+ 	* Get
+ 	
+	 	$value = $op->GetSession('key');
+ 	
+[COOKIE]
+ 	
+ 	* Overview
+ 	
+ 		* Easy
+ 	
+ 	* Set
+ 	
+	 	$op->SetCookie('key',$value);
+ 	
+ 	* Get
+ 	
+	 	$value = $op->GetCookie('key');
+
+		
+	Mark & D method.
+		
+		
+		
+
+$op = new OnePiece5();
+
+$op->mark();
+
+$op->d($_SESSION);
+
+if( $op->admin() ){
+	
+}
+
+print $this->GetCallerLine();
+
+
+
+

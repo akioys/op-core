@@ -1,0 +1,16 @@
+
+[config]
+	
+	See example.
+	
+	$config = new stdClass();
+	$config->foo->bar = 'This is print notice error.';
+	
+	$config = new Config();
+	$config->foo->bar = 'This is anti notice error';
+
+[ConfigMgr]
+
+	
+	
+	

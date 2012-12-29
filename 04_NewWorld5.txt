@@ -1,0 +1,79 @@
+
+The New World is the new world!
+
+1. How to use.
+
+	<?php
+	include('NewWorld5.class.php');
+	$app = new App();
+	$app->Dispatch();
+
+2. How to use of layout.
+	
+	<?php
+	include('NewWorld5.class.php');
+	$app = new App();
+	$app->SetEnv('layout','App:/layout');
+	$app->Dispatch();
+
+3. Over
+	
+	Happy hacking!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4. One more thing for controller.
+	
+	The controller should be designed freely.
+	(Controller, you can freely design.)
+
+	If the controller if "index.php".
+	Edit index.php
+	<?php
+	$args = $this->GetArgs();
+	switch( $args[0] ){
+		case 'other':
+			$this->template('other.phtml');
+			break;
+		case '':
+		case 'index':
+		default:
+			$this->template('index.phtml');
+	}
+
+	
+4. One more thing. Part 2.
+
+	For html-pass-through.
+	
+	Please access to http://yourdomain/index.html
+	
+	The html file does not require a controller.
+	
+	
