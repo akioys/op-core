@@ -477,6 +477,10 @@ class DML5 extends OnePiece5
 	
 	protected function ConvertSelectColumn($conf)
 	{
+		//  init
+		$join = array();
+		$agg  = array();
+		
 		if( isset($conf['column']) ){
 			if( is_array($conf['column']) ){
 				$join = $conf['column'];
@@ -487,19 +491,21 @@ class DML5 extends OnePiece5
 				return false;
 			}
 		}else{
-			$join = array();
 		}
 		
+		//  
 		if( isset($conf['alias']) ){
 			if(!$this->ConvertAlias( $conf, $join )){
 				return false;
 			}
 		}
 		
+		//  COUNT(), MAX(), MIN(), AVG() 
 		if( isset($conf['agg']) ){
-			if(!$this->ConvertAggregate( $conf, $join )){
+			if(!$this->ConvertAggregate( $conf, $agg )){
 				return false;
 			}
+			$join = array_merge( $join, $agg );
 		}
 		
 		if( isset($conf['case']) ){
@@ -508,14 +514,28 @@ class DML5 extends OnePiece5
 			}
 		}
 		
-		if( $count = count($join) ){
+		//  exists select column
+		$count = count($join);
+		if( $count ){
+				$this->mark($count);
 			if( $count === 1 ){
+				$this->mark($count);
 				if( !$join[0] ){
-					//$join[0] = '*';
 					return '*';
 				}
 			}
-			return '`'.implode( '`, `', $join ).'`';
+			
+			//  Standard
+			if( $temp = array_diff( $join, $agg ) ){
+				$return = '`'.implode( '`, `', $temp ).'`';
+			}
+			
+			//  aggregate
+			if( $agg ){
+				$return .= $temp ? ', ': '';
+				$return .= implode( ', ', $agg );
+			}
+			return $return;
 		}else{
 			return '*';
 		}
