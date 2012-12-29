@@ -208,7 +208,7 @@ abstract class NewWorld5 extends OnePiece5
 		// controller root
 		$app_root = $this->GetEnv('AppRoot');
 		$ctrl = isset($route['ctrl']) ? $route['ctrl']: $route['path'];
-		$ctrl_root = $app_route . $ctrl;
+		$ctrl_root = $app_root . $ctrl;
 		$this->SetEnv('Ctrl-Root',$ctrl_root);
 		
 		// change dir
