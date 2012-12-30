@@ -222,6 +222,7 @@ abstract class NewWorld5 extends OnePiece5
 		
 		//  
 		if( $this->content ){
+			$this->p('![ .big .bold .red [ Lost <?php $this->Content(); ?> ]]');
 			print $this->content;
 			$this->content = '';
 		}
