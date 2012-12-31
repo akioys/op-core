@@ -43,3 +43,7 @@
 	$config->limit = -1;
  	$records = $this->pdo()->quick("host.database.table.id = $id",$config);
  	
+ 	
+ 	
+ 	
+ 	

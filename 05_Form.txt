@@ -1,32 +1,34 @@
 
 
 
-//  
+//  Instance
 $op = new OnePiece5();
 
 //  config
 $config = new Config();
 $config->name = 'chat_form';
 
-$config->input->comment->label = 'Comment';
+//  input of text
 $config->input->comment->name  = 'comment';
+$config->input->comment->label = 'Comment';
 $config->input->comment->type  = 'text'; // textarea, checkbox, radio, select
 $config->input->comment->validate->required = true;
 
+//  input of submit button
 $config->input->submit->name   = 'submit';
 $config->input->submit->type   = 'submit';
 $config->input->submit->value  = ' Do submit!! ';
 
-//  Add form config
+//  Add form-config to form-object.
 $op->form()->AddForm($config);
 
-//  Print Form (generate html)
+//  Print Form (generate form-tag)
 $op->form()->Start('chat_form');
 
 //  input (type is text)
-$op->form()->Label('comment');
-$op->form()->Input('comment');
-$op->form()->Error('comment');
+$op->form()->Label('comment'); // input's Label
+$op->form()->Input('comment'); // input-tag
+$op->form()->Error('comment'); // input error, required, validate, etc.
 
 //  input (type is submit)
 $op->form()->Input('submit');
@@ -91,7 +93,7 @@ foreach( $_SESSION['chat'] as $record ){
 
 	 - compare
 	 
-		$config->input->$input_name->validate->compare = 'input_name';
+		$config->input->$input_name->validate->compare = 'other input name';
 		$config->input->$input_name->validate->compare = '!= input_name';
 		$config->input->$input_name->validate->compare = '>  input_name';
 		$config->input->$input_name->validate->compare = '>= input_name';
