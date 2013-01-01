@@ -480,6 +480,7 @@ class DML5 extends OnePiece5
 		//  init
 		$join = array();
 		$agg  = array();
+		$return = null;
 		
 		if( isset($conf['column']) ){
 			if( is_array($conf['column']) ){
@@ -517,9 +518,7 @@ class DML5 extends OnePiece5
 		//  exists select column
 		$count = count($join);
 		if( $count ){
-				$this->mark($count);
 			if( $count === 1 ){
-				$this->mark($count);
 				if( !$join[0] ){
 					return '*';
 				}
