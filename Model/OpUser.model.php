@@ -79,6 +79,7 @@ class OpUser_model extends Model_model
 			$update = $this->config()->update( self::TABLE_OP_USER_INFO );
 			$update->set->visits = '+1';
 			$update->where->user_id = $user_id;
+			$update->limit = 1;
 			$this->pdo()->update($update);
 		}
 	}
