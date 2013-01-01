@@ -663,15 +663,6 @@ __EOL__;
 		
 		// get key's value
 		switch($key){
-			// $_SERVER
-			/*
-			case isset($_SERVER[strtoupper($key)]):
-				$var = $_SERVER[strtoupper($key)];
-				if( strtoupper($key) === 'DOCUMENT_ROOT' ){
-					$var .= '/'; 
-				}
-				break;
-			*/
 			case isset($_SERVER[strtolower($key)]):
 				$var = $_SERVER[strtolower($key)];
 				break;
@@ -684,7 +675,18 @@ __EOL__;
 			
 			default:
 				if( $ope == 'set' ){
+					
+					/**
+					 * TODO: To notice? About overwrite the value.
+					 * 
+					if( isset( $_SERVER[__CLASS__]['env'][$key] ) ){
+						$var = $_SERVER[__CLASS__]['env'][$key];
+						//print ("Already set value. ($key=$var)");
+					}
+					*/
+					
 					$_SERVER[__CLASS__]['env'][$key] = $var;
+					
 				}else if( $ope == 'get' ){
 					if( isset( $_SERVER[__CLASS__]['env'][$key])){
 						$var = $_SERVER[__CLASS__]['env'][$key];
@@ -701,7 +703,6 @@ __EOL__;
 					$var = OnePiece5::GetEnv('admin-mail');
 					break;
 			}
-			//var_dump($var);
 		}
 		
 		return $var;
