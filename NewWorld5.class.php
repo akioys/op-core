@@ -43,7 +43,7 @@ abstract class NewWorld5 extends OnePiece5
 	function __destruct()
 	{
 		if(!$this->isDispatch){
-			$this->StackError('App has not dispatched. Please call $app->Dispatch().');
+			$this->StackError('App has not dispatched. Please call $app->Dispatch();');
 		}
 		ob_end_flush();
 		$io = parent::__destruct();
@@ -79,7 +79,7 @@ abstract class NewWorld5 extends OnePiece5
 	{
 		// controller file name
 		if(!$controller = $this->GetEnv('controller-name')){
-			$this->StackError('Does not set controller-name. Please call $app->SetEnv("controller-name","index.php")');
+			$this->StackError('Does not set controller-name. Please call $app->SetEnv("controller-name","index.php");');
 			return false;
 		}
 		
@@ -554,8 +554,12 @@ class App extends NewWorld5
 	
 	function GetAction()
 	{
-		$args = $this->GetArgs();
-		return $args[0] ? $args[0]: 'index';
+		if(!$action = $this->GetEnv('action') ){
+			//  Does not undefine.
+			$args = $this->GetArgs();
+			$action = $args[0] ? $args[0]: 'index';
+		}
+		return $action;
 	}
 }
 
