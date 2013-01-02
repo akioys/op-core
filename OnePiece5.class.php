@@ -788,7 +788,11 @@ __EOL__;
 	{
 		//  start to session.
 		if(!session_id()){
-			session_start();
+			if( headers_sent($file,$line) ){
+				$this->StackError("Header has already been sent. Check $file, line no. $line.");
+			}else{
+				session_start();
+			}
 		}
 		
 		/**
