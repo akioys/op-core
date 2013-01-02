@@ -907,7 +907,14 @@ __EOL__;
 		$call_line = '';
 		$depth++;
 		$nl = $this->GetEnv('nl');
-		$back = debug_backtrace( false );
+		
+		
+		if( version_compare(PHP_VERSION, '5.2.5') >= 0 ){
+			$back = debug_backtrace(false);
+		}else{
+			$back = debug_backtrace();
+		}
+		
 		
 		// num
 		if( $num >= count($back) or $num <= 0 ){
