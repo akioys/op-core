@@ -108,19 +108,28 @@ abstract class NewWorld5 extends OnePiece5
 			$file_name = $match[1].'.'.$match[2];
 			
 			//  current path is App path.
-			$cwd = getcwd();
+			$app_root = getcwd();
+			
 			//  document root path
 			$doc_path = $_SERVER['DOCUMENT_ROOT'];
 			
 			//  create app path
-			if( preg_match("|^$cwd(.+)|", $full_path, $match) ){
+			
+			if( preg_match("|^$app_root(.+)|", $full_path, $match) ){
 				$app_path = $match[1];
 			}else if( preg_match("|^$doc_path(.+)|", $full_path, $match) ){
 				$app_path = $match[1];
 			}
 			
+			
+			/*
+			preg_match("|^$doc_path(.+)$file_name|",$full_path,$match);
+			$this->d($match);
+			$app_path = $match[1];
+			*/
+			
 			$route = array();
-			$route['current'] = $cwd;
+			$route['app_root'] = $app_root;
 			$route['fullpath'] = $full_path;
 //			$route['path'] = dirname($path);
 			$route['path'] = dirname($app_path);
@@ -140,11 +149,13 @@ abstract class NewWorld5 extends OnePiece5
 				}
 			}
 			
-			$real_path = $_SERVER['DOCUMENT_ROOT'].$route['path'].'/'.$route['file'];
+			//  file exists path
+			$real_path = rtrim($app_root,'/').'/'.trim($route['path'],'/').'/'.ltrim($route['file'],'/');
 			
 			/*
 			$this->d($route);
-			$this->mark($real_path);
+			$this->mark($app_path);
+			$this->mark('real_path='.$real_path);
 			*/
 			
 			//  
@@ -247,12 +258,6 @@ abstract class NewWorld5 extends OnePiece5
 		// change dir
 		$chdir = rtrim($app_root,'/') .'/'. trim($route['path'],'/');
 		chdir( $chdir );
-		
-		/*
-		$this->d($chdir);
-		$this->d($app_root);
-		$this->d($route);
-		*/
 		
 		//  content
 		$this->doContent();
