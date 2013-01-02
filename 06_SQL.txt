@@ -1,5 +1,4 @@
 
-
  - Support to MySQL, PostgreSQL, SQLite, Oracle, MS-SQL
 
  - Support to DML, DDL, DCL, DxL
