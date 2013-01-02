@@ -491,7 +491,6 @@ class DML5 extends OnePiece5
 				$this->StackError('column is not array or string.');
 				return false;
 			}
-		}else{
 		}
 		
 		//  

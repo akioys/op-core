@@ -90,22 +90,46 @@ abstract class NewWorld5 extends OnePiece5
 		
 		// separate query
 		list( $path, $query_string ) = explode('?',$request_uri.'?');
+		$full_path = $_SERVER['DOCUMENT_ROOT'] . $path;
+		//$this->mark($full_path);
 		
 		// Does path exist?
 		if( $route = @$this->routeTable[md5($path)] ){
 			return $route;
 		}
 		
-		//  path through
+		//  Real file is target of path through.
 		if( preg_match('/\/([-_a-z0-9]+)\.(html|css|js)$/i',$path,$match) ){
+			
+			//  file extension
+			$extension = $match[2];
+			
+			//  access file name
+			$file_name = $match[1].'.'.$match[2];
+			
+			//  current path is App path.
+			$cwd = getcwd();
+			//  document root path
+			$doc_path = $_SERVER['DOCUMENT_ROOT'];
+			
+			//  create app path
+			if( preg_match("|^$cwd(.+)|", $full_path, $match) ){
+				$app_path = $match[1];
+			}else if( preg_match("|^$doc_path(.+)|", $full_path, $match) ){
+				$app_path = $match[1];
+			}
+			
 			$route = array();
-			$route['path'] = dirname($path);
-			$route['file'] = $match[1].'.'.$match[2];
+			$route['current'] = $cwd;
+			$route['fullpath'] = $full_path;
+//			$route['path'] = dirname($path);
+			$route['path'] = dirname($app_path);
+			$route['file'] = $file_name;
 			$route['args'] = null;
 			$route['pass'] = true;
 			$route['ctrl'] = null;
 			$route = $this->Escape($route);
-						
+			
 			//  Simple controller search
 			$temp = $route['path'];
 			foreach( array_reverse( explode('/',$route['path'].'/') ) as $dir ){
@@ -116,14 +140,21 @@ abstract class NewWorld5 extends OnePiece5
 				}
 			}
 			
+			$real_path = $_SERVER['DOCUMENT_ROOT'].$route['path'].'/'.$route['file'];
+			
+			/*
+			$this->d($route);
+			$this->mark($real_path);
+			*/
+			
 			//  
-			if(file_exists($_SERVER['DOCUMENT_ROOT'].$route['path'].'/'.$route['file'])){
-				switch(strtolower($match[2])){
+			if(file_exists( $real_path )){
+				switch( strtolower($extension) ){
 					case 'html':
 						if( $this->GetEnv('HtmlPassThrough') ){
 							return $route;
 						}else{
-							$this->mark("![.red[HtmlPassThrough is off. please \$this->SetEnv('HtmlPassThrough',true)]]");
+							$this->mark("![.red[HtmlPassThrough is off. please \$app->SetEnv('HtmlPassThrough',true);]]");
 						}
 						break;
 						
@@ -134,6 +165,8 @@ abstract class NewWorld5 extends OnePiece5
 					case 'js':
 						$this->doJs($route);
 						exit(0);
+					default:
+						$this->mark("![.red[Does not match extension. ($extension)]]");
 				}
 			}
 		}
@@ -212,7 +245,14 @@ abstract class NewWorld5 extends OnePiece5
 		$this->SetEnv('Ctrl-Root',$ctrl_root);
 		
 		// change dir
-		chdir( rtrim($app_root,'/') .'/'. trim($route['path'],'/') );
+		$chdir = rtrim($app_root,'/') .'/'. trim($route['path'],'/');
+		chdir( $chdir );
+		
+		/*
+		$this->d($chdir);
+		$this->d($app_root);
+		$this->d($route);
+		*/
 		
 		//  content
 		$this->doContent();
@@ -307,11 +347,12 @@ abstract class NewWorld5 extends OnePiece5
 		if( $layout_dir = $this->GetEnv('layout-dir') ){
 			//  layout has been set.
 			$layout_dir = $this->ConvertPath($layout_dir);
-			$path = $layout_dir .'/'. $layout .'/'. $controller;
+			$path = rtrim($layout_dir,'/') .'/'. $layout .'/'. $controller;
 		}else{
 			$path = $this->ConvertPath($layout) .'/'. $controller;
 		}
 		
+		//  for debug
 		if( 0 ){
 			$temp['controller'] = $controller;
 			$temp['layout']     = $layout;
@@ -358,11 +399,21 @@ abstract class NewWorld5 extends OnePiece5
 	
 	function doCss($route)
 	{
+		//  Init garbage code. 
 		ob_clean();
+		
+		//  Print headers.
 		header("Content-Type: text/css");
 		header("X-Content-Type-Options: nosniff");
+		
+		//  Full path of file.
+		$path = $_SERVER['DOCUMENT_ROOT'].$route['path'].'/'.$route['file'];
+		
+		//  Change cli mode.
 		$this->SetEnv('cli',true);
-		$this->template( $_SERVER['DOCUMENT_ROOT'].$route['path'].'/'.$route['file'] );
+		
+		//  Execute.
+		$this->template( $path );
 		exit(0);
 	}
 	
