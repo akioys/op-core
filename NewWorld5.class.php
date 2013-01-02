@@ -114,7 +114,6 @@ abstract class NewWorld5 extends OnePiece5
 			$doc_path = $_SERVER['DOCUMENT_ROOT'];
 			
 			//  create app path
-			
 			if( preg_match("|^$app_root(.+)|", $full_path, $match) ){
 				$app_path = $match[1];
 			}else if( preg_match("|^$doc_path(.+)|", $full_path, $match) ){
@@ -159,7 +158,10 @@ abstract class NewWorld5 extends OnePiece5
 			*/
 			
 			//  
-			if(file_exists( $real_path )){
+			if( file_exists($real_path) ){
+				
+			//	$this->mark();
+				
 				switch( strtolower($extension) ){
 					case 'html':
 						if( $this->GetEnv('HtmlPassThrough') ){
@@ -179,14 +181,19 @@ abstract class NewWorld5 extends OnePiece5
 					default:
 						$this->mark("![.red[Does not match extension. ($extension)]]");
 				}
+			}else{
+			//	$this->mark();
 			}
 		}
+		
+		// separate query
+		list( $path, $query_string ) = explode('?',$request_uri.'?');
 		
 		// create absolute path
 		$absolute_path = $_SERVER['DOCUMENT_ROOT'] . $path;
 		
 		// execute dir
-		chdir( dirname($_SERVER['SCRIPT_FILENAME']) );
+//		chdir( dirname($_SERVER['SCRIPT_FILENAME']) );
 		
 		//$app_root = getcwd();
 		$app_root = $this->GetEnv('AppRoot');
@@ -194,36 +201,50 @@ abstract class NewWorld5 extends OnePiece5
 		//	absolute from current dir
 		$file_path = preg_replace("|$app_root|",'',$absolute_path);
 		
+		/*
+		$this->mark($absolute_path);
+		$this->mark( getcwd() );
+		$this->mark(dirname($_SERVER['SCRIPT_FILENAME']));
+		$this->mark($app_root);
+		$this->mark($file_path);
+		*/
+		
 		//	search controller
 		$dirs = explode( '/', rtrim($file_path,'/') );
-		$join = array();
-		while(count($dirs)){
-			$dir = array_shift($dirs);
+		$args = array();
+		while( count($dirs) ){
 			
-			$file_name = './'.join('/',$join).'/'.$dir.'/'.$controller;
+			$file_name = rtrim($app_root,'/').'/'.trim(join('/',$dirs)).'/'.$controller;
+		//	$io = file_exists($file_name) ? 'true': 'false';
+		//	$this->mark("file_name = $file_name, dir = $dir, io = $io");
 			
 			if( file_exists($file_name) ){
-				$join[] = $dir;
-			}else{
-				array_unshift($dirs, $dir);
 				break;
 			}
+			
+			$args[] = array_pop($dirs);
 		}
 		
 		// anti nortice error
-		if(!count($dirs)){
-			$dirs[] = null; // $dirs[0] = null;
+		if(!count($args)){
+			$args[0] = null;
 		}
 		
 		//  build
-		$route['path'] = join('/',$join);
+		$route['path'] = join('/',$dirs);
 		$route['file'] = $controller;
-		$route['args'] = $dirs;
+		$route['args'] = array_reverse($args);
+		//$this->d($route);
 		
 		//  escape
 		$route = $this->Escape($route);
 		
 		return $route;
+	}
+	
+	function HtmlPassThrough()
+	{
+		
 	}
 	
 	function Dispatch($route=null)
