@@ -54,5 +54,3 @@ Welcome to OnePiece-Framework!!
 		* Present database access.
 	
 	
-	
-	
