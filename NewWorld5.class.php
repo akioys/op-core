@@ -25,26 +25,37 @@ abstract class NewWorld5 extends OnePiece5
 	 * 
 	 * @var array
 	 */
-	private $routeTable = null;
+	private $isInit     = null;
 	private $isDispatch = null;
+	private $routeTable = null;
 	private $content    = null;
 	
 	function __construct($args=array())
 	{
-		// output is buffering.
+		//  output is buffering.
 		$io = ob_start();
 		$io = parent::__construct($args);
 		$this->StackLog('START');
+		
+		//  init
 		$this->Init();
 		
+		//  
 		return $io;
 	}
 	
 	function __destruct()
 	{
+		//  Called dispatch?
 		if(!$this->isDispatch){
 			$this->StackError('App has not dispatched. Please call $app->Dispatch();');
 		}
+		
+		//  Called Init?
+		if(!$this->isInit){
+			$this->StackError('App has not call init. Please call $app->Init(){ parent::Init(); };');
+		}
+		
 		ob_end_flush();
 		$io = parent::__destruct();
 		return $io;
@@ -52,6 +63,8 @@ abstract class NewWorld5 extends OnePiece5
 	
 	function Init()
 	{
+		$this->isInit = true;
+		
 		$this->GetEnv('doctype','html');
 		$this->GetEnv('title','The NewWorld is the new world');
 	}
