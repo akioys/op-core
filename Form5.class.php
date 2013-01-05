@@ -1227,6 +1227,9 @@ class Form5 extends OnePiece5
 		if( isset($form[$form_name]) ){
 			unset($form[$form_name]);
 		}
+		if( true /*$_POST['form_name'] === $form_name*/ ){
+			$_POST = array();
+		}
 		$this->SetSession('form',$form);
 		
 		return true;
