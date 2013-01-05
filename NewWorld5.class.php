@@ -68,6 +68,36 @@ abstract class NewWorld5 extends OnePiece5
 		$this->GetEnv('doctype','html');
 		$this->GetEnv('title','The NewWorld is the new world');
 	}
+
+	function SetControllerName( $var )
+	{
+		return $this->SetEnv('controller-name', $var);
+	}
+	
+	function SetLayoutDir( $var )
+	{
+		return $this->SetEnv('layout-dir', $var);
+	}
+	
+	function SetLayoutName( $var )
+	{
+		return $this->SetEnv('layout', $var);
+	}
+	
+	function SetLayoutPath( $var )
+	{
+		return $this->SetEnv('layout', $var);
+	}
+	
+	function SetTemplateDir( $var )
+	{
+		return $this->SetEnv('template-dir', $var);
+	}
+	
+	function SetHtmlPassThrough( $var )
+	{
+		return $this->SetEnv('HtmlPassThrough', $var);
+	}
 	
 	/**
 	 * Setup route table

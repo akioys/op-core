@@ -1227,6 +1227,9 @@ class Form5 extends OnePiece5
 		if( isset($form[$form_name]) ){
 			unset($form[$form_name]);
 		}
+		if( true /*$_POST['form_name'] === $form_name*/ ){
+			$_POST = array();
+		}
 		$this->SetSession('form',$form);
 		
 		return true;
@@ -1996,6 +1999,23 @@ class Form5 extends OnePiece5
 	function ValidatePermit( $input, $form_name, $value )
 	{
 		switch( $key = $input->validate->permit ){
+			// English only
+			case 'english':
+				//  Array is convert string.
+				if(is_array($value)){
+					$value = implode('',$value);
+				}
+				//  Check character
+				if( $io = preg_match('/([^-_a-z0-9\/\\\!\?\(\)\[\]\{\}:;\'"`@#$%&*+^~|]{1,100})/i',$value,$match)){					
+					$this->d($match);
+					$this->SetInputError( $input->name, $form_name, 'permit-english', $match[1] );
+					//  Permit is failed
+					$io = false;
+				}else{
+					$io = true;
+				}
+				break;
+			
 			// including decimal
 			case 'number':
 				if(is_array($value)){
