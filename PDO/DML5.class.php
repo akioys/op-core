@@ -439,6 +439,10 @@ class DML5 extends OnePiece5
 	protected function ConvertSet( $conf )
 	{
 		foreach( $conf['set'] as $key => $var ){
+			if(!is_string($var)){
+				$this->StackError("Set is only string. ($key)");
+				continue;
+			}
 			switch(strtoupper($var)){
 				case 'NULL':
 				case 'NOW()':
