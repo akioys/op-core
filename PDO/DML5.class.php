@@ -32,6 +32,22 @@ class DML5 extends OnePiece5
 		}
 	}
 	
+	function Quote( $var )
+	{
+		if( is_array($var) ){
+			foreach( $var as $tmp ){
+				$safe[] = $this->Quote($tmp);
+			}
+		}else if( strpos($var,'.') ){
+			$temp = explode('.',$var);
+			$this->d($temp);
+			$safe = $this->ql .trim($temp[0]). $this->qr.'.'.$this->ql .trim($temp[1]). $this->qr;
+		}else{
+			$safe = $this->ql .trim($var). $this->qr;
+		}
+		return $safe;
+	}
+	
 	function GetSelect( $conf )
 	{
 		//  database
@@ -408,9 +424,6 @@ class DML5 extends OnePiece5
 			case '=>':
 				$join = 'RIGHT JOIN';
 				break;
-			case '<=>':
-				$join = 'OUTER JOIN';
-				break;
 			case '>=<':
 				$join = 'INNER JOIN';
 				break;
@@ -528,13 +541,16 @@ class DML5 extends OnePiece5
 		
 		if( isset($conf['column']) ){
 			if( is_array($conf['column']) ){
-				$join = $conf['column'];
+				$cols = $conf['column'];
 			}else if( is_string($conf['column']) ){
-				$join[] = $conf['column'];
+				$cols = explode(',',$conf['column']);
 			}else{
 				$this->StackError('column is not array or string.');
 				return false;
 			}
+			$cols = join(', ',$this->Quote($cols));
+		}else{
+			$cols = null;
 		}
 		
 		//  
@@ -549,7 +565,7 @@ class DML5 extends OnePiece5
 			if(!$this->ConvertAggregate( $conf, $agg )){
 				return false;
 			}
-			$join = array_merge( $join, $agg );
+		//	$join = array_merge( $join, $agg );
 		}
 		
 		if( isset($conf['case']) ){
@@ -558,8 +574,16 @@ class DML5 extends OnePiece5
 			}
 		}
 		
+		//  init
+		$return = null;
+		
+		//  select columns
+		if( $cols ){
+			$return = $cols;
+		}
+		
 		//  exists select column
-		$count = count($join);
+		$count = count($join) + count($agg);
 		if( $count ){
 			if( $count === 1 ){
 				if( !$join[0] ){
@@ -568,19 +592,23 @@ class DML5 extends OnePiece5
 			}
 			
 			//  Standard
-			if( $temp = array_diff( $join, $agg ) ){
-				$return = '`'.implode( '`, `', $temp ).'`';
+			//if( $temp = array_diff( $join, $agg ) ){
+			if( $join ){
+				$return .= $return ? ', ': '';
+				$return .= '`'.implode( '`, `', $join ).'`';
 			}
 			
 			//  aggregate
 			if( $agg ){
-				$return .= $temp ? ', ': '';
+				$return .= $return ? ', ': '';
 				$return .= implode( ', ', $agg );
 			}
-			return $return;
+		//	return $return;
 		}else{
-			return '*';
+		//	return '*';
 		}
+		
+		return $return ? $return: '*';
 	}
 	
 	protected function ConvertAlias( $conf, &$join )
