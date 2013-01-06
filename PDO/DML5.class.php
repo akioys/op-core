@@ -378,7 +378,7 @@ class DML5 extends OnePiece5
 		return $table;
 	}
 	
-	protected function ConvertTableJoin(&$conf)
+	protected function ConvertTableJoin( $conf )
 	{
 		//  current table join is only two table yet.
 		
@@ -386,7 +386,7 @@ class DML5 extends OnePiece5
 		$table = str_replace(' ', '', $conf['table']);
 		
 		//  parse
-		if(!preg_match('/^([-_a-z0-9\.]+) ?([><=]{1,2}) ?([-_a-z0-9\.]+)$/i',trim($table),$match) ){
+		if(!preg_match('/^([-_a-z0-9\.]+) ?([><=]{1,3}) ?([-_a-z0-9\.]+)$/i',trim($table),$match) ){
 			$this->StackError("Illigal define.({$conf['table']})");
 			return false;
 		}
@@ -422,7 +422,7 @@ class DML5 extends OnePiece5
 		list( $right_table, $right_column) = explode('.',$right);
 		
 		//  fat mode
-		if( !isset($conf['fat']) or empty($conf['fat']) ){
+		if( !empty($conf['fat']) ){
 			
 		}
 		
@@ -430,10 +430,50 @@ class DML5 extends OnePiece5
 		$ql = $this->ql;
 		$qr = $this->qr;
 		
+		//  quote
+		$left_table   = $ql.$left_table.$qr;
+		$right_table  = $ql.$right_table.$qr;
+		$left_column  = $ql.$left_column.$qr;
+		$right_column = $ql.$right_column.$qr;
+		
+		//  on
+		$on = " ON $left_table.$left_column = $right_table.$right_column";
+		
+		//  using
+		if( isset($conf['using']) ){
+			$on    = null;
+			$using = $this->ConvertUsing($conf);
+		}else{
+			$using = null;
+		}
+		
 		//  join
-		$joind_table = $ql.$left_table.$qr.' '.$join.' '.$ql.$right_table.$qr.' ON '.$ql.$left_column.$qr.'='.$ql.$right_column.$qr;
+		$joind_table = "$left_table $join $right_table $on $using";
 		
 		return $joind_table;
+	}
+	
+	protected function ConvertUsing( $conf )
+	{
+		if( empty($conf['using']) ){
+			return null;
+		}
+		
+		if( is_string($conf['using']) ){
+			$usings = explode(',', $conf['using']);
+		}else if(is_array($conf['using'])){
+			$usings = $conf['using'];
+		}else if( is_object($conf['using']) ){
+			$usings = Toolbox::toArray($conf['using']);
+		}
+		
+		foreach( $usings as $str ){
+			$join[] = $this->ql .trim($str). $this->qr;
+		}
+		
+		$using = 'USING (' .implode(', ', $join). ')';
+		
+		return $using;
 	}
 	
 	protected function ConvertSet( $conf )
