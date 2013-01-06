@@ -77,7 +77,7 @@ class PDO5 extends OnePiece5
 			$temp = $this->pdo->errorInfo();
 			$this->StackError("{$temp[2]} : {$this->qu}");
 		}
-		
+
 		return $return;
 	}
 	
@@ -106,9 +106,12 @@ class PDO5 extends OnePiece5
 		
 		//  create value
 		$value = trim($value);
+		$value = trim($value,"'");
 		
-		//  create limit
-		$limit = isset($config->limit) ? $config->limit: 1;
+		//  create limit, offset, order
+		$limit  = isset($config->limit)  ? $config->limit:  1;
+		$offset = isset($config->offset) ? $config->offset: null;
+		$order  = isset($config->order)  ? $config->order:  null;
 		
 		//  create config
 		$config = new Config();
@@ -117,6 +120,8 @@ class PDO5 extends OnePiece5
 		$config->table    = $table;
 		$config->column   = $columns;
 		$config->limit    = $limit;
+		$config->offset   = $offset;
+		$config->order    = $order;
 		$config->where->$target = $value;
 		
 		//  get record
@@ -127,7 +132,7 @@ class PDO5 extends OnePiece5
 		}
 		
 		//  return all
-		if( !$column ){
+		if( !$column or $limit != 1 ){
 			return $record;
 		}
 		
@@ -360,7 +365,7 @@ class PDO5 extends OnePiece5
 		if(($records = $this->query($qu)) === false ){
 			return false;
 		}
-
+		
 		//  if limit is 1
 		if( isset($conf['limit']) and $conf['limit'] == 1){
 			if( isset($records[0]) ){
