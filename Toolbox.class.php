@@ -6,7 +6,7 @@
  *
  */
 if (!function_exists('lcfirst')) {
-	function lcfirst($text) {
+	function lcfirst($text) { // upper is ucfirst
 		$text{0} = strtolower($text{0});
 		return $text;
 	}
@@ -124,52 +124,6 @@ class Toolbox
 		
 		return $obj;
 	}
-	
-	/*
-	function GetVarToString( $args )
-	{
-		$charset = OnePiece5::GetEnv('charset');
-		$type = substr( gettype($args), 0, 3 );
-		switch( $type ){
-			case 'str':
-				$len = mb_strlen( $args, $charset );
-				if( $len > 20 ){
-					$var = mb_substr( $args, 0, 20 ) . '...';
-				}
-				$var = str_replace(array("\n","\r","\t"), array('\n ','\r ','\t '), $var);
-				$str = sprintf("%s(%s[%s])" . PHP_EOL, $type, $var, $len);
-				break;
-				
-			case 'obj':
-				$var = get_class($args);
-				$str = "$type($var)" . PHP_EOL;
-				break;
-				
-			case 'arr':
-				foreach($args as $key => $var){
-					$join[] = "$key=>" . self::GetVarToString($var);
-				}
-				$var = join(',',$join);
-				$str = str_replace(PHP_EOL, '', 'arr('.$var.')');
-				break;
-				
-			case 'boo':
-				$var = $args ? 'true': 'false';
-				$str = "$type($var)" . PHP_EOL;
-				break;
-				
-			case 'NULL':
-				$str = 'null' . PHP_EOL;
-				break;
-				
-			default:
-				$var = $args;
-				$str = "$type($var)" . PHP_EOL;
-		}
-		
-		return $str;
-	}
-	*/
 	
 	/**
 	 * Get secure request
