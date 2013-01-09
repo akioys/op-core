@@ -580,15 +580,6 @@ abstract class NewWorld5 extends OnePiece5
 		}
 	}
 	
-	function Title( $args=null )
-	{
-		if( $args ){
-			$this->SetEnv('title',$args);
-		}else{
-			print $this->GetEnv('title');
-		}
-	}
-	
 	function GetContent()
 	{
 		return $this->content;
@@ -681,6 +672,21 @@ class App extends NewWorld5
 	{
 		return $this->SetEnv('HtmlPassThrough', $var);
 	}
+	
+	function SetTitle( $var )
+	{
+		return $this->SetEnv('title', $var);
+	}
+	
+	function Title( $args=null )
+	{
+		if( $args ){
+			$this->SetEnv('title',$args);
+		}else{
+			print $this->GetEnv('title');
+		}
+	}
+	
 }
 
 /**
