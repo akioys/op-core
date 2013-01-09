@@ -5,15 +5,8 @@ include_once('OnePiece5.class.php');
 /**
  * The NewWorld is the new world.
  * 
- * NewWorld's job is dispatched to index.php, only.
- * before index.php is your like. 
- * 
- * - 2012-06-xx NewWorld5
- * - 2011-01-xx NewWorld
- * - 2010-01-xx NewWorld0
- * 
- * 1st Attend system is NewWorld0 - 2010-12
- * 2nd Attend system is replace at NewWorld - 2011-09
+ * NewWorld's job is only to dispatch the index.php.
+ * After dispatch to index.php, your freedom.
  * 
  * @author Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
  *
@@ -104,7 +97,6 @@ abstract class NewWorld5 extends OnePiece5
 		// separate query
 		list( $path, $query_string ) = explode('?',$request_uri.'?');
 		$full_path = $_SERVER['DOCUMENT_ROOT'] . $path;
-		//$this->mark($full_path);
 		
 		// Does path exist?
 		if( $route = @$this->routeTable[md5($path)] ){
@@ -133,17 +125,9 @@ abstract class NewWorld5 extends OnePiece5
 				$app_path = $match[1];
 			}
 			
-			
-			/*
-			preg_match("|^$doc_path(.+)$file_name|",$full_path,$match);
-			$this->d($match);
-			$app_path = $match[1];
-			*/
-			
 			$route = array();
 			$route['app_root'] = $app_root;
 			$route['fullpath'] = $full_path;
-//			$route['path'] = dirname($path);
 			$route['path'] = dirname($app_path);
 			$route['file'] = $file_name;
 			$route['args'] = null;
@@ -164,16 +148,8 @@ abstract class NewWorld5 extends OnePiece5
 			//  file exists path
 			$real_path = rtrim($app_root,'/').'/'.trim($route['path'],'/').'/'.ltrim($route['file'],'/');
 			
-			/*
-			$this->d($route);
-			$this->mark($app_path);
-			$this->mark('real_path='.$real_path);
-			*/
-			
-			//  
+			//  file is exists?
 			if( file_exists($real_path) ){
-				
-			//	$this->mark();
 				
 				switch( strtolower($extension) ){
 					case 'html':
@@ -194,8 +170,6 @@ abstract class NewWorld5 extends OnePiece5
 					default:
 						$this->mark("![.red[Does not match extension. ($extension)]]");
 				}
-			}else{
-			//	$this->mark();
 			}
 		}
 		
@@ -204,9 +178,6 @@ abstract class NewWorld5 extends OnePiece5
 		
 		// create absolute path
 		$absolute_path = $_SERVER['DOCUMENT_ROOT'] . $path;
-		
-		// execute dir
-//		chdir( dirname($_SERVER['SCRIPT_FILENAME']) );
 		
 		//$app_root = getcwd();
 		$app_root = $this->GetEnv('AppRoot');
@@ -642,7 +613,7 @@ class App extends NewWorld5
 		}
 		return $action;
 	}
-
+	
 	function SetControllerName( $var )
 	{
 		return $this->SetEnv('controller-name', $var);
@@ -650,6 +621,7 @@ class App extends NewWorld5
 	
 	function SetLayoutDir( $var )
 	{
+		$this->SetEnv('layout-root',$this->ConvertURL($var));
 		return $this->SetEnv('layout-dir', $var);
 	}
 	
