@@ -40,6 +40,11 @@ class Wizard extends OnePiece5
 		//  Check secure
 		if( $this->form()->Secure($form_name) ){
 			
+			$database = $config->database;
+			$database->user     = $this->form()->GetInputValue('user',$form_name);
+			$database->password = $this->form()->GetInputValue('password',$form_name);
+			$this->pdo()->Connect( $database );
+			
 			$this->CreateDatabase($config);
 			$this->CreateTable($config);
 			$this->CreateColumn($config);
