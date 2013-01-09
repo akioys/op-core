@@ -15,6 +15,23 @@ class PDO5 extends OnePiece5
 	private $database	 = null;
 	private $charset	 = null;
 	
+	function DDL( $name=null )
+	{
+		if( empty($this->ddl) ){
+			if(!class_exists('DDL',false)){
+				$io = include_once('PDO/DDL.class.php');
+				if(!$io){
+					throw( new Exception("Include failed.(PDO/DDL.class.php)") );
+				}
+			}
+			
+			//  Init
+			$this->ddl = new DDL();
+			$this->ddl->SetPDO($this->pdo);
+		}
+		return $this->ddl;
+	}
+	
 	function DML( $name=null )
 	{
 		if(!isset($this->dml)){
@@ -39,12 +56,40 @@ class PDO5 extends OnePiece5
 		
 		return $qu;
 	}
-
+	
 	function Qus()
 	{
 		return $this->qus;
 	}
-
+	
+	function GetQuote( $driver )
+	{
+		switch( strtolower($driver) ){
+			case 'mysql':
+				$ql = $qr = '`';
+				break;
+		}
+		return array($ql,$qr);
+	}
+	
+	function Quote( $var, $driver )
+	{
+		list( $ql, $qr ) = self::GetQuote($driver);
+		
+		if( is_array($var) ){
+			foreach( $var as $tmp ){
+				$safe[] = $this->Quote($tmp);
+			}
+		}else if( strpos($var,'.') ){
+			$temp = explode('.',$var);
+			$this->d($temp);
+			$safe = $ql.trim($temp[0]).$qr.'.'.$ql.trim($temp[1]).$qr;
+		}else{
+			$safe = $ql.trim($var).$qr;
+		}
+		return $safe;
+	}
+	
 	function Query( $qu, $key=null )
 	{
 		$this->qu($qu);
@@ -320,6 +365,27 @@ class PDO5 extends OnePiece5
 		return $return;
 	}
 	
+	function CreateDatabase( $conf )
+	{
+		//  object to array
+		if(!is_array($conf)){
+			$conf = Toolbox::toArray($conf);
+		}
+				
+		//  get select query
+		if(!$qu = $this->ddl()->GetCreateDatabase($conf)){
+			return false;
+		}
+		
+		//  execute
+		$io = $this->query($qu);
+		
+		return $io;
+	}
+	
+	/**
+	 * 
+	 */
 	function Count( $conf )
 	{
 		//  object to array
