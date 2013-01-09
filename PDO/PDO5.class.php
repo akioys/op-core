@@ -81,74 +81,6 @@ class PDO5 extends OnePiece5
 		return $return;
 	}
 	
-	function Quick( $string, $config=null)
-	{
-		list( $left, $value ) = explode('=', trim($string) );
-		
-		if( strpos( $left, '<') ){
-			list( $column, $location ) = explode('<-', trim($left) );
-		}else{
-			$location = $left;
-			$column = null;
-		}
-		//$this->mark($string);
-		//$this->mark("column=$column, location=$location, value=$value");
-		
-		//  generate define
-		$locations = array_reverse( explode('.', trim($location) ) );
-		$target   = isset($locations[0]) ? $locations[0]: null;
-		$table    = isset($locations[1]) ? $locations[1]: null;
-		$database = isset($locations[2]) ? $locations[2]: null;
-		$host     = isset($locations[3]) ? $locations[3]: null;
-		
-		//  create columns
-		$columns = explode(',',str_replace(' ', '', $column));
-		
-		//  create value
-		$value = trim($value);
-		$value = trim($value,"'");
-		
-		//  create limit, offset, order
-		$limit  = isset($config->limit)  ? $config->limit:  1;
-		$offset = isset($config->offset) ? $config->offset: null;
-		$order  = isset($config->order)  ? $config->order:  null;
-		
-		//  create config
-		$config = new Config();
-		$config->host     = $host;
-		$config->database = $database;
-		$config->table    = $table;
-		$config->column   = $columns;
-		$config->limit    = $limit;
-		$config->offset   = $offset;
-		$config->order    = $order;
-		$config->where->$target = $value;
-		
-		//  get record
-		$record = $this->Select($config);
-		if( $record === false ){
-			$this->qu('Quick-Select is failed');
-			return false;
-		}
-		
-		//  return all
-		if( !$column or $limit != 1 ){
-			return $record;
-		}
-		
-		//  return one
-		if( count($columns) === 1 ){
-			return isset($record[$columns[0]]) ? $record[$columns[0]]: null;
-		}
-		
-		//  return many
-		foreach( $record as $key => $var ){
-			$return[$key] = $var; 
-		}
-		
-		return $return;
-	}
-	
 	function ConvertCharset( $config )
 	{
 		$charset = isset($config->charset) ? $config->charset: $this->GetEnv('charset');
@@ -318,6 +250,74 @@ class PDO5 extends OnePiece5
 		}
 		
 		return $struct;
+	}
+
+	function Quick( $string, $config=null)
+	{
+		list( $left, $value ) = explode('=', trim($string) );
+	
+		if( strpos( $left, '<') ){
+			list( $column, $location ) = explode('<-', trim($left) );
+		}else{
+			$location = $left;
+			$column = null;
+		}
+		//$this->mark($string);
+		//$this->mark("column=$column, location=$location, value=$value");
+	
+		//  generate define
+		$locations = array_reverse( explode('.', trim($location) ) );
+		$target   = isset($locations[0]) ? $locations[0]: null;
+		$table    = isset($locations[1]) ? $locations[1]: null;
+		$database = isset($locations[2]) ? $locations[2]: null;
+		$host     = isset($locations[3]) ? $locations[3]: null;
+	
+		//  create columns
+		$columns = explode(',',str_replace(' ', '', $column));
+	
+		//  create value
+		$value = trim($value);
+		$value = trim($value,"'");
+	
+		//  create limit, offset, order
+		$limit  = isset($config->limit)  ? $config->limit:  1;
+		$offset = isset($config->offset) ? $config->offset: null;
+		$order  = isset($config->order)  ? $config->order:  null;
+	
+		//  create config
+		$config = new Config();
+		$config->host     = $host;
+		$config->database = $database;
+		$config->table    = $table;
+		$config->column   = $columns;
+		$config->limit    = $limit;
+		$config->offset   = $offset;
+		$config->order    = $order;
+		$config->where->$target = $value;
+	
+		//  get record
+		$record = $this->Select($config);
+		if( $record === false ){
+			$this->qu('Quick-Select is failed');
+			return false;
+		}
+	
+		//  return all
+		if( !$column or $limit != 1 ){
+			return $record;
+		}
+	
+		//  return one
+		if( count($columns) === 1 ){
+			return isset($record[$columns[0]]) ? $record[$columns[0]]: null;
+		}
+	
+		//  return many
+		foreach( $record as $key => $var ){
+			$return[$key] = $var;
+		}
+	
+		return $return;
 	}
 	
 	function Count( $conf )
