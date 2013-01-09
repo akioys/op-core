@@ -613,7 +613,7 @@ class App extends NewWorld5
 		}
 		return $action;
 	}
-	
+
 	function SetControllerName( $var )
 	{
 		return $this->SetEnv('controller-name', $var);
@@ -621,7 +621,6 @@ class App extends NewWorld5
 	
 	function SetLayoutDir( $var )
 	{
-		$this->SetEnv('layout-root',$this->ConvertURL($var));
 		return $this->SetEnv('layout-dir', $var);
 	}
 	
