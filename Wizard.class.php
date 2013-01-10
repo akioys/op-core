@@ -101,7 +101,14 @@ class Wizard extends OnePiece5
 	
 	function CreateTable($config)
 	{
-		
+		foreach( $config->table as $table ){
+			$this->d( Toolbox::toArray($table) );
+			if( empty($table->database) ){
+				$table->database = $config->database->database;
+			}
+			$io = $this->pdo()->CreateTable($table);
+		}
+		return $io;
 	}
 	
 	function CreateColumn($config)
