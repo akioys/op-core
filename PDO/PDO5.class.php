@@ -27,7 +27,7 @@ class PDO5 extends OnePiece5
 			
 			//  Init
 			$this->ddl = new DDL();
-			$this->ddl->SetPDO($this->pdo);
+			$this->ddl->SetPDO( $this->pdo, $this->driver );
 		}
 		return $this->ddl;
 	}
@@ -374,6 +374,24 @@ class PDO5 extends OnePiece5
 				
 		//  get select query
 		if(!$qu = $this->ddl()->GetCreateDatabase($conf)){
+			return false;
+		}
+		
+		//  execute
+		$io = $this->query($qu);
+		
+		return $io;
+	}
+	
+	function CreateTable( $conf )
+	{
+		//  object to array
+		if(!is_array($conf)){
+			$conf = Toolbox::toArray($conf);
+		}
+		
+		//  get select query
+		if(!$qu = $this->ddl()->GetCreateTable($conf)){
 			return false;
 		}
 		
