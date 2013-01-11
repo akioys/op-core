@@ -40,7 +40,7 @@ class Wizard extends OnePiece5
 		//  Check secure
 		if( $this->form()->Secure($form_name) ){
 			
-			$database = $config->database;
+			$database = Toolbox::Copy( $config->database );
 			$database->user     = $this->form()->GetInputValue('user',$form_name);
 			$database->password = $this->form()->GetInputValue('password',$form_name);
 			$this->pdo()->Connect( $database );
@@ -49,7 +49,7 @@ class Wizard extends OnePiece5
 			$this->CreateTable($config);
 			$this->CreateColumn($config);
 			$this->CreateUser($config);
-			$this->CreateAlter($config);
+			$this->CreateGrant($config);
 			
 		}else{
 			$this->form()->Debug($form_name);
@@ -102,7 +102,7 @@ class Wizard extends OnePiece5
 	function CreateTable($config)
 	{
 		foreach( $config->table as $table ){
-			$this->d( Toolbox::toArray($table) );
+		//	$this->d( Toolbox::toArray($table) );
 			if( empty($table->database) ){
 				$table->database = $config->database->database;
 			}
@@ -113,17 +113,23 @@ class Wizard extends OnePiece5
 	
 	function CreateColumn($config)
 	{
-		
+		$this->mark(__METHOD__);
 	}
 	
 	function CreateUser($config)
 	{
+		$config->user->host     = $config->database->host;
+		$config->user->user     = $config->database->user;
+		$config->user->password = $config->database->password;
 		
+		$this->d( Toolbox::toArray($config) );
+		
+		$io = $this->pdo()->CreateUser($config->user);
 	}
 
-	function CreateAlter($config)
+	function CreateGrant($config)
 	{
-	
+		$io = $this->pdo()->Grant($config->grant);
 	}
 }
 
