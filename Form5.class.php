@@ -96,7 +96,7 @@ class Form5 extends OnePiece5
 	public function GetStatus( $form_name )
 	{
 		if(!isset($form_name)){
-			$this->mark('Empty form_name');
+			$this->mark('Form name is required to GetStatus($form_name).');
 			return false;
 		}
 		
@@ -163,11 +163,11 @@ class Form5 extends OnePiece5
 		return isset($token[$form_name]) ? $token[$form_name]: null;
 	}
 	
-	const VISIT_FIRST       = '1st visit';
-	const SESSION_DESTORY   = 'session is destory';
-	const TOKEN_KEY_MATCH   = 'match token key';
-	const TOKEN_KEY_UNMATCH = 'unmatch token key';
-	const UNKNOWN_ERROR     = 'unknown error';
+	const STATUS_VISIT_FIRST       = '1st visit';
+	const STATUS_SESSION_DESTORY   = 'session is destory';
+	const STATUS_TOKEN_KEY_MATCH   = 'match token key';
+	const STATUS_TOKEN_KEY_UNMATCH = 'unmatch token key';
+	const STATUS_UNKNOWN_ERROR     = 'unknown error';
 	
 	private function CheckTokenKey( $form_name )
 	{
@@ -182,19 +182,19 @@ class Form5 extends OnePiece5
 		//$this->mark("post=$post_token");
 		
 		if( !$save_token and !$post_token ){
-			$this->SetStatus( $form_name, self::VISIT_FIRST );
+			$this->SetStatus( $form_name, self::STATUS_VISIT_FIRST );
 			return false;
 		}else if(!$save_token and $post_token){
-			$this->SetStatus( $form_name, self::SESSION_DESTORY );
+			$this->SetStatus( $form_name, self::STATUS_SESSION_DESTORY );
 			return false;
 		}else if( $save_token !== $post_token ){
-			$this->SetStatus( $form_name, self::TOKEN_KEY_UNMATCH );
+			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_UNMATCH );
 			return false;
 		}else if( $save_token === $post_token ){
-			$this->SetStatus( $form_name, self::TOKEN_KEY_MATCH );
+			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_MATCH );
 			return true;
 		}else{
-			$this->SetStatus( $form_name, self::UNKNOWN_ERROR );
+			$this->SetStatus( $form_name, self::STATUS_UNKNOWN_ERROR );
 			return false;
 		}
 	}
@@ -1227,6 +1227,9 @@ class Form5 extends OnePiece5
 		if( isset($form[$form_name]) ){
 			unset($form[$form_name]);
 		}
+		if( true /*$_POST['form_name'] === $form_name*/ ){
+			$_POST = array();
+		}
 		$this->SetSession('form',$form);
 		
 		return true;
@@ -1996,6 +1999,23 @@ class Form5 extends OnePiece5
 	function ValidatePermit( $input, $form_name, $value )
 	{
 		switch( $key = $input->validate->permit ){
+			// English only
+			case 'english':
+				//  Array is convert string.
+				if(is_array($value)){
+					$value = implode('',$value);
+				}
+				//  Check character
+				if( $io = preg_match('/([^-_a-z0-9\/\\\!\?\(\)\[\]\{\}:;\'"`@#$%&*+^~|]{1,100})/i',$value,$match)){					
+					$this->d($match);
+					$this->SetInputError( $input->name, $form_name, 'permit-english', $match[1] );
+					//  Permit is failed
+					$io = false;
+				}else{
+					$io = true;
+				}
+				break;
+			
 			// including decimal
 			case 'number':
 				if(is_array($value)){

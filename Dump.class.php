@@ -1,14 +1,12 @@
 <?php
 /**
- * Super Dump!
+ * Dump
  * 
- * 2004: dump.inc.php > 2011: OnePiece::dump > 2012: dump.class.php
+ * 2006: dump.inc.php > 2011: OnePiece::dump > 2012: dump.class.php
  * 
- * @version 1.0
- * @since   2004
- * @author  Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
- * @copyright (C) 2004 Tomoaki Nagahara All rights reserved.
- *
+ * @version   1.0
+ * @author    Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
+ * @copyright 2006 (C) Tomoaki Nagahara All right reserved.   
  */
 class Dump {
 	
@@ -16,10 +14,11 @@ class Dump {
 		print "<p>$str</p>";
 	}
 	
-	function Dump(){
-	}
-	
 	static function D( $args, $lifetime=null ){
+		if( is_array($args) and count($args) === 0 ){
+			print self::GetDump( ' ', null, null, false );
+			return;
+		}
 		@self::PrintDump( $args, $lifetime );
 	}
 	
@@ -150,7 +149,7 @@ class Dump {
 	static function CaseOfObject( $args, $lifetime, $history, $label_flag=false ){
 		static $calls;
 		
-		// redy reflection
+		// ready reflection
 		$class_name = get_class($args);
 //		$reflection = new ReflectionClass($class_name);
 		$reflection = new ReflectionClass($args);

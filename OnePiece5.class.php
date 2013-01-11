@@ -18,12 +18,12 @@ if(!function_exists('__autoload')){
 		
 		// include path
 		$dirs = explode( PATH_SEPARATOR, ini_get('include_path') );
-		$dirs['current'] = '.';
-		$dirs['approot'] = OnePiece5::GetEnv('AppRoot');
-		$dirs['oproot']  = OnePiece5::GetEnv('OPRoot');
+		$dirs[] = '.';
+		$dirs[] = OnePiece5::GetEnv('App-Root');
+		$dirs[] = OnePiece5::GetEnv('OP-Root');
 		
 		// check
-		foreach( $dirs as $key => $dir ){
+		foreach( $dirs as $dir ){
 			$file_path = rtrim($dir,DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $file_name;
 			//print $file_path . '<br/>' . PHP_EOL;
 			if( file_exists($file_path) ){

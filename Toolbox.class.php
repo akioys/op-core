@@ -6,7 +6,7 @@
  *
  */
 if (!function_exists('lcfirst')) {
-	function lcfirst($text) {
+	function lcfirst($text) { // upper is ucfirst
 		$text{0} = strtolower($text{0});
 		return $text;
 	}
@@ -124,52 +124,6 @@ class Toolbox
 		
 		return $obj;
 	}
-	
-	/*
-	function GetVarToString( $args )
-	{
-		$charset = OnePiece5::GetEnv('charset');
-		$type = substr( gettype($args), 0, 3 );
-		switch( $type ){
-			case 'str':
-				$len = mb_strlen( $args, $charset );
-				if( $len > 20 ){
-					$var = mb_substr( $args, 0, 20 ) . '...';
-				}
-				$var = str_replace(array("\n","\r","\t"), array('\n ','\r ','\t '), $var);
-				$str = sprintf("%s(%s[%s])" . PHP_EOL, $type, $var, $len);
-				break;
-				
-			case 'obj':
-				$var = get_class($args);
-				$str = "$type($var)" . PHP_EOL;
-				break;
-				
-			case 'arr':
-				foreach($args as $key => $var){
-					$join[] = "$key=>" . self::GetVarToString($var);
-				}
-				$var = join(',',$join);
-				$str = str_replace(PHP_EOL, '', 'arr('.$var.')');
-				break;
-				
-			case 'boo':
-				$var = $args ? 'true': 'false';
-				$str = "$type($var)" . PHP_EOL;
-				break;
-				
-			case 'NULL':
-				$str = 'null' . PHP_EOL;
-				break;
-				
-			default:
-				$var = $args;
-				$str = "$type($var)" . PHP_EOL;
-		}
-		
-		return $str;
-	}
-	*/
 	
 	/**
 	 * Get secure request
@@ -325,62 +279,6 @@ class Toolbox
 		$ip1 = ip2long($ip1) >> $mask << $mask;
 		$ip2 = ip2long($ip2) >> $mask << $mask;
 		return $ip1 === $ip2 ? true: false;
-	}
-	
-    /**
-     *  Encrypt string.
-     *  
-     *  @see http://jp2.php.net/manual/ja/book.mcrypt.php
-     *  @param  string  $str String of want to encrypt.
-     *  @return string  Encrypted string.
-     */
-	function Encrypt( $str, $key=null )
-	{
-		$cipher = MCRYPT_RIJNDAEL_128;
-		$mode   = MCRYPT_MODE_CBC;
-		if(!$key){
-			$key = OnePiece5::GetEnv('Encrypt-Key');
-		}
-		
-		srand();
-		$ivs = mcrypt_get_iv_size($cipher,$mode);
-		$iv  = mcrypt_create_iv( $ivs, MCRYPT_RAND );
-		$bin = mcrypt_encrypt( $cipher, $key, $str, $mode, $iv );
-		$hex = bin2hex($bin);
-		
-	    return bin2hex($bin).'.'.bin2hex($iv);
-	}
-
-    /**
-     *  Decrypt string.
-     *  
-     *  @param  string  $str String of want to decrypt.
-     *  @return string  Decrypted string.
-     */
-	function Decrypt( $str, $key=null )
-	{
-		$cipher = MCRYPT_RIJNDAEL_128;
-		$mode   = MCRYPT_MODE_CBC;
-		if(!$key){
-			$key = OnePiece5::GetEnv('Encrypt-Key');
-		}
-		
-		//	ドット区切りでivも渡す必要がある
-		list( $hex, $ivt ) = explode( '.', $str );
-		
-		//	どれかが空なら空文字を返す
-		if( !$hex or !$ivt or !$key ){
-			$this->mark("hex=$hex, ivt=$ivt, key=$key");
-			return '';
-		}
-		
-		$bin = pack('H*', $hex);
-		$iv  = pack('H*', $ivt);
-	    $dec = mcrypt_decrypt( $cipher, $key, $bin, $mode, $iv );
-	    // Java等、\0以外でパディングするプログラムと連携する場合はパディング方法が同じになるよう注意すること。
-		$dec = rtrim($dec, "\0");
-	    
-	    return $dec;
 	}
 	
 	function ConvertConfigFromPath( $args )

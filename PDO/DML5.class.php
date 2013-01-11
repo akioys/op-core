@@ -32,6 +32,22 @@ class DML5 extends OnePiece5
 		}
 	}
 	
+	function Quote( $var )
+	{
+		if( is_array($var) ){
+			foreach( $var as $tmp ){
+				$safe[] = $this->Quote($tmp);
+			}
+		}else if( strpos($var,'.') ){
+			$temp = explode('.',$var);
+			$this->d($temp);
+			$safe = $this->ql .trim($temp[0]). $this->qr.'.'.$this->ql .trim($temp[1]). $this->qr;
+		}else{
+			$safe = $this->ql .trim($var). $this->qr;
+		}
+		return $safe;
+	}
+	
 	function GetSelect( $conf )
 	{
 		//  database
@@ -378,7 +394,7 @@ class DML5 extends OnePiece5
 		return $table;
 	}
 	
-	protected function ConvertTableJoin(&$conf)
+	protected function ConvertTableJoin( $conf )
 	{
 		//  current table join is only two table yet.
 		
@@ -386,7 +402,7 @@ class DML5 extends OnePiece5
 		$table = str_replace(' ', '', $conf['table']);
 		
 		//  parse
-		if(!preg_match('/^([-_a-z0-9\.]+) ?([><=]{1,2}) ?([-_a-z0-9\.]+)$/i',trim($table),$match) ){
+		if(!preg_match('/^([-_a-z0-9\.]+) ?([><=]{1,3}) ?([-_a-z0-9\.]+)$/i',trim($table),$match) ){
 			$this->StackError("Illigal define.({$conf['table']})");
 			return false;
 		}
@@ -408,9 +424,6 @@ class DML5 extends OnePiece5
 			case '=>':
 				$join = 'RIGHT JOIN';
 				break;
-			case '<=>':
-				$join = 'OUTER JOIN';
-				break;
 			case '>=<':
 				$join = 'INNER JOIN';
 				break;
@@ -422,7 +435,7 @@ class DML5 extends OnePiece5
 		list( $right_table, $right_column) = explode('.',$right);
 		
 		//  fat mode
-		if( !isset($conf['fat']) or empty($conf['fat']) ){
+		if( !empty($conf['fat']) ){
 			
 		}
 		
@@ -430,15 +443,59 @@ class DML5 extends OnePiece5
 		$ql = $this->ql;
 		$qr = $this->qr;
 		
+		//  quote
+		$left_table   = $ql.$left_table.$qr;
+		$right_table  = $ql.$right_table.$qr;
+		$left_column  = $ql.$left_column.$qr;
+		$right_column = $ql.$right_column.$qr;
+		
+		//  on
+		$on = " ON $left_table.$left_column = $right_table.$right_column";
+		
+		//  using
+		if( isset($conf['using']) ){
+			$on    = null;
+			$using = $this->ConvertUsing($conf);
+		}else{
+			$using = null;
+		}
+		
 		//  join
-		$joind_table = $ql.$left_table.$qr.' '.$join.' '.$ql.$right_table.$qr.' ON '.$ql.$left_column.$qr.'='.$ql.$right_column.$qr;
+		$joind_table = "$left_table $join $right_table $on $using";
 		
 		return $joind_table;
+	}
+	
+	protected function ConvertUsing( $conf )
+	{
+		if( empty($conf['using']) ){
+			return null;
+		}
+		
+		if( is_string($conf['using']) ){
+			$usings = explode(',', $conf['using']);
+		}else if(is_array($conf['using'])){
+			$usings = $conf['using'];
+		}else if( is_object($conf['using']) ){
+			$usings = Toolbox::toArray($conf['using']);
+		}
+		
+		foreach( $usings as $str ){
+			$join[] = $this->ql .trim($str). $this->qr;
+		}
+		
+		$using = 'USING (' .implode(', ', $join). ')';
+		
+		return $using;
 	}
 	
 	protected function ConvertSet( $conf )
 	{
 		foreach( $conf['set'] as $key => $var ){
+			if(!is_string($var)){
+				$this->StackError("Set is only string. ($key)");
+				continue;
+			}
 			switch(strtoupper($var)){
 				case 'NULL':
 				case 'NOW()':
@@ -484,13 +541,16 @@ class DML5 extends OnePiece5
 		
 		if( isset($conf['column']) ){
 			if( is_array($conf['column']) ){
-				$join = $conf['column'];
+				$cols = $conf['column'];
 			}else if( is_string($conf['column']) ){
-				$join[] = $conf['column'];
+				$cols = explode(',',$conf['column']);
 			}else{
 				$this->StackError('column is not array or string.');
 				return false;
 			}
+			$cols = join(', ',$this->Quote($cols));
+		}else{
+			$cols = null;
 		}
 		
 		//  
@@ -505,7 +565,7 @@ class DML5 extends OnePiece5
 			if(!$this->ConvertAggregate( $conf, $agg )){
 				return false;
 			}
-			$join = array_merge( $join, $agg );
+		//	$join = array_merge( $join, $agg );
 		}
 		
 		if( isset($conf['case']) ){
@@ -514,8 +574,16 @@ class DML5 extends OnePiece5
 			}
 		}
 		
+		//  init
+		$return = null;
+		
+		//  select columns
+		if( $cols ){
+			$return = $cols;
+		}
+		
 		//  exists select column
-		$count = count($join);
+		$count = count($join) + count($agg);
 		if( $count ){
 			if( $count === 1 ){
 				if( !$join[0] ){
@@ -524,19 +592,23 @@ class DML5 extends OnePiece5
 			}
 			
 			//  Standard
-			if( $temp = array_diff( $join, $agg ) ){
-				$return = '`'.implode( '`, `', $temp ).'`';
+			//if( $temp = array_diff( $join, $agg ) ){
+			if( $join ){
+				$return .= $return ? ', ': '';
+				$return .= '`'.implode( '`, `', $join ).'`';
 			}
 			
 			//  aggregate
 			if( $agg ){
-				$return .= $temp ? ', ': '';
+				$return .= $return ? ', ': '';
 				$return .= implode( ', ', $agg );
 			}
-			return $return;
+		//	return $return;
 		}else{
-			return '*';
+		//	return '*';
 		}
+		
+		return $return ? $return: '*';
 	}
 	
 	protected function ConvertAlias( $conf, &$join )
