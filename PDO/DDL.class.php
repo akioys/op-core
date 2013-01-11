@@ -126,19 +126,72 @@ class DDL extends OnePiece5
 		
 	}
 	
-	function GetCreateUser()
+	function GetCreateUser( $args )
 	{
+		$user = isset($args['name']) ? $args['name']: null;
+		$user = isset($args['user']) ? $args['user']: $user;
+		$host = $args['host'];
+		$password = $args['password'];
 		
+		if(!$host){
+			$this->StackError("Empty host name.");
+			return false;
+		}
+
+		if(!$user){
+			$this->StackError("Empty user name.");
+			return false;
+		}
+
+		if(!$password){
+			$this->StackError("Empty password name.");
+			return false;
+		}
+		
+		//	CREATE USER 'user-name'@'host-name' IDENTIFIED BY '***';
+		$query = "CREATE USER '{$user}'@'{$host}' IDENTIFIED BY '{$password}'";
+		
+		return $query;
 	}
 	
-	function GetDropDatabase()
+	function GetDropDatabase( $args )
 	{
+		if( empty($args['database']) ){
+			$this->StackError("Empty database name.");
+			return false;
+		}
 		
+		$database  = PDO5::Quote( $args['database'], $this->driver );
+		
+		$query = "DROP DATABASE IF EXISTS {$database}";
+		
+		return $query;
 	}
 	
 	function GetDropTable()
 	{
+		if( empty($args['database']) ){
+			$this->StackError("Empty database name.");
+			return false;
+		}
+		
+		if( empty($args['table']) ){
+			$this->StackError("Empty table name.");
+			return false;
+		}
+
+		$database  = PDO5::Quote( $args['database'], $this->driver );
+		$table     = PDO5::Quote( $args['table'],    $this->driver );
+		$temporary = empty($args['temporary']) ? null: 'TEMPORARY';
+		
+		$query = "DROP {$temporary} TABLE IF EXISTS {$database}.{$table}";
+		
+		return $query;
+	}
 	
+	function GetDropUser()
+	{
+		//DROP USER 'op_wizard'@'localhost';
 	}
 	
 	function ConvertColumn( $args, $ACD='' )

@@ -14,6 +14,18 @@ class PDO5 extends OnePiece5
 	private $user		 = null;
 	private $database	 = null;
 	private $charset	 = null;
+
+	function DML( $name=null )
+	{
+		if(!isset($this->dml)){
+			if(!class_exists('DML5',false)){
+				include_once('PDO/DML5.class.php');
+			}
+			$conf['driver'] = $this->driver;
+			$this->dml = new DML5( $conf, $this->pdo );
+		}
+		return $this->dml;
+	}
 	
 	function DDL( $name=null )
 	{
@@ -32,18 +44,23 @@ class PDO5 extends OnePiece5
 		return $this->ddl;
 	}
 	
-	function DML( $name=null )
+	function DCL( $name=null )
 	{
-		if(!isset($this->dml)){
-			if(!class_exists('DML5',false)){
-				include_once('PDO/DML5.class.php');
-			}			
-			$conf['driver'] = $this->driver;
-			$this->dml = new DML5( $conf, $this->pdo );
+		if( empty($this->dcl) ){
+			if(!class_exists('DCL',false)){
+				$io = include_once('PDO/DCL.class.php');
+				if(!$io){
+					throw( new Exception("Include failed.(PDO/DCL.class.php)") );
+				}
+			}
+			
+			//  Init
+			$this->dcl = new DCL();
+			$this->dcl->SetPDO( $this->pdo, $this->driver );
 		}
-		return $this->dml;
+		return $this->dcl;
 	}
-
+	
 	function Qu($qu=null)
 	{
 		if( $qu ){
@@ -398,6 +415,42 @@ class PDO5 extends OnePiece5
 		//  execute
 		$io = $this->query($qu);
 		
+		return $io;
+	}
+	
+	function CreateUser( $conf )
+	{
+		//  object to array
+		if(!is_array($conf)){
+			$conf = Toolbox::toArray($conf);
+		}
+		
+		//  get select query
+		if(!$qu = $this->ddl()->GetCreateUser($conf)){
+			return false;
+		}
+		
+		//  execute
+		$io = $this->query($qu);
+		
+		return $io;
+	}
+	
+	function Grant( $conf )
+	{
+		//  object to array
+		if(!is_array($conf)){
+			$conf = Toolbox::toArray($conf);
+		}
+	
+		//  get select query
+		if(!$qu = $this->dcl()->GetGrant($conf)){
+			return false;
+		}
+	
+		//  execute
+		$io = $this->query($qu);
+	
 		return $io;
 	}
 	
