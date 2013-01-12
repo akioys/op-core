@@ -6,12 +6,25 @@
 if(!function_exists('__autoload')){
 	function __autoload($class_name)
 	{
-		// file name
+		//  init
+		$sub_dir = null;
+		
+		//  file name
 		switch($class_name){
 			case 'Memcache':
 				return;
+				
 			case 'App':
 				$class_name = 'NewWorld5';
+			
+			case 'DML':
+			case 'DML5':
+			case 'DDL':
+			case 'DDL5':
+			case 'DCL':
+			case 'DCL5':
+				$sub_dir = 'PDO';
+				
 			default:
 				$file_name = $class_name . '.class.php';
 		}
@@ -21,6 +34,9 @@ if(!function_exists('__autoload')){
 		$dirs[] = '.';
 		$dirs[] = OnePiece5::GetEnv('App-Root');
 		$dirs[] = OnePiece5::GetEnv('OP-Root');
+		if( $sub_dir ){
+			$dirs[] = OnePiece5::GetEnv('OP-Root').DIRECTORY_SEPARATOR.$sub_dir;
+		}
 		
 		// check
 		foreach( $dirs as $dir ){
