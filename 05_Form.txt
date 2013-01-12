@@ -1,4 +1,12 @@
 
+ - Debug
+ 
+ 	//  Print debug information from form_name.
+ 	$op->form()->debug('form_name');
+ 	
+ 	//  Get form status.
+ 	$op->form()->GetStatus('form_name');
+ 	
  - Instance
  
  	$op = new OnePiece5();
@@ -62,11 +70,6 @@
  	//  Check secure. Xsite, F5, reload, browser back, and validate from form_name.
  	$op->form()->secure('form_name');
  
- - Debug
- 
- 	//  Print debug information from form_name.
- 	$op->form()->debug('form_name');
- 	
  - GetInputValue
 
  	//  Get saved value of input. (saved value is secure)
