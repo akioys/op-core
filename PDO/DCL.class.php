@@ -20,7 +20,7 @@ class DCL extends OnePiece5
 		$table		 = isset($args['table'])       ? $args['table']       : null;
 		$user		 = isset($args['user'])        ? $args['user']        : null;
 		$password	 = isset($args['password'])    ? $args['password']    : null;
-		$privilege	 = isset($args['privilege'])   ? $args['privilege']   : 'ALL PRIVILEGE';
+		$privilege	 = isset($args['privilege'])   ? $args['privilege']   : 'ALL PRIVILEGES';
 		$column      = isset($args['column'])      ? $args['column']      : null;
 		$identified  = isset($args['password'])    ? "IDENTIFIED BY '{$password}'": null;
 		
