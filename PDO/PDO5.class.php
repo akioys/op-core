@@ -15,14 +15,15 @@ class PDO5 extends OnePiece5
 	private $database	 = null;
 	private $charset	 = null;
 
-	function DML( $name=null )
+	function DML( $name='DML5' )
 	{
 		if(!isset($this->dml)){
-			if(!class_exists('DML5',false)){
-				include_once('PDO/DML5.class.php');
+			if( class_exists( $name ) ){
+				//include_once('PDO/DML5.class.php');
+				
+				$conf['driver'] = $this->driver;
+				$this->dml = new $name( $conf, $this->pdo );
 			}
-			$conf['driver'] = $this->driver;
-			$this->dml = new DML5( $conf, $this->pdo );
 		}
 		return $this->dml;
 	}
@@ -33,7 +34,7 @@ class PDO5 extends OnePiece5
 			if(!class_exists('DDL',false)){
 				$io = include_once('PDO/DDL.class.php');
 				if(!$io){
-					throw( new Exception("Include failed.(PDO/DDL.class.php)") );
+					throw new Exception("Include failed.(PDO/DDL.class.php)");
 				}
 			}
 			
@@ -50,7 +51,7 @@ class PDO5 extends OnePiece5
 			if(!class_exists('DCL',false)){
 				$io = include_once('PDO/DCL.class.php');
 				if(!$io){
-					throw( new Exception("Include failed.(PDO/DCL.class.php)") );
+					throw new Exception("Include failed.(PDO/DCL.class.php)");
 				}
 			}
 			
@@ -127,6 +128,11 @@ class PDO5 extends OnePiece5
 							$return = false;
 						}
 						break;
+					
+					case 'update':
+						$return = $st->rowCount();
+						break;
+						
 					default:
 						$return = $st->fetchAll(PDO::FETCH_ASSOC);
 				}
@@ -316,7 +322,17 @@ class PDO5 extends OnePiece5
 
 	function Quick( $string, $config=null)
 	{
-		list( $left, $value ) = explode('=', trim($string) );
+		//list( $left, $value ) = explode('=', trim($string) );
+		if( preg_match('/(.+)[^><=]([=<>]{1,2})(.+)/', $string, $match) ){
+			$left  = $match[1];
+			$ope   = $match[2];
+			$value = $match[3];
+			//$this->d($match);
+		}else{
+			$this->StackError("Format error. ($string)");
+			return false;
+		}
+		
 	
 		if( strpos( $left, '<') ){
 			list( $column, $location ) = explode('<-', trim($left) );
@@ -355,7 +371,7 @@ class PDO5 extends OnePiece5
 		$config->limit    = $limit;
 		$config->offset   = $offset;
 		$config->order    = $order;
-		$config->where->$target = $value;
+		$config->where->$target = $ope.' '.$value;
 	
 		//  get record
 		$record = $this->Select($config);
@@ -558,6 +574,8 @@ class PDO5 extends OnePiece5
 		}
 		
 		//  execute
+		$num = $this->query($qu,'update');
+		/*
 		if( $st = $this->pdo->query($qu) ){
 			//  num rows
 			$num = $st->rowCount();
@@ -567,6 +585,7 @@ class PDO5 extends OnePiece5
 			$temp = $this->pdo->errorInfo();
 			$this->StackError("{$temp[2]} : {$this->qu}");
 		}
+		*/
 		
 		return $num;
 	}
