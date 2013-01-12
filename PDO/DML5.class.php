@@ -718,7 +718,7 @@ class DML5 extends OnePiece5
 			}else if( strtolower($var) === '!null' or strtolower($var) === 'not null' ){
 				$join[] = "$column IS NOT NULL";
 				continue;
-			}else if(preg_match('/^(>|<|>=|<=) ([-0-9: ]+)$/i',$var,$match)){
+			}else if(preg_match('/^([><]?=) ([-0-9: ]+)$/i',$var,$match)){				
 				$ope = $match[1];
 				$var = $match[2];
 			}else{
