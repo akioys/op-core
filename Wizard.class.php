@@ -23,10 +23,14 @@ class Wizard extends OnePiece5
 			$this->CheckDatabase($config);
 			$this->CheckTable($config);
 			$this->CheckColumn($config);
+			$io = true;
 		}catch( Exception $e ){
 			$this->p( $e->getMessage() );
 			$this->DoWizard( $config );
+			$io = false;
 		}
+		
+		return $io;
 	}
 	
 	function DoWizard( $config )
@@ -102,7 +106,6 @@ class Wizard extends OnePiece5
 	function CreateTable($config)
 	{
 		foreach( $config->table as $table ){
-		//	$this->d( Toolbox::toArray($table) );
 			if( empty($table->database) ){
 				$table->database = $config->database->database;
 			}
@@ -113,7 +116,7 @@ class Wizard extends OnePiece5
 	
 	function CreateColumn($config)
 	{
-		$this->mark(__METHOD__);
+	//	$this->mark(__METHOD__);
 	}
 	
 	function CreateUser($config)
@@ -122,14 +125,24 @@ class Wizard extends OnePiece5
 		$config->user->user     = $config->database->user;
 		$config->user->password = $config->database->password;
 		
-		$this->d( Toolbox::toArray($config) );
+	//	$this->d( Toolbox::toArray($config) );
 		
 		$io = $this->pdo()->CreateUser($config->user);
 	}
 
 	function CreateGrant($config)
 	{
-		$io = $this->pdo()->Grant($config->grant);
+		$this->d( Toolbox::toArray($config) );
+		$config->grant->host     = $config->database->host;
+		$config->grant->database = $config->database->database;
+		$config->grant->user     = $config->database->user;
+		
+		foreach( $config->table as $table_name => $table ){
+			$config->grant->table = $table_name;
+			if($io = $this->pdo()->Grant($config->grant)){
+				return false;
+			}
+		}
 	}
 }
 
