@@ -322,6 +322,7 @@ class PDO5 extends OnePiece5
 
 	function Quick( $string, $config=null)
 	{
+		//  Get value
 		//list( $left, $value ) = explode('=', trim($string) );
 		if( preg_match('/(.+)[^><=]([=<>]{1,2})(.+)/', $string, $match) ){
 			$left  = $match[1];
@@ -333,15 +334,14 @@ class PDO5 extends OnePiece5
 			return false;
 		}
 		
-	
+		//  Get column
 		if( strpos( $left, '<') ){
 			list( $column, $location ) = explode('<-', trim($left) );
 		}else{
 			$location = $left;
 			$column = null;
 		}
-		//$this->mark($string);
-		//$this->mark("column=$column, location=$location, value=$value");
+		//$this->mark("column=$column, location=$location, ope=$ope, value=$value");
 	
 		//  generate define
 		$locations = array_reverse( explode('.', trim($location) ) );
@@ -351,7 +351,11 @@ class PDO5 extends OnePiece5
 		$host     = isset($locations[3]) ? $locations[3]: null;
 	
 		//  create columns
-		$columns = explode(',',str_replace(' ', '', $column));
+		if( $column ){
+			$columns = explode(',',str_replace(' ', '', $column));
+		}else{
+			$columns = null;
+		}
 	
 		//  create value
 		$value = trim($value);
@@ -376,7 +380,8 @@ class PDO5 extends OnePiece5
 		//  get record
 		$record = $this->Select($config);
 		if( $record === false ){
-			$this->qu('Quick-Select is failed');
+			//$this->qu('Quick-Select is failed');
+			//$this->d( Toolbox::toArray($config) );
 			return false;
 		}
 	
