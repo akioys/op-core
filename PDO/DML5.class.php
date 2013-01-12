@@ -586,7 +586,7 @@ class DML5 extends OnePiece5
 		$count = count($join) + count($agg);
 		if( $count ){
 			if( $count === 1 ){
-				if( !$join[0] ){
+				if( empty($join[0]) ){
 					return '*';
 				}
 			}

@@ -123,8 +123,8 @@ class PDO5 extends OnePiece5
 						}else if( isset($return['COUNT()']) ){
 							$return = $return['COUNT()'];
 						}else{
-							$this->mark( $this->Qu() );
-							$this->d($return);
+							//$this->mark( $this->Qu() );
+							//$this->d($return);
 							$return = false;
 						}
 						break;
@@ -326,9 +326,9 @@ class PDO5 extends OnePiece5
 		//list( $left, $value ) = explode('=', trim($string) );
 		if( preg_match('/(.+)[^><=]([=<>]{1,2})(.+)/', $string, $match) ){
 			$left  = $match[1];
-			$ope   = $match[2];
+			$ope   = $match[2] == '=' ? null: $match[2].' ';
 			$value = $match[3];
-			//$this->d($match);
+		//	$this->d($match);
 		}else{
 			$this->StackError("Format error. ($string)");
 			return false;
@@ -375,7 +375,7 @@ class PDO5 extends OnePiece5
 		$config->limit    = $limit;
 		$config->offset   = $offset;
 		$config->order    = $order;
-		$config->where->$target = $ope.' '.$value;
+		$config->where->$target = $ope.$value;
 	
 		//  get record
 		$record = $this->Select($config);
