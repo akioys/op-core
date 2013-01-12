@@ -1999,6 +1999,7 @@ class Form5 extends OnePiece5
 	function ValidatePermit( $input, $form_name, $value )
 	{
 		switch( $key = $input->validate->permit ){
+			
 			// English only
 			case 'english':
 				//  Array is convert string.
@@ -2006,8 +2007,8 @@ class Form5 extends OnePiece5
 					$value = implode('',$value);
 				}
 				//  Check character
-				if( $io = preg_match('/([^-_a-z0-9\/\\\!\?\(\)\[\]\{\}:;\'"`@#$%&*+^~|]{1,100})/i',$value,$match)){					
-					$this->d($match);
+				if( $io = preg_match('/([^-_a-z0-9\s\/\\\!\?\(\)\[\]\{\}:;\'"`@#$%&*+^~|]+)/i',$value,$match)){					
+					//$this->d($match);
 					$this->SetInputError( $input->name, $form_name, 'permit-english', $match[1] );
 					//  Permit is failed
 					$io = false;
@@ -2015,7 +2016,24 @@ class Form5 extends OnePiece5
 					$io = true;
 				}
 				break;
-			
+
+			// Use for password
+			case 'password':
+				//  Array is convert string.
+				if(is_array($value)){
+					$value = implode('',$value);
+				}
+				//  Check character
+				if( $io = preg_match('/([^-_a-z0-9\/\\\!\?\(\)\[\]\{\}:;\'"`@#$%&*+^~|]+)/i',$value,$match)){
+					//$this->d($match);
+					$this->SetInputError( $input->name, $form_name, 'permit-password', $match[1] );
+					//  Permit is failed
+					$io = false;
+				}else{
+					$io = true;
+				}
+				break;
+				
 			// including decimal
 			case 'number':
 				if(is_array($value)){
@@ -2049,6 +2067,7 @@ class Form5 extends OnePiece5
 				if(is_array($value)){
 					$value = implode('@',$value);
 				}
+				//$io = filter_var( $value, FILTER_VALIDATE_EMAIL);
 				$io = $this->ValidatePermitEmail($input, $form_name, $value);
 				break;
 			
@@ -2128,7 +2147,8 @@ class Form5 extends OnePiece5
 		}
 		
 		// check exists host
-		if( $this->GetEnv('REMOTE_ADDR') == '127.0.0.1' ){
+		if( $_SERVER['REMOTE_ADDR'] == '127.0.0.1' or 
+			$_SERVER['REMOTE_ADDR'] == '::1' ){
 			$this->SetStatus($form_name, "XX: Skip check host. ($input->name, $value)");
 			return true;
 		}
