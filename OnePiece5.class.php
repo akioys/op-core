@@ -6,7 +6,6 @@
 if(!function_exists('__autoload')){
 	function __autoload($class_name)
 	{
-		// file name
 		switch($class_name){
 			case 'Memcache':
 				return;
@@ -58,8 +57,6 @@ if(!function_exists('OnePieceShutdown')){
 		$status  = connection_status();
 
 		/* @see http://www.php.net/manual/ja/errorfunc.constants.php */
-		if( function_exists('error_get_last') and $error = error_get_last()){
-			
 			switch($error['type']){
 				case E_WARNING: // 2
 					$er = 'E_WARNING';
@@ -907,14 +904,6 @@ __EOL__;
 		$call_line = '';
 		$depth++;
 		$nl = $this->GetEnv('nl');
-		
-		
-		if( version_compare(PHP_VERSION, '5.2.5') >= 0 ){
-			$back = debug_backtrace(false);
-		}else{
-			$back = debug_backtrace();
-		}
-		
 		
 		// num
 		if( $num >= count($back) or $num <= 0 ){

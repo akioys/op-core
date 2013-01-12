@@ -3,4 +3,5 @@
 .buildpath
 .project
 .settings/
+*.orig
 
