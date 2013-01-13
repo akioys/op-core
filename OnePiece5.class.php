@@ -1769,20 +1769,20 @@ __EOL__;
 	}
 	
 	/**
-	 *  @var $form i18n_a 
+	 *  @var $i18n i18n
 	 */
-	private $i18n;
+	private $i18n = null;
 	
 	/**
-	 * i18n object
+	 * i18n is translate object.
 	 * 
-	 * @param string $i18n_source_file
-	 * @return $form
+	 * @param  string $name Object name
+	 * @return i18n
 	 */
-	function i18n($i18n_source_file=null)
+	function i18n($name='i18n')
 	{
 		if( empty($this->i18n) ){
-			if(!$this->i18n = new i18n_a($i18n_source_file)){
+			if(!$this->i18n = new $name()){
 				return $this;
 			}
 		}
