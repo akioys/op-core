@@ -18,7 +18,6 @@ abstract class NewWorld5 extends OnePiece5
 	 * 
 	 * @var array
 	 */
-	private $isInit     = null;
 	private $isDispatch = null;
 	private $routeTable = null;
 	private $content    = null;
@@ -31,9 +30,9 @@ abstract class NewWorld5 extends OnePiece5
 		$this->StackLog('START');
 		
 		//  init
-		$this->Init();
+		//$this->Init();
 		
-		//  
+		//  result
 		return $io;
 	}
 	
@@ -44,11 +43,6 @@ abstract class NewWorld5 extends OnePiece5
 			$this->StackError('App has not dispatched. Please call $app->Dispatch();');
 		}
 		
-		//  Called Init?
-		if(!$this->isInit){
-			$this->StackError('App has not call init. Please call $app->Init(){ parent::Init(); };');
-		}
-		
 		ob_end_flush();
 		$io = parent::__destruct();
 		return $io;
@@ -56,8 +50,8 @@ abstract class NewWorld5 extends OnePiece5
 	
 	function Init()
 	{
-		$this->isInit = true;
-		
+		//$this->isInit = true;
+		parent::Init();
 		$this->GetEnv('doctype','html');
 		$this->GetEnv('title','The NewWorld is the new world');
 	}

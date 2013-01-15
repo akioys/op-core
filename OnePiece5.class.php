@@ -168,6 +168,7 @@ class OnePiece5
 	public  $laptime = null;
 	private $errors  = array();
 	private $session = array();
+	private $isInit  = null;
 	
 	/**
 	 * 
@@ -176,23 +177,26 @@ class OnePiece5
 	{
 		//  all
 		$this->InitSession();
+
+		//  extends class have init method.
+		if( method_exists($this, 'Init') ){
+			//  op-root has set the first.
+			$this->SetEnv('op-root',dirname(__FILE__));
+			$this->Init();
+		}
 		
-		//  check already init 
+		//  Check already init. 
 		if( $this->GetEnv('init') ){
-			//  extends class init
-			if( method_exists($this, 'Init') ){
-				$this->Init();
-			}
 			return;
 		}
 		$this->SetEnv('init',true);
 		
-		// error control
+		// Error control
 		$save_level = error_reporting();
 		error_reporting( E_ALL );
 		ini_set('display_errors',1);
 		
-		// added op-root to include_path.
+		// Added op-root to include_path.
 		$op_root = dirname(__FILE__);
 		$include_path = ini_get('include_path');
 		$include_path = trim( $include_path, PATH_SEPARATOR );
@@ -224,6 +228,11 @@ class OnePiece5
 	 */
 	function __destruct()
 	{
+		//  Called Init?
+		if(!$this->isInit){
+			$this->StackError(get_class($this).' has not call "parent::init();".');
+		}
+		
 		$this->PrintTime();
 		$this->PrintError();
 	}
@@ -328,6 +337,19 @@ class OnePiece5
 	function __set_state()
 	{
 		$this->mark('![.red .bold[ CATCH MAGIC METHOD ]]');
+	}
+	
+	function Init()
+	{
+		$this->isInit = true;
+		
+		//  Create i18n configuration file path.
+		$path = $this->ConvertPath('op:/i18n/'.get_class($this).'.i18n.php');
+		
+		//  Include configuration file.
+		if( file_exists($path) ){
+			$this->i18n()->SetByFile($path);
+		}
 	}
 	
 	/**
@@ -748,7 +770,7 @@ __EOL__;
 		
 		$this->SetEnv('class',      __CLASS__    );
 		$this->SetEnv('local',      $local       );
-		$this->SetEnv('op_root',    $op_root     );
+	//	$this->SetEnv('op_root',    $op_root     );
 		$this->SetEnv('doc_root',   $doc_root    );
 		$this->SetEnv('app_root',   $app_root    );
 		$this->SetEnv('site_root',  $site_root   );
@@ -1545,7 +1567,7 @@ __EOL__;
 			if( $root = $this->GetEnv($temp) ){
 				$path = str_replace($match[0], $root, $path);
 			}else{
-				$tihs->StackError("$temp is not set.");
+				$this->StackError("$temp is not set.");
 			}
 		}else{
 			$url = self::ConvertURL($path);
@@ -1750,20 +1772,20 @@ __EOL__;
 	}
 	
 	/**
-	 *  @var $form i18n_a 
+	 *  @var $i18n i18n
 	 */
-	private $i18n;
+	private $i18n = null;
 	
 	/**
-	 * i18n object
+	 * i18n is translate object.
 	 * 
-	 * @param string $i18n_source_file
-	 * @return $form
+	 * @param  string $name Object name
+	 * @return i18n
 	 */
-	function i18n($i18n_source_file=null)
+	function i18n($name='i18n')
 	{
 		if( empty($this->i18n) ){
-			if(!$this->i18n = new i18n_a($i18n_source_file)){
+			if(!$this->i18n = new $name()){
 				return $this;
 			}
 		}
