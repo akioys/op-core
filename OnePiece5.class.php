@@ -198,6 +198,8 @@ class OnePiece5
 
 		//  extends class have init method.
 		if( method_exists($this, 'Init') ){
+			//  Set the first.
+			$this->SetEnv('op-root',dirname(__FILE__));
 			$this->Init();
 		}
 		
@@ -786,7 +788,7 @@ __EOL__;
 		
 		$this->SetEnv('class',      __CLASS__    );
 		$this->SetEnv('local',      $local       );
-		$this->SetEnv('op_root',    $op_root     );
+	//	$this->SetEnv('op_root',    $op_root     );
 		$this->SetEnv('doc_root',   $doc_root    );
 		$this->SetEnv('app_root',   $app_root    );
 		$this->SetEnv('site_root',  $site_root   );
