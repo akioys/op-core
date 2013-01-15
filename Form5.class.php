@@ -10,6 +10,7 @@ class Form5 extends OnePiece5
 	
 	function Init()
 	{
+		parent::Init();
 		$this->config = new Config();
 		$this->status = new Config();
 //		$io = session_regenerate_id(true);
