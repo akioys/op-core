@@ -194,23 +194,24 @@ class OnePiece5
 	{
 		//  all
 		$this->InitSession();
+
+		//  extends class have init method.
+		if( method_exists($this, 'Init') ){
+			$this->Init();
+		}
 		
-		//  check already init 
+		//  Check already init. 
 		if( $this->GetEnv('init') ){
-			//  extends class init
-			if( method_exists($this, 'Init') ){
-				$this->Init();
-			}
 			return;
 		}
 		$this->SetEnv('init',true);
 		
-		// error control
+		// Error control
 		$save_level = error_reporting();
 		error_reporting( E_ALL );
 		ini_set('display_errors',1);
 		
-		// added op-root to include_path.
+		// Added op-root to include_path.
 		$op_root = dirname(__FILE__);
 		$include_path = ini_get('include_path');
 		$include_path = trim( $include_path, PATH_SEPARATOR );
