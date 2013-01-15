@@ -15,6 +15,7 @@ class PDO5 extends OnePiece5
 	private $database	 = null;
 	private $charset	 = null;
 
+	/*
 	function DML( $name='DML5' )
 	{
 		if(!isset($this->dml)){
@@ -24,6 +25,24 @@ class PDO5 extends OnePiece5
 				$conf['driver'] = $this->driver;
 				$this->dml = new $name( $conf, $this->pdo );
 			}
+		}
+		return $this->dml;
+	}
+	*/
+
+	function DML( $name=null )
+	{
+		if( empty($this->dml) ){
+			if(!class_exists('DML',false)){
+				$io = include_once('PDO/DML.class.php');
+				if(!$io){
+					throw new Exception("Include failed.(PDO/DML.class.php)");
+				}
+			}
+				
+			//  Init
+			$this->dml = new DML();
+			$this->dml->SetPDO( $this->pdo, $this->driver );
 		}
 		return $this->dml;
 	}

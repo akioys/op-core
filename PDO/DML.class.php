@@ -1,12 +1,24 @@
 <?php
 
-class DML5 extends OnePiece5
+class DML extends OnePiece5
 {
-	private $pdo = null;
+	//  OLD
+	//private $pdo = null;
 	private $ql  = null;
 	private $qr  = null;
 	private $is_table_join = null;
+
+	//  NEW
+	private $pdo    = null;
+	private $driver = null;
 	
+	function SetPDO( $pdo, $driver )
+	{
+		$this->pdo = $pdo;
+		$this->driver = $driver;
+	}
+	
+	/*
 	function __construct( $conf, $pdo )
 	{
 		if(!is_array($conf)){
@@ -19,6 +31,7 @@ class DML5 extends OnePiece5
 		//  Quote
 		$this->InitQuote($conf['driver']);
 	}
+	*/
 	
 	function InitQuote($driver)
 	{
