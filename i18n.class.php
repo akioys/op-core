@@ -7,7 +7,7 @@ class i18n extends OnePiece5
 	
 	function init()
 	{
-		//parent::init();
+		parent::init();
 		$this->lang = $this->GetEnv('lang');
 	}
 	
@@ -46,7 +46,7 @@ class i18n extends OnePiece5
 		if( isset($config) ){
 			return $this->SetByConfig($config, $lang);
 		}else if( isset($conf) ){
-			return $this->SetByArray($config, $lang);
+			return $this->SetByArray($conf, $lang);
 		}
 		
 		return false;
@@ -64,9 +64,11 @@ class i18n extends OnePiece5
 		}
 		
 		foreach( $array as $temp ){
-			$english   = $temp['english'];
-			$translate = $temp['translate'];
-			$this->set( $english, $translate, $lang );
+			if( isset($temp[$lang]) ){
+				$english   = $temp['en'];
+				$translate = $temp[$lang];
+				$this->set( $english, $translate, $lang );
+			}
 		}
 		
 		return true;

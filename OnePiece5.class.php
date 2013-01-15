@@ -186,6 +186,7 @@ class OnePiece5
 	public  $laptime = null;
 	private $errors  = array();
 	private $session = array();
+	private $isInit  = null;
 	
 	/**
 	 * 
@@ -243,6 +244,11 @@ class OnePiece5
 	 */
 	function __destruct()
 	{
+		//  Called Init?
+		if(!$this->isInit){
+			$this->StackError(get_class($this).' has not call "parent::init();".');
+		}
+		
 		$this->PrintTime();
 		$this->PrintError();
 	}
@@ -347,6 +353,19 @@ class OnePiece5
 	function __set_state()
 	{
 		$this->mark('![.red .bold[ CATCH MAGIC METHOD ]]');
+	}
+	
+	function Init()
+	{
+		$this->isInit = true;
+		
+		//  i18n
+		$path = $this->ConvertPath('op:/i18n/'.get_class($this).'.i18n.php');
+		$this->mark($path);
+		
+		if( file_exists($path) ){
+			$this->i18n()->SetByFile($path);
+		}
 	}
 	
 	/**
@@ -1565,7 +1584,7 @@ __EOL__;
 			if( $root = $this->GetEnv($temp) ){
 				$path = str_replace($match[0], $root, $path);
 			}else{
-				$tihs->StackError("$temp is not set.");
+				$this->StackError("$temp is not set.");
 			}
 		}else{
 			$url = self::ConvertURL($path);
