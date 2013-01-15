@@ -1599,13 +1599,13 @@ class Form5 extends OnePiece5
 	function Error( $input_name, $html='span 0xff0000', $form_name=null )
 	{
 		print $this->GetInputError( $input_name, $html, $form_name=null );
-		return 'This method(function) is print.';
+		return $this->i18n()->Get('This method(function) is print.');
 	}
 	
 	function InputError( $input_name, $html='span 0xff0000', $form_name=null )
 	{
 		print $this->GetInputError( $input_name, $html, $form_name=null );
-		return 'This method(function) is print.';
+		return $this->i18n()->Get('This method(function) is print.');
 	}
 
 	function GetError( $input_name, $html='span 0xff0000', $form_name=null )
@@ -1628,10 +1628,14 @@ class Form5 extends OnePiece5
 			
 			foreach($this->status->$form_name->error->$input_name as $key => $value){
 				
+				$key   = $this->i18n()->get($key);
+				$value = $this->i18n()->get($value);
+				
 				if( isset($input->error->$key) ){
 					$format = '![ $html ['.$input->error->$key.']]';
 				}else{
-					$format = '![ $html [$label is error. This field is $key. ($value)]]';
+					$format = $this->i18n()->Get('$label is error. This field is $key. ($value)');
+					$format = "![ $html [$format]]";
 				}
 				
 				$patt = array('/\$label/', '/\$key/', '/\$value2/', '/\$value/', '/\$html/');
@@ -2008,7 +2012,7 @@ class Form5 extends OnePiece5
 					$value = implode('',$value);
 				}
 				//  Check character
-				if( $io = preg_match('/([^-_a-z0-9\s\/\\\!\?\(\)\[\]\{\}:;\'"`@#$%&*+^~|]+)/i',$value,$match)){					
+				if( $io = preg_match('/([^-_a-z0-9\s\/\\\!\?\(\)\[\]\{\}\.,:;\'"`@#$%&*+^~|]+)/i',$value,$match)){					
 					//$this->d($match);
 					$this->SetInputError( $input->name, $form_name, 'permit-english', $match[1] );
 					//  Permit is failed

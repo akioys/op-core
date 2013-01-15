@@ -198,7 +198,7 @@ class OnePiece5
 
 		//  extends class have init method.
 		if( method_exists($this, 'Init') ){
-			//  Set the first.
+			//  op-root has set the first.
 			$this->SetEnv('op-root',dirname(__FILE__));
 			$this->Init();
 		}
@@ -361,10 +361,10 @@ class OnePiece5
 	{
 		$this->isInit = true;
 		
-		//  i18n
+		//  Create i18n configuration file path.
 		$path = $this->ConvertPath('op:/i18n/'.get_class($this).'.i18n.php');
-		$this->mark($path);
 		
+		//  Include configuration file.
 		if( file_exists($path) ){
 			$this->i18n()->SetByFile($path);
 		}
