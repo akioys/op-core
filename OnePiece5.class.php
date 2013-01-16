@@ -1731,64 +1731,6 @@ __EOL__;
 	/* @var $form Form5 */
 	private $form = null;
 	
-	/**
-	 * Get Form.class.php Instance
-	 * 
-	 * @return Form5
-	 */
-	function _Form( $args='Form5' )
-	{
-		//  past legacy
-		if( isset($this->form) ){
-			if(!is_null($args)){
-				$this->form->AddForms($args);
-			}
-		}else{
-			/*
-			if(is_null($args)){
-				
-				//  The standard to which this is recommended.
-				$this->form = new Form5();
-
-			}else 
-			*/
-			if( is_string($args) ){
-				
-				//$io[] = include_once($args.'.class.php');
-				//$io[] = class_exists($args, true);
-				//if( $io[0] or $io[1] ){
-					
-				if( class_exists($args, true) ){
-					
-					// old
-					//$this->form = new $args();
-					
-					//  An inherited class can be specified.
-					$_SERVER[__CLASS__][strtoupper($args)] = new $args();
-				}else{
-					
-					//  Support the past legacy.
-					if( $form_dir = $this->GetEnv('form-dir') ){
-						$path = $form_dir .'/'. $args;
-					}else{
-						$path = Toolbox::ConvertPath($args);
-					}
-					
-					if( file_exists($path) ){
-						//  This is past legacy.
-						$args = $path;
-						$this->form = new Form5();
-						$this->form->AddConfig($args);
-						$this->mark('This is support to the past legacy.
-							Please use $this->form()->AddConfig($args).');
-					}
-				}
-			}
-		}
-		
-		return $_SERVER[__CLASS__][strtoupper($args)];
-//		return $this->form;
-	}
 	
 	/**
 	 *  @var $i18n i18n
@@ -1828,14 +1770,11 @@ __EOL__;
 	}
 	
 	/**
-	 * @var Memcache
+	 * @var $cache Cache
 	 */
 	private $cache = null;
 	
-	/**
-	 * 
-	 * @param string $args
-	 */
+	/*
 	function Cache($args=null)
 	{
 		if(!$this->cache){
@@ -1855,12 +1794,9 @@ __EOL__;
 			return $this->cache;
 		}
 	}
+	*/
 	
-	/**
-	 * Set data to memcached
-	 * 
-	 * @param string $key
-	 */
+	/*
 	function GetCache($key)
 	{
 		if(!$this->cache){
@@ -1871,14 +1807,6 @@ __EOL__;
 		return $this->Cache()->Get($key);
 	}
 	
-	/**
-	 * Get data from memcached
-	 * 
-	 * @param string  $key
-	 * @param string  $var
-	 * @param integer $flag
-	 * @param integer $expire
-	 */
 	function SetCache( $key, $var, $flag=0, $expire=0)
 	{
 		if(!$this->cache){
@@ -1888,6 +1816,7 @@ __EOL__;
 		}
 		$this->Cache()->Set( $key, $var, (int)$flag, (int)$expire );
 	}
+	*/
 	
 	/**
 	 * 
