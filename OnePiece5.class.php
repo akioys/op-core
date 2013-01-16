@@ -1774,6 +1774,19 @@ __EOL__;
 	 */
 	private $cache = null;
 	
+	function Cache($name='Cache')
+	{
+		if(!$this->cache){
+			if(!include("$name.class.php") ){
+				throw new Exception("Include is failed. ($name)");
+			}
+			if(!$this->cache = new $name() ){
+				throw new Exception("Instance object is failed. ($name)");
+			}
+		}
+		return $this->cache;
+	}
+	
 	/*
 	function Cache($args=null)
 	{
