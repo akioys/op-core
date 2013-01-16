@@ -4,17 +4,9 @@ abstract class ConfigMgr extends OnePiece5
 {
 	protected $config;
 	
-	/*
-	function __construct($args=null)
-	{
-		parent::__construct($args);
-		$this->config = new Config(); 
-	}
-	*/
-	
 	function Init($config=null)
 	{
-//		$this->mark( get_class($this) );
+		parent::Init();
 		$this->config = new Config();
 	}
 	
