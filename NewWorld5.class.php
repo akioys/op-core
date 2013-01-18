@@ -27,7 +27,8 @@ abstract class NewWorld5 extends OnePiece5
 		//  output is buffering.
 		$io = ob_start();
 		$io = parent::__construct($args);
-		$this->StackLog('START');
+
+		//$this->StackLog('START');
 		
 		//  init
 		//$this->Init();
@@ -43,8 +44,13 @@ abstract class NewWorld5 extends OnePiece5
 			$this->StackError('App has not dispatched. Please call $app->Dispatch();');
 		}
 		
+		//  flush buffer
 		ob_end_flush();
+		
+		
+		//  
 		$io = parent::__destruct();
+		
 		return $io;
 	}
 	
@@ -52,6 +58,7 @@ abstract class NewWorld5 extends OnePiece5
 	{
 		//$this->isInit = true;
 		parent::Init();
+		
 		$this->GetEnv('doctype','html');
 		$this->GetEnv('title','The NewWorld is the new world');
 	}
@@ -97,8 +104,9 @@ abstract class NewWorld5 extends OnePiece5
 			return $route;
 		}
 		
-		//  Real file is target of path through.
+		//  Real file is target of pass through.
 		if( preg_match('/\/([-_a-z0-9]+)\.(html|css|js)$/i',$path,$match) ){
+			$this->mark('pass through mode');
 			
 			//  file extension
 			$extension = $match[2];
@@ -143,6 +151,19 @@ abstract class NewWorld5 extends OnePiece5
 			$real_path = rtrim($app_root,'/').'/'.trim($route['path'],'/').'/'.ltrim($route['file'],'/');
 			
 			//  file is exists?
+			$this->mark($app_root);
+			$this->mark($real_path);
+			$this->mark(file_exists($real_path));
+			$this->mark($_SERVER['SCRIPT_FILENAME']);
+			
+			//  Anti-alias mode.
+			//$doc_path = $_SERVER['SCRIPT_FILENAME'];
+			//$this->d( dirname($doc_path) );
+			
+			$this->d( $route );
+			
+			$real_path = $route['fullpath'];
+			
 			if( file_exists($real_path) ){
 				
 				switch( strtolower($extension) ){
@@ -256,7 +277,13 @@ abstract class NewWorld5 extends OnePiece5
 		
 		// change dir
 		$chdir = rtrim($app_root,'/') .'/'. trim($route['path'],'/');
-		chdir( $chdir );
+		
+		if( $route['pass'] ){
+			$this->mark( $chdir );
+			chdir( dirname($route['fullpath']) );
+		}else{
+			chdir( $chdir );
+		}
 		
 		//  content
 		$this->doContent();
@@ -499,9 +526,8 @@ abstract class NewWorld5 extends OnePiece5
 			switch($this->GetEnv('doctype')){
 				case 'xhtml':
 					break;
-				case 'html, 4.01, strict':
-					break;
 				case 'html':
+					break;
 				default:
 					$doctype = 'html';
 			}
