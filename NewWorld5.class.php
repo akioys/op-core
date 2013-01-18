@@ -106,7 +106,7 @@ abstract class NewWorld5 extends OnePiece5
 		
 		//  Real file is target of pass through.
 		if( preg_match('/\/([-_a-z0-9]+)\.(html|css|js)$/i',$path,$match) ){
-			$this->mark('pass through mode');
+		//	$this->mark('pass through mode');
 			
 			//  file extension
 			$extension = $match[2];
@@ -147,23 +147,25 @@ abstract class NewWorld5 extends OnePiece5
 				}
 			}
 			
-			//  file exists path
-			$real_path = rtrim($app_root,'/').'/'.trim($route['path'],'/').'/'.ltrim($route['file'],'/');
-			
-			//  file is exists?
+			/*
 			$this->mark($app_root);
 			$this->mark($real_path);
 			$this->mark(file_exists($real_path));
 			$this->mark($_SERVER['SCRIPT_FILENAME']);
+			$this->d( $route );
+			*/
 			
 			//  Anti-alias mode.
 			//$doc_path = $_SERVER['SCRIPT_FILENAME'];
 			//$this->d( dirname($doc_path) );
 			
-			$this->d( $route );
+			//  file exists path
+			//  $real_path = rtrim($app_root,'/').'/'.trim($route['path'],'/').'/'.ltrim($route['file'],'/');
 			
+			//  full path is real path.
 			$real_path = $route['fullpath'];
 			
+			//  file is exists?
 			if( file_exists($real_path) ){
 				
 				switch( strtolower($extension) ){
@@ -266,8 +268,8 @@ abstract class NewWorld5 extends OnePiece5
 		// route info
 		$this->SetEnv('route',$route);
 		
-		// settigns
-		$this->doSettings($route);
+		// setting
+		$this->doSetting($route);
 		
 		// controller root
 		$app_root = $this->GetEnv('AppRoot');
@@ -278,9 +280,10 @@ abstract class NewWorld5 extends OnePiece5
 		// change dir
 		$chdir = rtrim($app_root,'/') .'/'. trim($route['path'],'/');
 		
-		if( $route['pass'] ){
-			$this->mark( $chdir );
+		if( isset($route['pass']) and $route['pass'] ){
+		//	$this->mark( $chdir );
 			chdir( dirname($route['fullpath']) );
+		//	$this->mark( getcwd() );
 		}else{
 			chdir( $chdir );
 		}
@@ -323,7 +326,7 @@ abstract class NewWorld5 extends OnePiece5
 		return true;
 	}
 	
-	function doSettings($route)
+	function doSetting($route)
 	{
 		/**
 		 * Search begins from AppRoot.
@@ -331,7 +334,7 @@ abstract class NewWorld5 extends OnePiece5
 		 */
 		 
 		//  Get settings file name.
-		if(!$settings = $this->GetEnv('settings-name')){
+		if(!$setting = $this->GetEnv('setting-name') ){
 			return true;
 		}
 		
@@ -341,9 +344,9 @@ abstract class NewWorld5 extends OnePiece5
 		
 		//  Search settings file, and execute settings.
 		$save_dir = getcwd();
-		foreach(explode('/', '/'. $route['path']) as $dir){
+		foreach(explode('/', $route['path']) as $dir){
 			$dirs[] = $dir;
-			$path = $app_root.join('/',$dirs)."/$settings";
+			$path = $app_root.join('/',$dirs)."/$setting";
 			
 			if( file_exists($path) ){
 				chdir( dirname($path) );
