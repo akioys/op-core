@@ -1404,7 +1404,14 @@ class Form5 extends OnePiece5
 				break;
 				
 			case 'select':
-				$tag = sprintf('<select name="%s" %s>%s</select>'.$tail, $name, $attr, $this->CreateOption($input->option, $value));
+				if( isset($input->options) ){
+					$options = $input->options;
+				}else if( isset($input->option) ){
+					$options = $input->option;
+				}else{
+					$options = array();
+				}
+				$tag = sprintf('<select name="%s" %s>%s</select>'.$tail, $name, $attr, $this->CreateOption( $options, $value));
 				break;
 				
 			case 'file':
