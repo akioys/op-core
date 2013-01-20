@@ -1539,7 +1539,7 @@ __EOL__;
 		// read file
 		$io = include($path);
 		
-		return $io;
+		return $io ? '': false;
 	}
 	
 	/**
