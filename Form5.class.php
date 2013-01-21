@@ -1289,24 +1289,20 @@ class Form5 extends OnePiece5
 					$join[] = sprintf('%s="%s"',$key,$var);
 			}
 		}
-		$attr = join(' ',$join);
 
-        //  name (Anti IDE notice, PhpStorm )
-        if(!isset($name)){
+        //  name
+        if(empty($name)){
             $name = $input->name;
         }
         $input_name = $input->name;
 
         //  type
-        if(!isset($type)){
+        if(empty($type)){
             $type = 'text';
         }
-
-		// request
-		$_request = $this->GetRequest( null, $form_name );
-	
+		
 		//  id
-		if(!isset($id)){
+		if(empty($id)){
 			$id = $form_name.'-'.$input_name;
 			if( $type !== 'checkbox' or $type !== 'radio' ){
 				//  Why join value?
@@ -1317,7 +1313,14 @@ class Form5 extends OnePiece5
 				}
 			}
 		}
+		$join[] = sprintf('id="%s"',$id);
+		
+		//  Other attributes
+		$attr = join(' ',$join);
 
+		// request
+		$_request = $this->GetRequest( null, $form_name );
+		
 		/*
 		if( $type === 'submit' or $type === 'button' ){
 		
