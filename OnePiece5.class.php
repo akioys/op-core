@@ -1260,8 +1260,11 @@ __EOL__;
 	 */
 	static function EscapeString( &$args, $charset='utf-8' )
 	{
-		// anti null byte attack
+		//  Anti null byte attack
 		$args = str_replace("\0", '\0', $args);
+		
+		//  Anti ASCII Control code.
+		//  $args = trim( $args, "\x00..\x1F");
 		
 		/**
 		 * htmlentities's double_encoding off funciton is PHP Version 5.2.3 latter.
