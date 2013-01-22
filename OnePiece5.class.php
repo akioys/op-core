@@ -667,6 +667,7 @@ __EOL__;
 	static private function Env( $key, $var=null, $ope )
 	{
 		// convert key name
+		//switch( strcasecmp($key) ){
 		$key = strtolower($key);
 		switch( $key ){
 			case 'nl':
