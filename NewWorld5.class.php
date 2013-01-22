@@ -154,7 +154,7 @@ abstract class NewWorld5 extends OnePiece5
 		}
 		
 		//  build
-		$route['path'] = join('/',$dirs);
+		$route['path'] = '/'.join('/',$dirs);
 		$route['file'] = $controller;
 		$route['args'] = array_reverse($args);
 		//$this->d($route);
@@ -335,6 +335,12 @@ abstract class NewWorld5 extends OnePiece5
 	
 	function doSetting($route)
 	{
+		/*
+		$this->mark(__METHOD__);
+		$this->mark($this->GetEnv('setting-name'));
+		$this->d($route);
+		*/
+		
 		/**
 		 * Search begins from AppRoot.
 		 * settings-file is looked for forward Dispatch-dir, from AppRoot
@@ -354,6 +360,7 @@ abstract class NewWorld5 extends OnePiece5
 		foreach(explode('/', $route['path']) as $dir){
 			$dirs[] = $dir;
 			$path = $app_root.join('/',$dirs)."/$setting";
+		//	$this->mark($path);
 			
 			if( file_exists($path) ){
 				chdir( dirname($path) );
@@ -574,7 +581,6 @@ class App extends NewWorld5
 	function Init()
 	{
 		parent::Init();
-		
 	}
 	
 	/**
@@ -627,6 +633,11 @@ class App extends NewWorld5
 		return $this->SetEnv('layout', $var);
 	}
 	
+	function GetTemplateDir( $var )
+	{
+		return $this->GetEnv('template-dir');
+	}
+
 	function SetTemplateDir( $var )
 	{
 		return $this->SetEnv('template-dir', $var);
