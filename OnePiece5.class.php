@@ -230,7 +230,9 @@ class OnePiece5
 	{
 		//  Called Init?
 		if(!$this->isInit){
-			$this->StackError(get_class($this).' has not call "parent::init();".');
+			$format  = $this->i18n()->get('%s has not call "parent::init();".');
+			$message = sprintf( $format, get_class($this));
+			$this->StackError( $message );
 		}
 		
 		$this->PrintTime();
@@ -342,6 +344,11 @@ class OnePiece5
 	function Init()
 	{
 		$this->isInit = true;
+
+		//  No use self.
+		if( $this instanceof i18n ){
+			return true;
+		}
 		
 		//  Create i18n configuration file path.
 		$path = $this->ConvertPath('op:/i18n/'.get_class($this).'.i18n.php');
@@ -349,7 +356,11 @@ class OnePiece5
 		//  Include configuration file.
 		if( file_exists($path) ){
 			$this->i18n()->SetByFile($path);
+		}else{
+			//$this->mark( $path );
 		}
+		
+		return true;
 	}
 	
 	/**
@@ -1042,13 +1053,13 @@ __EOL__;
 		}
 		
 		$op_root  = self::GetEnv('op_root');
-		$app_root = self::GetEnv('app_root'); // ex. /main.php
+		$app_root = self::GetEnv('app_root');
 		$doc_root = self::GetEnv('doc_root');
 		
 		//  remove slash (easy-to-read)
-		$op_root  = rtrim( $op_root,  '/' );
-		$app_root = rtrim( $app_root, '/' );
-		$doc_root = rtrim( $doc_root, '/' );
+		$op_root  = $op_root  ? rtrim($op_root, '/') : ' ';
+		$app_root = $app_root ? rtrim($app_root,'/') : ' ';
+		$doc_root = $doc_root ? rtrim($doc_root,'/') : ' ';
 		
 		/*
 		print "path=$path<br/>";
@@ -1217,7 +1228,7 @@ __EOL__;
 				$args = self::EscapeObject($args);
 				break;
 			default:
-				self::p("[".__METHOD__."]undefined type($type)");
+				self::p("[".__METHOD__."] undefined type($type)");
 		}
 		
 		return $args;
@@ -1230,8 +1241,11 @@ __EOL__;
 	 */
 	static function EscapeString( &$args, $charset='utf-8' )
 	{
-		// anti null byte attack
+		//  Anti null byte attack
 		$args = str_replace("\0", '\0', $args);
+		
+		//  Anti ASCII Control code.
+		//  $args = trim( $args, "\x00..\x1F");
 		
 		/**
 		 * htmlentities's double_encoding off funciton is PHP Version 5.2.3 latter.
@@ -1509,7 +1523,7 @@ __EOL__;
 		// read file
 		$io = include($path);
 		
-		return $io;
+		return $io ? '': false;
 	}
 	
 	/**
@@ -1600,7 +1614,7 @@ __EOL__;
 		}
 		
 		//  include Model_model
-		if(!class_exists( 'Model_model', false ) ){
+		if(!class_exists( 'Model_Model', false ) ){
 			$path = self::ConvertPath('op:/Model/Model.model.php');
 			if(!$io = include_once($path)){
 				$msg = "Failed to include the Model_model. ($path)";
@@ -1632,9 +1646,9 @@ __EOL__;
 		}
 		
 		//  instance of model
-		$model_name = $name.'_model';
+		$model_name = 'Model_'.$name;//.'_model';
 		if(!$_SERVER['test']['model'][$name] = new $model_name ){
-			$msg = "Failed to include the Model_model. ($path)";
+			$msg = "Failed to include the Model_Model. ($path)";
 			$this->StackError($msg);
 			throw new OpModelException($msg);
 		}
@@ -1767,50 +1781,6 @@ __EOL__;
 		}
 		return $this->cache;
 	}
-	
-	/*
-	function Cache($args=null)
-	{
-		if(!$this->cache){
-			if(!class_exists('Memcache',false)){
-				$this->mark('does not install memcache','cache');
-				return null;
-			}else if( $this->cache = new Memcache() ){
-				$host   = @$args['host']   ? $args['host']:  'localhost';
-				$port   = @$args['port']   ? $args['port']:  '11211';
-				$weight = @$args['weight'] ? $args['weight']: null;
-				$io = $this->cache->addServer( $host, $port, $weight );
-				$this->mark('addServer='.$io, 'onepiece, cache');
-			}else{
-				$this->Mark('PHP-Memcache module is not installed?','onepiece, cache');
-			}
-		}else{
-			return $this->cache;
-		}
-	}
-	*/
-	
-	/*
-	function GetCache($key)
-	{
-		if(!$this->cache){
-			if(!$this->Cache()){
-				return null;
-			}
-		}
-		return $this->Cache()->Get($key);
-	}
-	
-	function SetCache( $key, $var, $flag=0, $expire=0)
-	{
-		if(!$this->cache){
-			if(!$this->Cache()){
-				return null;
-			}
-		}
-		$this->Cache()->Set( $key, $var, (int)$flag, (int)$expire );
-	}
-	*/
 	
 	/**
 	 * 

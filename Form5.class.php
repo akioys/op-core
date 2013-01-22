@@ -1289,24 +1289,20 @@ class Form5 extends OnePiece5
 					$join[] = sprintf('%s="%s"',$key,$var);
 			}
 		}
-		$attr = join(' ',$join);
 
-        //  name (Anti IDE notice, PhpStorm )
-        if(!isset($name)){
+        //  name
+        if(empty($name)){
             $name = $input->name;
         }
         $input_name = $input->name;
 
         //  type
-        if(!isset($type)){
+        if(empty($type)){
             $type = 'text';
         }
-
-		// request
-		$_request = $this->GetRequest( null, $form_name );
-	
+		
 		//  id
-		if(!isset($id)){
+		if(empty($id)){
 			$id = $form_name.'-'.$input_name;
 			if( $type !== 'checkbox' or $type !== 'radio' ){
 				//  Why join value?
@@ -1317,7 +1313,14 @@ class Form5 extends OnePiece5
 				}
 			}
 		}
+		$join[] = sprintf('id="%s"',$id);
+		
+		//  Other attributes
+		$attr = join(' ',$join);
 
+		// request
+		$_request = $this->GetRequest( null, $form_name );
+		
 		/*
 		if( $type === 'submit' or $type === 'button' ){
 		
@@ -1404,7 +1407,14 @@ class Form5 extends OnePiece5
 				break;
 				
 			case 'select':
-				$tag = sprintf('<select name="%s" %s>%s</select>'.$tail, $name, $attr, $this->CreateOption($input->option, $value));
+				if( isset($input->options) ){
+					$options = $input->options;
+				}else if( isset($input->option) ){
+					$options = $input->option;
+				}else{
+					$options = array();
+				}
+				$tag = sprintf('<select name="%s" %s>%s</select>'.$tail, $name, $attr, $this->CreateOption( $options, $value));
 				break;
 				
 			case 'file':
@@ -1497,13 +1507,26 @@ class Form5 extends OnePiece5
 	function CreateOption( $args, $save_value )
 	{
 		$options = '';
-		foreach($args as $option){
+		foreach( $args as $option ){
 			
 			$value = $option->value;
 			$label = isset($option->label) ? $option->label: $value;
 			$selected = $value == $save_value ? 'selected="selected"': '';
 			
-			$options .= sprintf('<option value="%s" %s>%s</option>', $value, $selected, $label);
+			//  attributes
+			$attr = array();
+			foreach( $option as $key => $var ){
+				switch( $key ){
+					case 'selected':
+						continue;
+					default:
+						$attr[] = sprintf('%s="%s"', $key, $var);
+				}
+			}
+			$attr = implode(' ', $attr);
+			
+			//  joint
+			$options .= sprintf('<option value="%s" %s %s>%s</option>', $value, $attr, $selected, $label);
 		}
 		
 		return $options;
