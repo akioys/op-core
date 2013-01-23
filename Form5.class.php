@@ -1507,13 +1507,26 @@ class Form5 extends OnePiece5
 	function CreateOption( $args, $save_value )
 	{
 		$options = '';
-		foreach($args as $option){
+		foreach( $args as $option ){
 			
 			$value = $option->value;
 			$label = isset($option->label) ? $option->label: $value;
 			$selected = $value == $save_value ? 'selected="selected"': '';
 			
-			$options .= sprintf('<option value="%s" %s>%s</option>', $value, $selected, $label);
+			//  attributes
+			$attr = array();
+			foreach( $option as $key => $var ){
+				switch( $key ){
+					case 'selected':
+						continue;
+					default:
+						$attr[] = sprintf('%s="%s"', $key, $var);
+				}
+			}
+			$attr = implode(' ', $attr);
+			
+			//  joint
+			$options .= sprintf('<option value="%s" %s %s>%s</option>', $value, $attr, $selected, $label);
 		}
 		
 		return $options;
