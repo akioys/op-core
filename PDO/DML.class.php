@@ -18,21 +18,6 @@ class DML extends OnePiece5
 		$this->driver = $driver;
 	}
 	
-	/*
-	function __construct( $conf, $pdo )
-	{
-		if(!is_array($conf)){
-			$conf = Toolbox::toArray($conf);
-		}
-		
-		//  PDO
-		$this->pdo = $pdo;
-		
-		//  Quote
-		$this->InitQuote($conf['driver']);
-	}
-	*/
-	
 	function InitQuote($driver)
 	{
 		switch($driver){
@@ -561,7 +546,17 @@ class DML extends OnePiece5
 				$this->StackError('column is not array or string.');
 				return false;
 			}
-			$cols = join(', ',$this->Quote($cols));
+			
+			$temp = array();
+			foreach( $cols as $key => $var ){
+				if( is_numeric($key) ){
+					$temp[] = $this->Quote($var);
+				}else{
+					$temp[] = $this->Quote($key)." AS ".$this->Quote($var);
+				}
+			}
+			$cols = join(', ',$temp);
+			$temp = null;
 		}else{
 			$cols = null;
 		}
