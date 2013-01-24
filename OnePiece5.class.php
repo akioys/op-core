@@ -1208,14 +1208,14 @@ __EOL__;
 	 * @param string|array $args
 	 * @param string $use_get_flag
 	 */
-	function D( $args, $use_get_flag=false )
+	function D( $args, $mark_label=null )
 	{
 		// displayed is only admin-ip.
 		if(!self::admin()){ return; }
 		
 		// displayed is Admin-ip and flag.
-		if($use_get_flag){
-			if(!Toolbox::UseGetFlag($use_get_flag)){
+		if( $mark_label ){
+			if(!Toolbox::GetSaveMarkLabelValue($mark_label)){
 				return;
 			}
 		}
@@ -1508,8 +1508,7 @@ __EOL__;
 	 */
 	function Template( $file, $data=null )
 	{
-		//$this->mark(__METHOD__);
-		//$this->mark($file);
+		$this->mark($file,'template');
 		
 		//  access is deny, above current directory
 		if( $this->GetEnv('allowDoubleDot') ){
