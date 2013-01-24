@@ -226,9 +226,16 @@ class OnePiece5
 			$this->SetCookie( self::OP_UNIQ_ID, md5(microtime() + $_SERVER['REMOTE_ADDR']));
 		}
 		
-		// init
+		//  init
 		$this->InitEnv($args);
 		$this->InitLocale($this->GetEnv('locale'));
+		
+		//  mark_label
+		if( isset($_GET['mark_label']) ){
+			$mark_label = $_GET['mark_label'];
+			$mark_value = $_GET['mark_label_value'];
+			Toolbox::SaveMarkLabelValue($mark_label,$mark_value);
+		}
 		
 		//  recovery (display_errors)
 		if( $this->admin() ){
@@ -1103,14 +1110,20 @@ __EOL__;
 	 * @param string  $str
 	 * @param boolean $use_get_flag
 	 */
-	function Mark( $str='', $use_get_flag=false )
+	function Mark( $str='', $mark_labels=false )
 	{
 		// displayed is only Admin-ip.
 		if(!self::admin()){ return; }
 		
 		// displayed is Admin-ip and flag.
-		if( $use_get_flag ){
-			if(!Toolbox::UseGetFlag($use_get_flag)){ return; }
+		if( $mark_labels ){
+		//	if(!Toolbox::UseGetFlag($mark_labels)){ return; }
+			foreach( explode(',',$mark_labels) as $mark_label ){
+				Toolbox::SetMarkLabel( $mark_label );
+			}
+			if(!Toolbox::GetSaveMarkLabelValue($mark_label) ){
+				return;
+			}
 		}
 		
 		// php momory usage 
