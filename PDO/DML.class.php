@@ -763,10 +763,10 @@ class DML extends OnePiece5
 	
 	protected function ConvertHaving( $having, $joint )
 	{
-		$this->d($having);
+	//	$this->d($having);
 		foreach( $having as $key => $var ){
 			if(preg_match('/^([><!]?=?) /i',$var,$match)){
-				$this->d($match);
+			//	$this->d($match);
 				$ope = $match[1];
 				$var = preg_replace("/^$ope /i",'',$var);
 			}else{
@@ -777,7 +777,7 @@ class DML extends OnePiece5
 			$var = $this->pdo->quote($var);
 			$join[] = "$key $ope $var";
 		}
-		$this->d($join);
+		//$this->d($join);
 		return '( '.join(" $joint ",$join).' )';
 	}
 	
