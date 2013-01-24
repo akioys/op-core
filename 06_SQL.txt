@@ -1,8 +1,18 @@
 
+ - Debug
+ 
+ 	Print last query.
+ 	$this->mark( $this->pdo()->qu() );
+ 	
+ 	Pint all queries.
+ 	$this->mark( $this->pdo()->qus() );
+
 
  - Support to MySQL, PostgreSQL, SQLite, Oracle, MS-SQL
 
+
  - Support to DML, DDL, DCL, DxL
+
 
  - DML
  

@@ -1,6 +1,6 @@
 <?php
 
-class OpUser_model extends Model_model
+class Model_OpUser extends Model_Model
 {
 	private $table_name = 'op_user';
 	const TABLE_OP_USER			 = 'op_user';

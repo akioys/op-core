@@ -1,4 +1,37 @@
 
+[SESSION]
+ 	
+ 	* Overview
+ 	
+ 		* Auto start
+ 		* Name space
+ 	
+ 	* Set
+ 	
+	 	$op->SetSession('key',$value);
+ 	
+ 	* Get
+ 	
+	 	$value = $op->GetSession('key');
+ 	
+[COOKIE]
+ 	
+ 	* Overview
+ 	
+ 		* Easy use
+ 	
+ 	* Set
+ 	
+	 	$op->SetCookie('key',$value);
+ 	
+ 	* Get
+ 	
+	 	$value = $op->GetCookie('key');
+
+		
+	Mark & D method.
+		
+		
 [Mark]
 
  	* Overview
@@ -21,41 +54,35 @@
 	
 		$op->D($_SESSION);
 		
+[P]
+	
+	* Easy print p tag.
+	
+	* How to use
+		
+		$op->p("Please input value.");
+		
+		$op->p("This is headline.", "h1");
+	
+[Wiki2]
+	
+	* Mark, D, P, and StackError methods support Wiki2 language.
+	  (Wraped OnePiece5::Wiki2 method.)
+	
+	* How to use
+		
+		$options = array();
+		$options['id']     = true;
+		$options['tag']    = true;
+		$options['class']  = true;
+		$options['style']  = false;
+		$options['script'] = false;	
+		$op->Wiki2("![ div .bold margin:10px #id 0xFcF030 [Wiki2 is Grate!]]",$options);
+	
+	
+[example]
 
-[SESSION]
- 	
- 	* Overview
- 	
- 		* Auto start
- 		* Name space
- 	
- 	* Set
- 	
-	 	$op->SetSession('key',$value);
- 	
- 	* Get
- 	
-	 	$value = $op->GetSession('key');
- 	
-[COOKIE]
- 	
- 	* Overview
- 	
- 		* Easy
- 	
- 	* Set
- 	
-	 	$op->SetCookie('key',$value);
- 	
- 	* Get
- 	
-	 	$value = $op->GetCookie('key');
-
-		
-	Mark & D method.
-		
-		
-		
+<?php
 
 $op = new OnePiece5();
 

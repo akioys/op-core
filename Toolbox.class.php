@@ -6,7 +6,7 @@
  *
  */
 if (!function_exists('lcfirst')) {
-	function lcfirst($text) {
+	function lcfirst($text) { // upper is ucfirst
 		$text{0} = strtolower($text{0});
 		return $text;
 	}
@@ -124,52 +124,6 @@ class Toolbox
 		
 		return $obj;
 	}
-	
-	/*
-	function GetVarToString( $args )
-	{
-		$charset = OnePiece5::GetEnv('charset');
-		$type = substr( gettype($args), 0, 3 );
-		switch( $type ){
-			case 'str':
-				$len = mb_strlen( $args, $charset );
-				if( $len > 20 ){
-					$var = mb_substr( $args, 0, 20 ) . '...';
-				}
-				$var = str_replace(array("\n","\r","\t"), array('\n ','\r ','\t '), $var);
-				$str = sprintf("%s(%s[%s])" . PHP_EOL, $type, $var, $len);
-				break;
-				
-			case 'obj':
-				$var = get_class($args);
-				$str = "$type($var)" . PHP_EOL;
-				break;
-				
-			case 'arr':
-				foreach($args as $key => $var){
-					$join[] = "$key=>" . self::GetVarToString($var);
-				}
-				$var = join(',',$join);
-				$str = str_replace(PHP_EOL, '', 'arr('.$var.')');
-				break;
-				
-			case 'boo':
-				$var = $args ? 'true': 'false';
-				$str = "$type($var)" . PHP_EOL;
-				break;
-				
-			case 'NULL':
-				$str = 'null' . PHP_EOL;
-				break;
-				
-			default:
-				$var = $args;
-				$str = "$type($var)" . PHP_EOL;
-		}
-		
-		return $str;
-	}
-	*/
 	
 	/**
 	 * Get secure request
@@ -327,62 +281,6 @@ class Toolbox
 		return $ip1 === $ip2 ? true: false;
 	}
 	
-    /**
-     *  Encrypt string.
-     *  
-     *  @see http://jp2.php.net/manual/ja/book.mcrypt.php
-     *  @param  string  $str String of want to encrypt.
-     *  @return string  Encrypted string.
-     */
-	function Encrypt( $str, $key=null )
-	{
-		$cipher = MCRYPT_RIJNDAEL_128;
-		$mode   = MCRYPT_MODE_CBC;
-		if(!$key){
-			$key = OnePiece5::GetEnv('Encrypt-Key');
-		}
-		
-		srand();
-		$ivs = mcrypt_get_iv_size($cipher,$mode);
-		$iv  = mcrypt_create_iv( $ivs, MCRYPT_RAND );
-		$bin = mcrypt_encrypt( $cipher, $key, $str, $mode, $iv );
-		$hex = bin2hex($bin);
-		
-	    return bin2hex($bin).'.'.bin2hex($iv);
-	}
-
-    /**
-     *  Decrypt string.
-     *  
-     *  @param  string  $str String of want to decrypt.
-     *  @return string  Decrypted string.
-     */
-	function Decrypt( $str, $key=null )
-	{
-		$cipher = MCRYPT_RIJNDAEL_128;
-		$mode   = MCRYPT_MODE_CBC;
-		if(!$key){
-			$key = OnePiece5::GetEnv('Encrypt-Key');
-		}
-		
-		//	ドット区切りでivも渡す必要がある
-		list( $hex, $ivt ) = explode( '.', $str );
-		
-		//	どれかが空なら空文字を返す
-		if( !$hex or !$ivt or !$key ){
-			$this->mark("hex=$hex, ivt=$ivt, key=$key");
-			return '';
-		}
-		
-		$bin = pack('H*', $hex);
-		$iv  = pack('H*', $ivt);
-	    $dec = mcrypt_decrypt( $cipher, $key, $bin, $mode, $iv );
-	    // Java等、\0以外でパディングするプログラムと連携する場合はパディング方法が同じになるよう注意すること。
-		$dec = rtrim($dec, "\0");
-	    
-	    return $dec;
-	}
-	
 	function ConvertConfigFromPath( $args )
 	{
 		
@@ -463,37 +361,30 @@ class Toolbox
 		return $str;
 	}
 	
-	/**
-	 * Mark method uses.
-	 *
-	 * @param string $key
-	 */
-	static function UseGetFlag( $keys )
+	//  Save mark-label for use footer links.
+	static function SetMarkLabel( $mark_label )
 	{
-		// recovery from session
-		$UseGetFlag = &$_SESSION[__CLASS__]['GetFlag'];
-		
-		// loop
-		foreach( explode(',',$keys) as $key ){
-			$key = trim($key,' ');
-	
-			// init
-			if( isset($UseGetFlag[$key]) and is_null($UseGetFlag[$key]) ){
-				$UseGetFlag[$key] = false;
-			}
-	
-			// save current url query
-			if( isset($_GET['GetFlag'][$key]) ){
-				$UseGetFlag[$key] = $_GET['GetFlag'][$key];
-			}
-	
-			// find
-			if( isset($UseGetFlag[$key]) ){
-				return $UseGetFlag[$key];
-			}
+		//  Use footer link
+		if( empty($_SERVER[__CLASS__]['MARK_LABEL'][$mark_label]) ){
+			$_SERVER[__CLASS__]['MARK_LABEL'][$mark_label] = true;
 		}
+	}
 	
-		return false;
+	//  Save on/off flag to session by get value.
+	static function SaveMarkLabelValue( $mark_label=null, $mark_value=null )
+	{
+		//  
+		if( $mark_label ){
+			$_SESSION[__CLASS__]['MARK_LABEL'][$mark_label] = $mark_value;
+		}
+	}
+	
+	//  Get save value from session. 
+	static function GetSaveMarkLabelValue( $mark_label )
+	{
+		return isset($_SESSION[__CLASS__]['MARK_LABEL'][$mark_label]) ? 
+			$_SESSION[__CLASS__]['MARK_LABEL'][$mark_label]: 
+			null;
 	}
 	
 	static function GetFileListFromDir($path='./')
@@ -533,31 +424,26 @@ class Toolbox
 			return;
 		}
 		
-		// set this function flag
-		self::UseGetFlag(__FUNCTION__);
-		
-		// get GetFlag
-		$UseGetFlag = $_SESSION[__CLASS__]['GetFlag'];
-		
-		// Is showing this links?
-		if( $UseGetFlag[__FUNCTION__] === '0' ){
-			return;
-		}else{
-			$key = __FUNCTION__;
-			$str = 'hide';
-			$var = 0;
-			$join[] = sprintf('<a href="?GetFlag[%s]=%s">%s %s</a>', $key, $var, $str, 'there links');
-		}
-		
-		// remove
-		unset($UseGetFlag[__FUNCTION__]);
-		
-		// general
-		if(!is_null($UseGetFlag)){
-			foreach( $UseGetFlag as $key => $var ){
-				$str = $var ? 'hide': 'show';
+		//  Mark label links
+		if(!is_null( $_SERVER['Toolbox'] )){
+			$join = array();
+			
+			//  Hide mark label links setting.
+			$key = 'hide_there_links';
+			$str = 'Hide there links';
+			$var = 1;
+			if( self::GetSaveMarkLabelValue($key) ){
+				return;
+			}
+
+			$join[] = sprintf('<a href="?mark_label=%s&mark_label_value=%s">%s</a>', $key, $var, $str);
+			
+			foreach( $_SERVER['Toolbox']['MARK_LABEL'] as $mark_label => $null ){
+				$key = $mark_label;
+				$var = self::GetSaveMarkLabelValue($mark_label);
+				$str = $var ? 'Hide': 'Show';
 				$var = $var ? 0: 1;
-				$join[] = sprintf('<a href="?GetFlag[%s]=%s">%s %s info</a>', $key, $var, $str, $key);
+				$join[] = sprintf('<a href="?mark_label=%s&mark_label_value=%s">%s %s info</a>', $key, $var, $str, $key);
 			}
 		}
 		
