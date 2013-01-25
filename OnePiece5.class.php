@@ -891,7 +891,7 @@ __EOL__;
 		}
 	}
 	
-	function SetCookie( $key, $value, $expire=0, $path='/', $domain='', $secure=0, $httponly=true, $class=null )
+	function SetCookie( $key, $value, $expire=0, $path='/', $domain='', $secure=0, $httponly=true )
 	{
 		$key   = $this->Escape($key);
 		$value = $this->Escape($value);
