@@ -961,14 +961,10 @@ class Form5 extends OnePiece5
 		}
 		
 		//  Check
-//		$this->d(Toolbox::toArray($config));
 		if(!isset($config->name)){
 			$this->StackError('Is this $config a single config form? There is no form name in the $config.($config->name)');
 			return false;
 		}
-		
-		//  debug
-//		$this->d(Toolbox::toArray($config));
 		
 		//  check form name
 		if(empty($config->name)){
@@ -1005,11 +1001,9 @@ class Form5 extends OnePiece5
 		}
 		
 		foreach( $config->input as $index => $input ){
-			/*
 			if( empty($input->name) ){
-				$input->name = $input_name;
+				$input->name = $index;
 			}
-			*/
 			$this->AddInput( $input, $form_name );
 		}
 		
@@ -1091,10 +1085,17 @@ class Form5 extends OnePiece5
 		}
 		
 		//  checkbox
-		if( $type === 'checkbox' ){
-			if(!isset($input->option) and (!isset($input->value) or !strlen($input->value)) ){
-				$this->mark("![.red[Empty checkbox value. ($form_name, $input_name)]]");
-				$this->StackError("Empty checkbox value. ($form_name, $input_name)");
+		if( in_array($type,array('checkbox','radio','select')) ){
+
+			if( empty($input->options) ){
+				if( isset($input->option) ){
+					$input->options = $input->option;
+				}
+			}
+			
+			if(!isset($input->options) and (!isset($input->value) or !strlen($input->value)) ){
+				$this->mark("![.red[Empty $type value. ($form_name, $input_name)]]");
+				$this->StackError("Empty $type value. ($form_name, $input_name)");
 			}
 		}
 		
@@ -1129,7 +1130,7 @@ class Form5 extends OnePiece5
 			return false;
 		}
 		
-		$input->option->md5(serialize($option))->$option;
+		$input->options->md5(serialize($option))->$option;
 		
 		return true;
 	}
@@ -1275,6 +1276,7 @@ class Form5 extends OnePiece5
 					$input->save = $var;
 				case 'error':
 				case 'option':
+				case 'options':
 				case 'validate':
 				case 'cookie':
 				case 'index':
@@ -1409,8 +1411,10 @@ class Form5 extends OnePiece5
 			case 'select':
 				if( isset($input->options) ){
 					$options = $input->options;
+					/*
 				}else if( isset($input->option) ){
 					$options = $input->option;
+					*/
 				}else{
 					$options = array();
 				}
@@ -1441,14 +1445,14 @@ class Form5 extends OnePiece5
 				
 			default:
 				//  single or multi
-				if(isset($input->option)){
+				if(isset($input->options)){
 					//  multi
 					//  child
-					foreach($input->option as $index => $option){
+					foreach($input->options as $index => $option){
 						$child = Toolbox::Copy($input);
 						$child->child = true;
 						$child->index = $index;
-						unset($child->option);
+						unset($child->options);
 						
 						//  copy option value to child
 						foreach($option as $key => $var){
@@ -1713,8 +1717,8 @@ class Form5 extends OnePiece5
 			return false;
 		}
 		
-		if(isset($input->option)){
-			foreach($input->option as $child){
+		if( isset($input->options) ){
+			foreach($input->options as $child){
 				$child->name = $input->name;
 				if(!$io = $this->CheckInputValue($child, $form_name)){
 					return false;
