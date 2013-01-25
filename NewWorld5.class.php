@@ -106,7 +106,6 @@ abstract class NewWorld5 extends OnePiece5
 		
 		//  Real file is pass through.
 		if( preg_match('/\/([-_a-z0-9]+)\.(html|css|js)$/i',$path,$match) ){
-		//	$this->mark('pass through mode');
 			if( $route = $this->HtmlPassThrough( $match, $full_path ) ){
 				return $route;
 			}
@@ -196,36 +195,8 @@ abstract class NewWorld5 extends OnePiece5
 			$route['ctrl'] = null;
 			$route = $this->Escape($route);
 			
-			//  Simple controller search
-			/*
-			$temp = $route['path'];
-			foreach( array_reverse( explode('/',$route['path'].'/') ) as $dir ){
-				$temp = preg_replace( "|/$dir$|", '', $temp);
-				if( file_exists( getcwd() . $temp .'/'. $controller ) ){
-					$route['ctrl'] = $temp;
-					break;
-				}
-			}
-			*/
-			
-			/*
-			$this->mark($app_root);
-			$this->mark($real_path);
-			$this->mark(file_exists($real_path));
-			$this->mark($_SERVER['SCRIPT_FILENAME']);
-			$this->d( $route );
-			*/
-			
-			//  Anti-alias mode.
-			//$doc_path = $_SERVER['SCRIPT_FILENAME'];
-			//$this->d( dirname($doc_path) );
-			
-			//  file exists path
-			//  $real_path = rtrim($app_root,'/').'/'.trim($route['path'],'/').'/'.ltrim($route['file'],'/');
-			
 			//  full path is real path.
 			$real_path = $route['fullpath'];
-			$this->mark( $real_path );
 			
 			//  file is exists?
 			if( file_exists($real_path) ){
@@ -320,7 +291,6 @@ abstract class NewWorld5 extends OnePiece5
 		
 		//  contrller file path
 		$path = getcwd().'/'.$route['file'];
-		//$this->mark($path);
 		
 		//  content
 		try{
@@ -335,12 +305,6 @@ abstract class NewWorld5 extends OnePiece5
 	
 	function doSetting($route)
 	{
-		/*
-		$this->mark(__METHOD__);
-		$this->mark($this->GetEnv('setting-name'));
-		$this->d($route);
-		*/
-		
 		/**
 		 * Search begins from AppRoot.
 		 * settings-file is looked for forward Dispatch-dir, from AppRoot
@@ -360,7 +324,6 @@ abstract class NewWorld5 extends OnePiece5
 		foreach(explode('/', $route['path']) as $dir){
 			$dirs[] = $dir;
 			$path = $app_root.join('/',$dirs)."/$setting";
-		//	$this->mark($path);
 			
 			if( file_exists($path) ){
 				chdir( dirname($path) );
