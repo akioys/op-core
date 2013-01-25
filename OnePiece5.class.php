@@ -12,6 +12,7 @@ if(!function_exists('__autoload')){
 		//  file name
 		switch($class_name){
 			case 'Memcache':
+			case 'Memcached':
 				return;
 				
 			case 'App':
