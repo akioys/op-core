@@ -1237,6 +1237,31 @@ __EOL__;
 		}
 	}
 	
+	static function Decode( $args, $charset=null)
+	{
+		if(!$charset){
+			$charset = self::GetEnv('charset');
+		}
+
+		switch($type = gettype($args)){
+			
+			case 'array':
+				foreach( $args as $key => $var ){
+				//	$key  = self::Decode( $key, $charset );
+					$var  = self::Decode( $var, $charset );
+					$temp[$key] = $var;
+				}
+				$args = $temp;
+				break;
+				
+			default:
+				$args = html_entity_decode( $args, ENT_QUOTES, $charset );
+				break;
+		}
+		
+		return $args;
+	}
+	
 	/**
 	 * 
 	 * @param string|array $args
