@@ -78,7 +78,7 @@ class DML extends OnePiece5
 		
 		//  where (or)
 		if(isset($conf['where-or'])){
-			$conf['wheres']['and'] = $conf['where'];
+			$conf['wheres']['or'] = $conf['where-or'];
 		}
 		
 		//  wheres
@@ -524,7 +524,7 @@ class DML extends OnePiece5
 			$cols[] = $key;
 			$vars[] = $var;
 		}
-	
+		
 		$set = '('.join(',',$cols).')';
 		$values = 'VALUES ('.join(',',$vars).')';
 		return array($set,$values);	
@@ -655,7 +655,8 @@ class DML extends OnePiece5
 						return false;
 					}
 					break;
-					
+				
+				//  Case of nest.
 				case 'wheres':
 					$join[] = $this->ConvertWheres($arr);
 					break;
@@ -817,4 +818,86 @@ class DML extends OnePiece5
 		return "LIMIT ".(int)$conf['limit'];
 	}
 	
+	/*
+	function ConvertBetween()
+	{
+		
+	}
+	
+	function ConvertLikes( $likes )
+	{
+		
+	}
+	
+	function ConvertLike( $column, $value )
+	{
+		$key = 'LIKE';
+		return $this->ConvertX( $column, $key, $value );
+	}
+	
+	function ConvertNotLike( $column, $value )
+	{
+		$key = 'LIKE';
+		return $this->ConvertX( $column, $key, $value );
+	}
+	
+	function ConvertX( $column, $key, $value)
+	{
+		if(!is_string($value)){
+			$this->StackError('Does match type. not string.');
+			return false;
+		}
+		
+		if( is_null($value) ){
+			$value = 'NULL';
+		}else{
+			$value = $this->pdo->quote($value);
+		}
+		
+		return "$column $key $value";
+	}
+	
+			$column = $this->EscapeColumn($key);
+			
+			//  
+			if( is_array($var) ){
+				
+				//  WHERE id IN ( 1, 2, 3 )
+				switch($key = strtoupper(trim($key))){
+					case 'LIKE':
+					case 'NOT LIKE':
+						foreach( $var as $column => $value ){
+							$column = $this->EscapeColumn($column);
+							$value  = $this->pdo->quote($value);
+							$join[] = ;
+						}
+						break;
+						
+					case 'BETWEEN':
+						foreach( $var as $column => $value ){
+							$column = $this->EscapeColumn($column);
+							$temp   = explode('-',$value);
+							$less   = (int)$temp[0];
+							$grat   = (int)$temp[1];
+							$join[] = "$column BETWEEN $less TO $grat";
+						}
+						break;
+						
+					case 'IN':
+					case 'NOT IN':
+						foreach( $var as $column => $arr ){
+							foreach( $arr as $temp ){
+								$in[] = $this->pdo->quote($temp);
+							}
+							$column = $this->EscapeColumn($column);
+							$temp   = join(', ', $in);
+							$join[] = "$column $key ( $temp )";
+						}
+						break;
+					default:
+						$this->mark("Does not support this. ($key)");
+				}
+				
+				continue;
+	*/
 }

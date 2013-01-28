@@ -425,8 +425,8 @@ class Toolbox
 		}
 		
 		//  Mark label links
-		if(!is_null( $_SERVER['Toolbox'] )){
-			$join = array();
+		$join = array();
+		if( isset($_SERVER['Toolbox']) ){
 			
 			//  Hide mark label links setting.
 			$key = 'hide_there_links';
@@ -448,7 +448,9 @@ class Toolbox
 		}
 		
 		print '<!-- '.__FILE__.' - '.__LINE__.' -->';
-		print '<div class="small">[ '.join(' | ', $join).' ]</div>';
+		if( $join ){
+			print '<div class="small">[ '.join(' | ', $join).' ]</div>';
+		}
 	}
 	
 	static function PrintStyleSheet()

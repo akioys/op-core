@@ -675,6 +675,7 @@ __EOL__;
 	static private function Env( $key, $var=null, $ope )
 	{
 		// convert key name
+		//switch( strcasecmp($key) ){
 		$key = strtolower($key);
 		switch( $key ){
 			case 'nl':
@@ -998,7 +999,12 @@ __EOL__;
 				if(!$args[0]){
 					$args = '![.red[null]]';
 				}else{
-					$str = var_export($args[0],true);
+					if( is_object($args[0]) ){
+						$var_export = get_class($args[0]);
+					}else{
+						$var_export = var_export($args[0],true);
+					}
+					$str = $var_export;
 					$str = str_replace(array("\n","\r","\t"), '', $str);
 					$str = str_replace("\\'", "'", $str);
 					$str = str_replace(",)", ") ", $str);
