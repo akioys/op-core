@@ -461,6 +461,24 @@ class Form5 extends OnePiece5
 		
 		return $config;
 	}
+
+	function GetInputOptionValue( $option_name, $input_name, $form_name=null )
+	{
+		if(!$options = $this->GetConfig( $form_name, $input_name, 'options' )){
+			return false;
+		}
+		
+		$this->d($options);
+		
+		
+		return $value;
+	}
+	
+	function GetInputOptionLabel( $option_name, $input_name, $form_name )
+	{
+
+		return $label;
+	}
 	
 	public function SetInputValue( $value, $input_name, $form_name )
 	{
@@ -1565,21 +1583,6 @@ class Form5 extends OnePiece5
 		return 'This method(function) is print.';
 	}
 	
-	function Textarea( $input_name, $form_name=null )
-	{
-		$this->Input( $input_name, $form_name=null );
-	}
-	
-	function Select( $input_name, $form_name=null )
-	{
-		$this->Input( $input_name, $form_name=null );
-	}
-	
-	function Button( $input_name, $form_name=null )
-	{
-		$this->Input( $input_name, $form_name=null );
-	}
-	
 	function Label( $input_name, $form_name=null )
 	{
 		print $this->GetInputLabel( $input_name, $form_name=null );
@@ -1588,7 +1591,8 @@ class Form5 extends OnePiece5
 	
 	function InputLabel( $input_name, $form_name=null )
 	{
-		print $this->GetInputLabel( $input_name, $form_name=null );
+		$label = $this->GetInputLabel( $input_name, $form_name=null );
+		print $label;
 		return 'This method(function) is print.';
 	}
 
