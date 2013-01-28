@@ -818,6 +818,7 @@ class DML extends OnePiece5
 		return "LIMIT ".(int)$conf['limit'];
 	}
 	
+	/*
 	function ConvertBetween()
 	{
 		
@@ -898,4 +899,5 @@ class DML extends OnePiece5
 				}
 				
 				continue;
+	*/
 }
