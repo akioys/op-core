@@ -196,7 +196,9 @@ class Form5 extends OnePiece5
 		}else if( $save_token and !$post_token ){
 			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_EMPTY );
 			
-			$this->mark('Add slash(/) to action tail.');
+			if( $_SERVER['REQUEST_URI']{strlen($_SERVER['REQUEST_URI'])-1} !== '/' ){
+				$this->mark('Add slash(/) to action tail.');
+			}
 			
 			return false;
 		}else if( $save_token !== $post_token ){
@@ -344,20 +346,52 @@ class Form5 extends OnePiece5
 	
 	/*******************************************************************************/
 	
-	public function Value( $input_name, $form_name=null, $joint=null )
+	/**
+	 * Direct print
+	 * 
+	 * @param  unknown $input_name
+	 * @param  string  $joint
+	 * @return string
+	 */
+	public function Value( $input_name, /*$form_name=null,*/ $joint=null )
 	{
-		print $this->GetInputValue( $input_name, $form_name, $joint );
+		$form_name = null;
+		$value = $this->GetInputValue( $input_name, $form_name, $joint );
+		
+		$input = $this->GetConfig( $form_name, $input_name );
+		
+		if( in_array( $input->type, array('select','checkbox','radio') ) ){
+			if( isset($input->options->$value) ){
+		//	if( array_key_exists($value, $input->options) ){
+				$value = $input->options->$value->label;
+			}else{
+			//	$this->d( Toolbox::toArray($input->options) );
+				foreach( $input->options as $option ){
+					if( $option->value == $value ){
+						$value = $option->label;
+						break;
+					}
+				} 
+			}
+		}
+		
+		print nl2br($value);
+		
 		return 'This method(function) is print.';
 	}
 
+	/*
     public function InputValue( $input_name, $form_name=null, $joint=null )
 	{
+		$form_name = null;
 		print $this->GetInputValue( $input_name, $form_name, $joint );
 		return 'This method(function) is print.';
 	}
+	*/
 	
-	public function GetValue( $input_name, $form_name=null, $joint=null )
+	public function GetValue( $input_name, /*$form_name=null,*/ $joint=null )
 	{
+		$form_name = null;
 		return $this->GetInputValue( $input_name, $form_name, $joint );
 	}
 
