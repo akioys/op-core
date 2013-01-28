@@ -892,7 +892,7 @@ __EOL__;
 		}
 	}
 	
-	function SetCookie( $key, $value, $expire=0, $path='/', $domain='', $secure=0, $httponly=true, $class=null )
+	function SetCookie( $key, $value, $expire=0, $path='/', $domain='', $secure=0, $httponly=true )
 	{
 		$key   = $this->Escape($key);
 		$value = $this->Escape($value);
@@ -1241,6 +1241,31 @@ __EOL__;
 			print strip_tags($line);
 			print serialize($args);
 		}
+	}
+	
+	static function Decode( $args, $charset=null)
+	{
+		if(!$charset){
+			$charset = self::GetEnv('charset');
+		}
+
+		switch($type = gettype($args)){
+			
+			case 'array':
+				foreach( $args as $key => $var ){
+				//	$key  = self::Decode( $key, $charset );
+					$var  = self::Decode( $var, $charset );
+					$temp[$key] = $var;
+				}
+				$args = $temp;
+				break;
+				
+			default:
+				$args = html_entity_decode( $args, ENT_QUOTES, $charset );
+				break;
+		}
+		
+		return $args;
 	}
 	
 	/**
