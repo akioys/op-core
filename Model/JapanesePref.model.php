@@ -42,6 +42,7 @@ class Model_JapanesePref extends Model_Model
 				$options[$value]['label'] = $label;
 			}
 		}
+		
 		return $options;
 	}
 	
