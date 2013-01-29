@@ -402,7 +402,8 @@ class PDO5 extends OnePiece5
 	
 		//  return many
 		foreach( $record as $key => $var ){
-			$return[$key] = $var;
+		//	$return[$key] = $var; // default is not index key.
+			$return[] = $var;
 		}
 	
 		return $return;
