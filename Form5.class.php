@@ -353,7 +353,7 @@ class Form5 extends OnePiece5
 	 * @param  string  $joint
 	 * @return string
 	 */
-	public function Value( $input_name, /*$form_name=null,*/ $joint=null )
+	public function Value( $input_name, $form_name=null, $joint=null )
 	{
 		$form_name = null;
 		$value = $this->GetInputValue( $input_name, $form_name, $joint );
@@ -383,15 +383,13 @@ class Form5 extends OnePiece5
 	/*
     public function InputValue( $input_name, $form_name=null, $joint=null )
 	{
-		$form_name = null;
 		print $this->GetInputValue( $input_name, $form_name, $joint );
 		return 'This method(function) is print.';
 	}
 	*/
 	
-	public function GetValue( $input_name, /*$form_name=null,*/ $joint=null )
+	public function GetValue( $input_name, $form_name=null, $joint=null )
 	{
-		$form_name = null;
 		return $this->GetInputValue( $input_name, $form_name, $joint );
 	}
 
