@@ -1252,10 +1252,15 @@ __EOL__;
 		switch($type = gettype($args)){
 			
 			case 'array':
+			case 'object':
 				foreach( $args as $key => $var ){
-				//	$key  = self::Decode( $key, $charset );
+					$key  = self::Decode( $key, $charset );
 					$var  = self::Decode( $var, $charset );
-					$temp[$key] = $var;
+					if( $type === 'array' ){
+						$temp[$key] = $var;
+					}else if( $type === 'object' ){
+						$temp->$key = $var;
+					}
 				}
 				$args = $temp;
 				break;
