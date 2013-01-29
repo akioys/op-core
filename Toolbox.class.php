@@ -361,37 +361,30 @@ class Toolbox
 		return $str;
 	}
 	
-	/**
-	 * Mark method uses.
-	 *
-	 * @param string $key
-	 */
-	static function UseGetFlag( $keys )
+	//  Save mark-label for use footer links.
+	static function SetMarkLabel( $mark_label )
 	{
-		// recovery from session
-		$UseGetFlag = &$_SESSION[__CLASS__]['GetFlag'];
-		
-		// loop
-		foreach( explode(',',$keys) as $key ){
-			$key = trim($key,' ');
-	
-			// init
-			if( isset($UseGetFlag[$key]) and is_null($UseGetFlag[$key]) ){
-				$UseGetFlag[$key] = false;
-			}
-	
-			// save current url query
-			if( isset($_GET['GetFlag'][$key]) ){
-				$UseGetFlag[$key] = $_GET['GetFlag'][$key];
-			}
-	
-			// find
-			if( isset($UseGetFlag[$key]) ){
-				return $UseGetFlag[$key];
-			}
+		//  Use footer link
+		if( empty($_SERVER[__CLASS__]['MARK_LABEL'][$mark_label]) ){
+			$_SERVER[__CLASS__]['MARK_LABEL'][$mark_label] = true;
 		}
+	}
 	
-		return false;
+	//  Save on/off flag to session by get value.
+	static function SaveMarkLabelValue( $mark_label=null, $mark_value=null )
+	{
+		//  
+		if( $mark_label ){
+			$_SESSION[__CLASS__]['MARK_LABEL'][$mark_label] = $mark_value;
+		}
+	}
+	
+	//  Get save value from session. 
+	static function GetSaveMarkLabelValue( $mark_label )
+	{
+		return isset($_SESSION[__CLASS__]['MARK_LABEL'][$mark_label]) ? 
+			$_SESSION[__CLASS__]['MARK_LABEL'][$mark_label]: 
+			null;
 	}
 	
 	static function GetFileListFromDir($path='./')
@@ -431,36 +424,33 @@ class Toolbox
 			return;
 		}
 		
-		// set this function flag
-		self::UseGetFlag(__FUNCTION__);
-		
-		// get GetFlag
-		$UseGetFlag = $_SESSION[__CLASS__]['GetFlag'];
-		
-		// Is showing this links?
-		if( $UseGetFlag[__FUNCTION__] === '0' ){
-			return;
-		}else{
-			$key = __FUNCTION__;
-			$str = 'hide';
-			$var = 0;
-			$join[] = sprintf('<a href="?GetFlag[%s]=%s">%s %s</a>', $key, $var, $str, 'there links');
-		}
-		
-		// remove
-		unset($UseGetFlag[__FUNCTION__]);
-		
-		// general
-		if(!is_null($UseGetFlag)){
-			foreach( $UseGetFlag as $key => $var ){
-				$str = $var ? 'hide': 'show';
+		//  Mark label links
+		$join = array();
+		if( isset($_SERVER['Toolbox']) ){
+			
+			//  Hide mark label links setting.
+			$key = 'hide_there_links';
+			$str = 'Hide there links';
+			$var = 1;
+			if( self::GetSaveMarkLabelValue($key) ){
+				return;
+			}
+
+			$join[] = sprintf('<a href="?mark_label=%s&mark_label_value=%s">%s</a>', $key, $var, $str);
+			
+			foreach( $_SERVER['Toolbox']['MARK_LABEL'] as $mark_label => $null ){
+				$key = $mark_label;
+				$var = self::GetSaveMarkLabelValue($mark_label);
+				$str = $var ? 'Hide': 'Show';
 				$var = $var ? 0: 1;
-				$join[] = sprintf('<a href="?GetFlag[%s]=%s">%s %s info</a>', $key, $var, $str, $key);
+				$join[] = sprintf('<a href="?mark_label=%s&mark_label_value=%s">%s %s info</a>', $key, $var, $str, $key);
 			}
 		}
 		
 		print '<!-- '.__FILE__.' - '.__LINE__.' -->';
-		print '<div class="small">[ '.join(' | ', $join).' ]</div>';
+		if( $join ){
+			print '<div class="small">[ '.join(' | ', $join).' ]</div>';
+		}
 	}
 	
 	static function PrintStyleSheet()

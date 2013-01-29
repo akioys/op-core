@@ -6,11 +6,26 @@
 if(!function_exists('__autoload')){
 	function __autoload($class_name)
 	{
+		//  init
+		$sub_dir = null;
+		
+		//  file name
 		switch($class_name){
 			case 'Memcache':
+			case 'Memcached':
 				return;
+				
 			case 'App':
 				$class_name = 'NewWorld5';
+			
+			case 'DML':
+			case 'DML5':
+			case 'DDL':
+			case 'DDL5':
+			case 'DCL':
+			case 'DCL5':
+				$sub_dir = 'PDO';
+				
 			default:
 				$file_name = $class_name . '.class.php';
 		}
@@ -20,6 +35,9 @@ if(!function_exists('__autoload')){
 		$dirs[] = '.';
 		$dirs[] = OnePiece5::GetEnv('App-Root');
 		$dirs[] = OnePiece5::GetEnv('OP-Root');
+		if( $sub_dir ){
+			$dirs[] = OnePiece5::GetEnv('OP-Root').DIRECTORY_SEPARATOR.$sub_dir;
+		}
 		
 		// check
 		foreach( $dirs as $dir ){
@@ -57,6 +75,7 @@ if(!function_exists('OnePieceShutdown')){
 		$status  = connection_status();
 
 		/* @see http://www.php.net/manual/ja/errorfunc.constants.php */
+		if($error = error_get_last()){
 			switch($error['type']){
 				case E_WARNING: // 2
 					$er = 'E_WARNING';
@@ -168,6 +187,7 @@ class OnePiece5
 	public  $laptime = null;
 	private $errors  = array();
 	private $session = array();
+	private $isInit  = null;
 	
 	/**
 	 * 
@@ -176,23 +196,26 @@ class OnePiece5
 	{
 		//  all
 		$this->InitSession();
+
+		//  extends class have init method.
+		if( method_exists($this, 'Init') ){
+			//  op-root has set the first.
+			$this->SetEnv('op-root',dirname(__FILE__));
+			$this->Init();
+		}
 		
-		//  check already init 
+		//  Check already init. 
 		if( $this->GetEnv('init') ){
-			//  extends class init
-			if( method_exists($this, 'Init') ){
-				$this->Init();
-			}
 			return;
 		}
 		$this->SetEnv('init',true);
 		
-		// error control
+		// Error control
 		$save_level = error_reporting();
 		error_reporting( E_ALL );
 		ini_set('display_errors',1);
 		
-		// added op-root to include_path.
+		// Added op-root to include_path.
 		$op_root = dirname(__FILE__);
 		$include_path = ini_get('include_path');
 		$include_path = trim( $include_path, PATH_SEPARATOR );
@@ -204,9 +227,16 @@ class OnePiece5
 			$this->SetCookie( self::OP_UNIQ_ID, md5(microtime() + $_SERVER['REMOTE_ADDR']));
 		}
 		
-		// init
+		//  init
 		$this->InitEnv($args);
 		$this->InitLocale($this->GetEnv('locale'));
+		
+		//  mark_label
+		if( isset($_GET['mark_label']) ){
+			$mark_label = $_GET['mark_label'];
+			$mark_value = $_GET['mark_label_value'];
+			Toolbox::SaveMarkLabelValue($mark_label,$mark_value);
+		}
 		
 		//  recovery (display_errors)
 		if( $this->admin() ){
@@ -224,6 +254,13 @@ class OnePiece5
 	 */
 	function __destruct()
 	{
+		//  Called Init?
+		if(!$this->isInit){
+			$format  = $this->i18n()->get('%s has not call "parent::init();".');
+			$message = sprintf( $format, get_class($this));
+			$this->StackError( $message );
+		}
+		
 		$this->PrintTime();
 		$this->PrintError();
 	}
@@ -328,6 +365,28 @@ class OnePiece5
 	function __set_state()
 	{
 		$this->mark('![.red .bold[ CATCH MAGIC METHOD ]]');
+	}
+	
+	function Init()
+	{
+		$this->isInit = true;
+
+		//  No use self.
+		if( $this instanceof i18n ){
+			return true;
+		}
+		
+		//  Create i18n configuration file path.
+		$path = $this->ConvertPath('op:/i18n/'.get_class($this).'.i18n.php');
+		
+		//  Include configuration file.
+		if( file_exists($path) ){
+			$this->i18n()->SetByFile($path);
+		}else{
+			//$this->mark( $path );
+		}
+		
+		return true;
 	}
 	
 	/**
@@ -616,6 +675,7 @@ __EOL__;
 	static private function Env( $key, $var=null, $ope )
 	{
 		// convert key name
+		//switch( strcasecmp($key) ){
 		$key = strtolower($key);
 		switch( $key ){
 			case 'nl':
@@ -748,7 +808,7 @@ __EOL__;
 		
 		$this->SetEnv('class',      __CLASS__    );
 		$this->SetEnv('local',      $local       );
-		$this->SetEnv('op_root',    $op_root     );
+	//	$this->SetEnv('op_root',    $op_root     );
 		$this->SetEnv('doc_root',   $doc_root    );
 		$this->SetEnv('app_root',   $app_root    );
 		$this->SetEnv('site_root',  $site_root   );
@@ -832,7 +892,7 @@ __EOL__;
 		}
 	}
 	
-	function SetCookie( $key, $value, $expire=0, $path='/', $domain='', $secure=0, $httponly=true, $class=null )
+	function SetCookie( $key, $value, $expire=0, $path='/', $domain='', $secure=0, $httponly=true )
 	{
 		$key   = $this->Escape($key);
 		$value = $this->Escape($value);
@@ -904,6 +964,7 @@ __EOL__;
 		$call_line = '';
 		$depth++;
 		$nl = $this->GetEnv('nl');
+		$back = debug_backtrace( false );
 		
 		// num
 		if( $num >= count($back) or $num <= 0 ){
@@ -938,7 +999,12 @@ __EOL__;
 				if(!$args[0]){
 					$args = '![.red[null]]';
 				}else{
-					$str = var_export($args[0],true);
+					if( is_object($args[0]) ){
+						$var_export = get_class($args[0]);
+					}else{
+						$var_export = var_export($args[0],true);
+					}
+					$str = $var_export;
 					$str = str_replace(array("\n","\r","\t"), '', $str);
 					$str = str_replace("\\'", "'", $str);
 					$str = str_replace(",)", ") ", $str);
@@ -1020,13 +1086,13 @@ __EOL__;
 		}
 		
 		$op_root  = self::GetEnv('op_root');
-		$app_root = self::GetEnv('app_root'); // ex. /main.php
+		$app_root = self::GetEnv('app_root');
 		$doc_root = self::GetEnv('doc_root');
 		
 		//  remove slash (easy-to-read)
-		$op_root  = rtrim( $op_root,  '/' );
-		$app_root = rtrim( $app_root, '/' );
-		$doc_root = rtrim( $doc_root, '/' );
+		$op_root  = $op_root  ? rtrim($op_root, '/') : ' ';
+		$app_root = $app_root ? rtrim($app_root,'/') : ' ';
+		$doc_root = $doc_root ? rtrim($doc_root,'/') : ' ';
 		
 		/*
 		print "path=$path<br/>";
@@ -1051,14 +1117,20 @@ __EOL__;
 	 * @param string  $str
 	 * @param boolean $use_get_flag
 	 */
-	function Mark( $str='', $use_get_flag=false )
+	function Mark( $str='', $mark_labels=false )
 	{
 		// displayed is only Admin-ip.
 		if(!self::admin()){ return; }
 		
 		// displayed is Admin-ip and flag.
-		if( $use_get_flag ){
-			if(!Toolbox::UseGetFlag($use_get_flag)){ return; }
+		if( $mark_labels ){
+		//	if(!Toolbox::UseGetFlag($mark_labels)){ return; }
+			foreach( explode(',',$mark_labels) as $mark_label ){
+				Toolbox::SetMarkLabel( $mark_label );
+			}
+			if(!Toolbox::GetSaveMarkLabelValue($mark_label) ){
+				return;
+			}
 		}
 		
 		// php momory usage 
@@ -1143,14 +1215,14 @@ __EOL__;
 	 * @param string|array $args
 	 * @param string $use_get_flag
 	 */
-	function D( $args, $use_get_flag=false )
+	function D( $args, $mark_label=null )
 	{
 		// displayed is only admin-ip.
 		if(!self::admin()){ return; }
 		
 		// displayed is Admin-ip and flag.
-		if($use_get_flag){
-			if(!Toolbox::UseGetFlag($use_get_flag)){
+		if( $mark_label ){
+			if(!Toolbox::GetSaveMarkLabelValue($mark_label)){
 				return;
 			}
 		}
@@ -1169,6 +1241,31 @@ __EOL__;
 			print strip_tags($line);
 			print serialize($args);
 		}
+	}
+	
+	static function Decode( $args, $charset=null)
+	{
+		if(!$charset){
+			$charset = self::GetEnv('charset');
+		}
+
+		switch($type = gettype($args)){
+			
+			case 'array':
+				foreach( $args as $key => $var ){
+				//	$key  = self::Decode( $key, $charset );
+					$var  = self::Decode( $var, $charset );
+					$temp[$key] = $var;
+				}
+				$args = $temp;
+				break;
+				
+			default:
+				$args = html_entity_decode( $args, ENT_QUOTES, $charset );
+				break;
+		}
+		
+		return $args;
 	}
 	
 	/**
@@ -1195,7 +1292,7 @@ __EOL__;
 				$args = self::EscapeObject($args);
 				break;
 			default:
-				self::p("[".__METHOD__."]undefined type($type)");
+				self::p("[".__METHOD__."] undefined type($type)");
 		}
 		
 		return $args;
@@ -1208,8 +1305,11 @@ __EOL__;
 	 */
 	static function EscapeString( &$args, $charset='utf-8' )
 	{
-		// anti null byte attack
+		//  Anti null byte attack
 		$args = str_replace("\0", '\0', $args);
+		
+		//  Anti ASCII Control code.
+		//  $args = trim( $args, "\x00..\x1F");
 		
 		/**
 		 * htmlentities's double_encoding off funciton is PHP Version 5.2.3 latter.
@@ -1440,8 +1540,7 @@ __EOL__;
 	 */
 	function Template( $file, $data=null )
 	{
-		//$this->mark(__METHOD__);
-		//$this->mark($file);
+		$this->mark($file,'template');
 		
 		//  access is deny, above current directory
 		if( $this->GetEnv('allowDoubleDot') ){
@@ -1487,7 +1586,7 @@ __EOL__;
 		// read file
 		$io = include($path);
 		
-		return $io;
+		return $io ? '': false;
 	}
 	
 	/**
@@ -1545,7 +1644,7 @@ __EOL__;
 			if( $root = $this->GetEnv($temp) ){
 				$path = str_replace($match[0], $root, $path);
 			}else{
-				$tihs->StackError("$temp is not set.");
+				$this->StackError("$temp is not set.");
 			}
 		}else{
 			$url = self::ConvertURL($path);
@@ -1578,7 +1677,7 @@ __EOL__;
 		}
 		
 		//  include Model_model
-		if(!class_exists( 'Model_model', false ) ){
+		if(!class_exists( 'Model_Model', false ) ){
 			$path = self::ConvertPath('op:/Model/Model.model.php');
 			if(!$io = include_once($path)){
 				$msg = "Failed to include the Model_model. ($path)";
@@ -1610,9 +1709,9 @@ __EOL__;
 		}
 		
 		//  instance of model
-		$model_name = $name.'_model';
+		$model_name = 'Model_'.$name;//.'_model';
 		if(!$_SERVER['test']['model'][$name] = new $model_name ){
-			$msg = "Failed to include the Model_model. ($path)";
+			$msg = "Failed to include the Model_Model. ($path)";
 			$this->StackError($msg);
 			throw new OpModelException($msg);
 		}
@@ -1690,80 +1789,22 @@ __EOL__;
 	/* @var $form Form5 */
 	private $form = null;
 	
-	/**
-	 * Get Form.class.php Instance
-	 * 
-	 * @return Form5
-	 */
-	function _Form( $args='Form5' )
-	{
-		//  past legacy
-		if( isset($this->form) ){
-			if(!is_null($args)){
-				$this->form->AddForms($args);
-			}
-		}else{
-			/*
-			if(is_null($args)){
-				
-				//  The standard to which this is recommended.
-				$this->form = new Form5();
-
-			}else 
-			*/
-			if( is_string($args) ){
-				
-				//$io[] = include_once($args.'.class.php');
-				//$io[] = class_exists($args, true);
-				//if( $io[0] or $io[1] ){
-					
-				if( class_exists($args, true) ){
-					
-					// old
-					//$this->form = new $args();
-					
-					//  An inherited class can be specified.
-					$_SERVER[__CLASS__][strtoupper($args)] = new $args();
-				}else{
-					
-					//  Support the past legacy.
-					if( $form_dir = $this->GetEnv('form-dir') ){
-						$path = $form_dir .'/'. $args;
-					}else{
-						$path = Toolbox::ConvertPath($args);
-					}
-					
-					if( file_exists($path) ){
-						//  This is past legacy.
-						$args = $path;
-						$this->form = new Form5();
-						$this->form->AddConfig($args);
-						$this->mark('This is support to the past legacy.
-							Please use $this->form()->AddConfig($args).');
-					}
-				}
-			}
-		}
-		
-		return $_SERVER[__CLASS__][strtoupper($args)];
-//		return $this->form;
-	}
 	
 	/**
-	 *  @var $form i18n_a 
+	 *  @var $i18n i18n
 	 */
-	private $i18n;
+	private $i18n = null;
 	
 	/**
-	 * i18n object
+	 * i18n is translate object.
 	 * 
-	 * @param string $i18n_source_file
-	 * @return $form
+	 * @param  string $name Object name
+	 * @return i18n
 	 */
-	function i18n($i18n_source_file=null)
+	function i18n($name='i18n')
 	{
 		if( empty($this->i18n) ){
-			if(!$this->i18n = new i18n_a($i18n_source_file)){
+			if(!$this->i18n = new $name()){
 				return $this;
 			}
 		}
@@ -1787,65 +1828,21 @@ __EOL__;
 	}
 	
 	/**
-	 * @var Memcache
+	 * @var $cache Cache
 	 */
 	private $cache = null;
 	
-	/**
-	 * 
-	 * @param string $args
-	 */
-	function Cache($args=null)
+	function Cache($name='Cache')
 	{
 		if(!$this->cache){
-			if(!class_exists('Memcache',false)){
-				$this->mark('does not install memcache','cache');
-				return null;
-			}else if( $this->cache = new Memcache() ){
-				$host   = @$args['host']   ? $args['host']:  'localhost';
-				$port   = @$args['port']   ? $args['port']:  '11211';
-				$weight = @$args['weight'] ? $args['weight']: null;
-				$io = $this->cache->addServer( $host, $port, $weight );
-				$this->mark('addServer='.$io, 'onepiece, cache');
-			}else{
-				$this->Mark('PHP-Memcache module is not installed?','onepiece, cache');
+			if(!include("$name.class.php") ){
+				throw new Exception("Include is failed. ($name)");
 			}
-		}else{
-			return $this->cache;
-		}
-	}
-	
-	/**
-	 * Set data to memcached
-	 * 
-	 * @param string $key
-	 */
-	function GetCache($key)
-	{
-		if(!$this->cache){
-			if(!$this->Cache()){
-				return null;
+			if(!$this->cache = new $name() ){
+				throw new Exception("Instance object is failed. ($name)");
 			}
 		}
-		return $this->Cache()->Get($key);
-	}
-	
-	/**
-	 * Get data from memcached
-	 * 
-	 * @param string  $key
-	 * @param string  $var
-	 * @param integer $flag
-	 * @param integer $expire
-	 */
-	function SetCache( $key, $var, $flag=0, $expire=0)
-	{
-		if(!$this->cache){
-			if(!$this->Cache()){
-				return null;
-			}
-		}
-		$this->Cache()->Set( $key, $var, (int)$flag, (int)$expire );
+		return $this->cache;
 	}
 	
 	/**

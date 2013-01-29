@@ -10,6 +10,7 @@ class Form5 extends OnePiece5
 	
 	function Init()
 	{
+		parent::Init();
 		$this->config = new Config();
 		$this->status = new Config();
 //		$io = session_regenerate_id(true);
@@ -165,6 +166,7 @@ class Form5 extends OnePiece5
 	
 	const STATUS_VISIT_FIRST       = '1st visit';
 	const STATUS_SESSION_DESTORY   = 'session is destory';
+	const STATUS_TOKEN_KEY_EMPTY   = 'empty submit token key';
 	const STATUS_TOKEN_KEY_MATCH   = 'match token key';
 	const STATUS_TOKEN_KEY_UNMATCH = 'unmatch token key';
 	const STATUS_UNKNOWN_ERROR     = 'unknown error';
@@ -175,17 +177,29 @@ class Form5 extends OnePiece5
 			return false;
 		}
 		
+		$token_key_name = $this->GetTokenKeyName($form_name);
 		$save_token = $this->GetTokenKey($form_name);
-		$post_token = Toolbox::GetRequest($this->GetTokenKeyName($form_name));
+		$post_token = Toolbox::GetRequest( $token_key_name );
 		
-		//$this->mark("save=$save_token");
-		//$this->mark("post=$post_token");
+		/*
+		$this->mark("key=$token_key_name");
+		$this->mark("save=$save_token");
+		$this->mark("post=$post_token");
+		*/
 		
 		if( !$save_token and !$post_token ){
 			$this->SetStatus( $form_name, self::STATUS_VISIT_FIRST );
 			return false;
 		}else if(!$save_token and $post_token){
 			$this->SetStatus( $form_name, self::STATUS_SESSION_DESTORY );
+			return false;
+		}else if( $save_token and !$post_token ){
+			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_EMPTY );
+			
+			if( $_SERVER['REQUEST_URI']{strlen($_SERVER['REQUEST_URI'])-1} !== '/' ){
+				$this->mark('Add slash(/) to action tail.');
+			}
+			
 			return false;
 		}else if( $save_token !== $post_token ){
 			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_UNMATCH );
@@ -332,17 +346,47 @@ class Form5 extends OnePiece5
 	
 	/*******************************************************************************/
 	
+	/**
+	 * Direct print
+	 * 
+	 * @param  unknown $input_name
+	 * @param  string  $joint
+	 * @return string
+	 */
 	public function Value( $input_name, $form_name=null, $joint=null )
 	{
-		print $this->GetInputValue( $input_name, $form_name, $joint );
+		$form_name = null;
+		$value = $this->GetInputValue( $input_name, $form_name, $joint );
+		
+		$input = $this->GetConfig( $form_name, $input_name );
+		
+		if( in_array( $input->type, array('select','checkbox','radio') ) ){
+			if( isset($input->options->$value) ){
+		//	if( array_key_exists($value, $input->options) ){
+				$value = $input->options->$value->label;
+			}else{
+			//	$this->d( Toolbox::toArray($input->options) );
+				foreach( $input->options as $option ){
+					if( $option->value == $value ){
+						$value = $option->label;
+						break;
+					}
+				} 
+			}
+		}
+		
+		print nl2br($value);
+		
 		return 'This method(function) is print.';
 	}
 
+	/*
     public function InputValue( $input_name, $form_name=null, $joint=null )
 	{
 		print $this->GetInputValue( $input_name, $form_name, $joint );
 		return 'This method(function) is print.';
 	}
+	*/
 	
 	public function GetValue( $input_name, $form_name=null, $joint=null )
 	{
@@ -448,6 +492,24 @@ class Form5 extends OnePiece5
 		}
 		
 		return $config;
+	}
+
+	function GetInputOptionValue( $option_name, $input_name, $form_name=null )
+	{
+		if(!$options = $this->GetConfig( $form_name, $input_name, 'options' )){
+			return false;
+		}
+		
+		$this->d($options);
+		
+		
+		return $value;
+	}
+	
+	function GetInputOptionLabel( $option_name, $input_name, $form_name )
+	{
+
+		return $label;
 	}
 	
 	public function SetInputValue( $value, $input_name, $form_name )
@@ -960,14 +1022,10 @@ class Form5 extends OnePiece5
 		}
 		
 		//  Check
-//		$this->d(Toolbox::toArray($config));
 		if(!isset($config->name)){
 			$this->StackError('Is this $config a single config form? There is no form name in the $config.($config->name)');
 			return false;
 		}
-		
-		//  debug
-//		$this->d(Toolbox::toArray($config));
 		
 		//  check form name
 		if(empty($config->name)){
@@ -1004,11 +1062,9 @@ class Form5 extends OnePiece5
 		}
 		
 		foreach( $config->input as $index => $input ){
-			/*
 			if( empty($input->name) ){
-				$input->name = $input_name;
+				$input->name = $index;
 			}
-			*/
 			$this->AddInput( $input, $form_name );
 		}
 		
@@ -1090,10 +1146,17 @@ class Form5 extends OnePiece5
 		}
 		
 		//  checkbox
-		if( $type === 'checkbox' ){
-			if(!isset($input->option) and (!isset($input->value) or !strlen($input->value)) ){
-				$this->mark("![.red[Empty checkbox value. ($form_name, $input_name)]]");
-				$this->StackError("Empty checkbox value. ($form_name, $input_name)");
+		if( in_array($type,array('checkbox','radio','select')) ){
+
+			if( empty($input->options) ){
+				if( isset($input->option) ){
+					$input->options = $input->option;
+				}
+			}
+			
+			if(!isset($input->options) and (!isset($input->value) or !strlen($input->value)) ){
+				$this->mark("![.red[Empty $type value. ($form_name, $input_name)]]");
+				$this->StackError("Empty $type value. ($form_name, $input_name)");
 			}
 		}
 		
@@ -1128,7 +1191,7 @@ class Form5 extends OnePiece5
 			return false;
 		}
 		
-		$input->option->md5(serialize($option))->$option;
+		$input->options->md5(serialize($option))->$option;
 		
 		return true;
 	}
@@ -1162,9 +1225,9 @@ class Form5 extends OnePiece5
 		$form_name = $form->name;
 		$method	 = $form->method === 'get' ? 'GET' : 'POST';
 		$charset = isset($form->charset)   ? $form->charset: $this->GetEnv('charset');
-		$class	 = empty($form->class)     ? '':     sprintf('class="%s"', $form->class);
-		$style	 = empty($form->style)     ? '':     sprintf('style="%s"', $form->style);
-		$enctype = empty($form->multipart) ? '':     sprintf('enctype="multipart/form-data"');
+		$class	 = empty($form->class)     ? null: sprintf('class="%s"', $form->class);
+		$style	 = empty($form->style)     ? null: sprintf('style="%s"', $form->style);
+		$enctype = empty($form->multipart) ? null: sprintf('enctype="multipart/form-data"');
 		
 		//  action
 		if( is_null($action) ){
@@ -1274,6 +1337,7 @@ class Form5 extends OnePiece5
 					$input->save = $var;
 				case 'error':
 				case 'option':
+				case 'options':
 				case 'validate':
 				case 'cookie':
 				case 'index':
@@ -1288,24 +1352,20 @@ class Form5 extends OnePiece5
 					$join[] = sprintf('%s="%s"',$key,$var);
 			}
 		}
-		$attr = join(' ',$join);
-
-        //  name (Anti IDE notice, PhpStorm )
-        if(!isset($name)){
+		
+        //  name
+        if(empty($name)){
             $name = $input->name;
         }
         $input_name = $input->name;
 
         //  type
-        if(!isset($type)){
+        if(empty($type)){
             $type = 'text';
         }
-
-		// request
-		$_request = $this->GetRequest( null, $form_name );
-	
+		
 		//  id
-		if(!isset($id)){
+		if(empty($id)){
 			$id = $form_name.'-'.$input_name;
 			if( $type !== 'checkbox' or $type !== 'radio' ){
 				//  Why join value?
@@ -1316,7 +1376,14 @@ class Form5 extends OnePiece5
 				}
 			}
 		}
+		$join[] = sprintf('id="%s"',$id);
+		
+		//  Other attributes
+		$attr = join(' ',$join);
 
+		// request
+		$_request = $this->GetRequest( null, $form_name );
+		
 		/*
 		if( $type === 'submit' or $type === 'button' ){
 		
@@ -1362,8 +1429,12 @@ class Form5 extends OnePiece5
 			}
 		}
 		
+		//  tail
+		$tail = $this->Decode($tail);
+		
 		//  Escape
-		$value = $this->Escape($value);
+		//var_dump($value);
+		//$value = $this->Escape($value);
 		
 		// radio
 		if('radio' === $type){
@@ -1403,7 +1474,16 @@ class Form5 extends OnePiece5
 				break;
 				
 			case 'select':
-				$tag = sprintf('<select name="%s" %s>%s</select>'.$tail, $name, $attr, $this->CreateOption($input->option, $value));
+				if( isset($input->options) ){
+					$options = $input->options;
+					/*
+				}else if( isset($input->option) ){
+					$options = $input->option;
+					*/
+				}else{
+					$options = array();
+				}
+				$tag = sprintf('<select name="%s" %s>%s</select>'.$tail, $name, $attr, $this->CreateOption( $options, $value));
 				break;
 				
 			case 'file':
@@ -1424,20 +1504,20 @@ class Form5 extends OnePiece5
 					// create remover
 					$tag = $this->CreateInputTag($remover, $form_name);
 				}else{
-					$tag = sprintf('<input type="%s" name="%s" value="%s" %s />', $type, $input_name, $value, $attr);
+					$tag = sprintf('<input type="%s" name="%s" value="%s" %s />'.$tail, $type, $input_name, $value, $attr);
 				}
 				break;
 				
 			default:
 				//  single or multi
-				if(isset($input->option)){
+				if(isset($input->options)){
 					//  multi
 					//  child
-					foreach($input->option as $index => $option){
+					foreach($input->options as $index => $option){
 						$child = Toolbox::Copy($input);
 						$child->child = true;
 						$child->index = $index;
-						unset($child->option);
+						unset($child->options);
 						
 						//  copy option value to child
 						foreach($option as $key => $var){
@@ -1496,13 +1576,26 @@ class Form5 extends OnePiece5
 	function CreateOption( $args, $save_value )
 	{
 		$options = '';
-		foreach($args as $option){
-			
+		foreach( $args as $option ){
+			//  
 			$value = $option->value;
 			$label = isset($option->label) ? $option->label: $value;
 			$selected = $value == $save_value ? 'selected="selected"': '';
 			
-			$options .= sprintf('<option value="%s" %s>%s</option>', $value, $selected, $label);
+			//  attributes
+			$attr = array();
+			foreach( $option as $key => $var ){
+				switch( $key ){
+					case 'selected':
+						continue;
+					default:
+						$attr[] = sprintf('%s="%s"', $key, $var);
+				}
+			}
+			$attr = implode(' ', $attr);
+			
+			//  joint
+			$options .= sprintf('<option value="%s" %s %s>%s</option>', $value, $attr, $selected, $label);
 		}
 		
 		return $options;
@@ -1522,21 +1615,6 @@ class Form5 extends OnePiece5
 		return 'This method(function) is print.';
 	}
 	
-	function Textarea( $input_name, $form_name=null )
-	{
-		$this->Input( $input_name, $form_name=null );
-	}
-	
-	function Select( $input_name, $form_name=null )
-	{
-		$this->Input( $input_name, $form_name=null );
-	}
-	
-	function Button( $input_name, $form_name=null )
-	{
-		$this->Input( $input_name, $form_name=null );
-	}
-	
 	function Label( $input_name, $form_name=null )
 	{
 		print $this->GetInputLabel( $input_name, $form_name=null );
@@ -1545,7 +1623,8 @@ class Form5 extends OnePiece5
 	
 	function InputLabel( $input_name, $form_name=null )
 	{
-		print $this->GetInputLabel( $input_name, $form_name=null );
+		$label = $this->GetInputLabel( $input_name, $form_name=null );
+		print $label;
 		return 'This method(function) is print.';
 	}
 
@@ -1585,26 +1664,26 @@ class Form5 extends OnePiece5
 			}
 		}
 		
-		$this->mark('Output of Debug()');
 		$temp['form_name'] = $form_name;
 		$temp['Status']	 = $this->GetStatus($form_name);
 		$temp['Error']	 = Toolbox::toArray($this->status->$form_name->error);
 		$temp['Errors']	 = $this->status->$form_name->stack;
 		$temp['session'] = $this->GetSession('form');
-		
-		$this->d($temp);
+
+		$this->mark(__METHOD__,'debug');
+		$this->d($temp,'debug');
 	}
 	
 	function Error( $input_name, $html='span 0xff0000', $form_name=null )
 	{
 		print $this->GetInputError( $input_name, $html, $form_name=null );
-		return 'This method(function) is print.';
+		return $this->i18n()->Get('This method(function) is print.');
 	}
 	
 	function InputError( $input_name, $html='span 0xff0000', $form_name=null )
 	{
 		print $this->GetInputError( $input_name, $html, $form_name=null );
-		return 'This method(function) is print.';
+		return $this->i18n()->Get('This method(function) is print.');
 	}
 
 	function GetError( $input_name, $html='span 0xff0000', $form_name=null )
@@ -1627,10 +1706,14 @@ class Form5 extends OnePiece5
 			
 			foreach($this->status->$form_name->error->$input_name as $key => $value){
 				
+				$key   = $this->i18n()->get($key);
+				$value = $this->i18n()->get($value);
+				
 				if( isset($input->error->$key) ){
 					$format = '![ $html ['.$input->error->$key.']]';
 				}else{
-					$format = '![ $html [$label is error. This field is $key. ($value)]]';
+					$format = $this->i18n()->Get('$label is error. This field is $key. ($value)');
+					$format = "![ $html [$format]]";
 				}
 				
 				$patt = array('/\$label/', '/\$key/', '/\$value2/', '/\$value/', '/\$html/');
@@ -1685,8 +1768,8 @@ class Form5 extends OnePiece5
 			return false;
 		}
 		
-		if(isset($input->option)){
-			foreach($input->option as $child){
+		if( isset($input->options) ){
+			foreach($input->options as $child){
 				$child->name = $input->name;
 				if(!$io = $this->CheckInputValue($child, $form_name)){
 					return false;
@@ -2007,7 +2090,7 @@ class Form5 extends OnePiece5
 					$value = implode('',$value);
 				}
 				//  Check character
-				if( $io = preg_match('/([^-_a-z0-9\s\/\\\!\?\(\)\[\]\{\}:;\'"`@#$%&*+^~|]+)/i',$value,$match)){					
+				if( $io = preg_match('/([^-_a-z0-9\s\/\\\!\?\(\)\[\]\{\}\.,:;\'"`@#$%&*+^~|]+)/i',$value,$match)){					
 					//$this->d($match);
 					$this->SetInputError( $input->name, $form_name, 'permit-english', $match[1] );
 					//  Permit is failed

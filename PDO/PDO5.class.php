@@ -14,16 +14,21 @@ class PDO5 extends OnePiece5
 	private $user		 = null;
 	private $database	 = null;
 	private $charset	 = null;
-
-	function DML( $name='DML5' )
+	
+	function DML( $name=null )
 	{
-		if(!isset($this->dml)){
-			if( class_exists( $name ) ){
-				//include_once('PDO/DML5.class.php');
-				
-				$conf['driver'] = $this->driver;
-				$this->dml = new $name( $conf, $this->pdo );
+		if( empty($this->dml) ){
+			if(!class_exists('DML',false)){
+				$io = include_once('PDO/DML.class.php');
+				if(!$io){
+					throw new Exception("Include failed.(PDO/DML.class.php)");
+				}
 			}
+				
+			//  Init
+			$this->dml = new DML();
+			$this->dml->SetPDO( $this->pdo, $this->driver );
+			$this->dml->InitQuote($this->driver);
 		}
 		return $this->dml;
 	}
@@ -397,7 +402,8 @@ class PDO5 extends OnePiece5
 	
 		//  return many
 		foreach( $record as $key => $var ){
-			$return[$key] = $var;
+		//	$return[$key] = $var; // default is not index key.
+			$return[] = $var;
 		}
 	
 		return $return;

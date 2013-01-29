@@ -1,23 +1,21 @@
 <?php
 
-class DML5 extends OnePiece5
+class DML extends OnePiece5
 {
-	private $pdo = null;
+	//  OLD
+	//private $pdo = null;
 	private $ql  = null;
 	private $qr  = null;
 	private $is_table_join = null;
+
+	//  NEW
+	private $pdo    = null;
+	private $driver = null;
 	
-	function __construct( $conf, $pdo )
+	function SetPDO( $pdo, $driver )
 	{
-		if(!is_array($conf)){
-			$conf = Toolbox::toArray($conf);
-		}
-		
-		//  PDO
 		$this->pdo = $pdo;
-		
-		//  Quote
-		$this->InitQuote($conf['driver']);
+		$this->driver = $driver;
 	}
 	
 	function InitQuote($driver)
@@ -80,7 +78,7 @@ class DML5 extends OnePiece5
 		
 		//  where (or)
 		if(isset($conf['where-or'])){
-			$conf['wheres']['and'] = $conf['where'];
+			$conf['wheres']['or'] = $conf['where-or'];
 		}
 		
 		//  wheres
@@ -526,7 +524,7 @@ class DML5 extends OnePiece5
 			$cols[] = $key;
 			$vars[] = $var;
 		}
-	
+		
 		$set = '('.join(',',$cols).')';
 		$values = 'VALUES ('.join(',',$vars).')';
 		return array($set,$values);	
@@ -548,7 +546,17 @@ class DML5 extends OnePiece5
 				$this->StackError('column is not array or string.');
 				return false;
 			}
-			$cols = join(', ',$this->Quote($cols));
+			
+			$temp = array();
+			foreach( $cols as $key => $var ){
+				if( is_numeric($key) ){
+					$temp[] = $this->Quote($var);
+				}else{
+					$temp[] = $this->Quote($key)." AS ".$this->Quote($var);
+				}
+			}
+			$cols = join(', ',$temp);
+			$temp = null;
 		}else{
 			$cols = null;
 		}
@@ -647,7 +655,8 @@ class DML5 extends OnePiece5
 						return false;
 					}
 					break;
-					
+				
+				//  Case of nest.
 				case 'wheres':
 					$join[] = $this->ConvertWheres($arr);
 					break;
@@ -755,10 +764,10 @@ class DML5 extends OnePiece5
 	
 	protected function ConvertHaving( $having, $joint )
 	{
-		$this->d($having);
+	//	$this->d($having);
 		foreach( $having as $key => $var ){
 			if(preg_match('/^([><!]?=?) /i',$var,$match)){
-				$this->d($match);
+			//	$this->d($match);
 				$ope = $match[1];
 				$var = preg_replace("/^$ope /i",'',$var);
 			}else{
@@ -769,7 +778,7 @@ class DML5 extends OnePiece5
 			$var = $this->pdo->quote($var);
 			$join[] = "$key $ope $var";
 		}
-		$this->d($join);
+		//$this->d($join);
 		return '( '.join(" $joint ",$join).' )';
 	}
 	
@@ -809,4 +818,86 @@ class DML5 extends OnePiece5
 		return "LIMIT ".(int)$conf['limit'];
 	}
 	
+	/*
+	function ConvertBetween()
+	{
+		
+	}
+	
+	function ConvertLikes( $likes )
+	{
+		
+	}
+	
+	function ConvertLike( $column, $value )
+	{
+		$key = 'LIKE';
+		return $this->ConvertX( $column, $key, $value );
+	}
+	
+	function ConvertNotLike( $column, $value )
+	{
+		$key = 'LIKE';
+		return $this->ConvertX( $column, $key, $value );
+	}
+	
+	function ConvertX( $column, $key, $value)
+	{
+		if(!is_string($value)){
+			$this->StackError('Does match type. not string.');
+			return false;
+		}
+		
+		if( is_null($value) ){
+			$value = 'NULL';
+		}else{
+			$value = $this->pdo->quote($value);
+		}
+		
+		return "$column $key $value";
+	}
+	
+			$column = $this->EscapeColumn($key);
+			
+			//  
+			if( is_array($var) ){
+				
+				//  WHERE id IN ( 1, 2, 3 )
+				switch($key = strtoupper(trim($key))){
+					case 'LIKE':
+					case 'NOT LIKE':
+						foreach( $var as $column => $value ){
+							$column = $this->EscapeColumn($column);
+							$value  = $this->pdo->quote($value);
+							$join[] = ;
+						}
+						break;
+						
+					case 'BETWEEN':
+						foreach( $var as $column => $value ){
+							$column = $this->EscapeColumn($column);
+							$temp   = explode('-',$value);
+							$less   = (int)$temp[0];
+							$grat   = (int)$temp[1];
+							$join[] = "$column BETWEEN $less TO $grat";
+						}
+						break;
+						
+					case 'IN':
+					case 'NOT IN':
+						foreach( $var as $column => $arr ){
+							foreach( $arr as $temp ){
+								$in[] = $this->pdo->quote($temp);
+							}
+							$column = $this->EscapeColumn($column);
+							$temp   = join(', ', $in);
+							$join[] = "$column $key ( $temp )";
+						}
+						break;
+					default:
+						$this->mark("Does not support this. ($key)");
+				}
+				
+				continue;
+	*/
 }
