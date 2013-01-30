@@ -397,7 +397,8 @@ class PDO5 extends OnePiece5
 	
 		//  return one
 		if( count($columns) === 1 ){
-			return isset($record[$columns[0]]) ? $record[$columns[0]]: null;
+		//	return isset($record[$columns[0]]) ? $record[$columns[0]]: null;
+			return array_shift($record);
 		}
 	
 		//  return many
