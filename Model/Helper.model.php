@@ -19,11 +19,20 @@ class Model_Helper extends Model_Model
 		return $options;
 	}
 	
-	function GetFormOptionsDateMonth()
+	function GetFormOptionsDateMonth($config=null)
 	{
+		if( isset($config->padding) ){
+			$padding = $config->padding ? $config->padding: false;
+		}else{
+			$padding = true;
+		}
+		
 		$options = new Config();
 		
 		for( $i=0; $i<=12; $i++ ){
+			if( $padding and $i ){
+				$i = sprintf('%02d',$i);
+			}
 			$options->$i->value = $i ? $i : '';
 		}
 		
