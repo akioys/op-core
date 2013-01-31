@@ -466,10 +466,14 @@ class Form5 extends OnePiece5
 		return $value;
 	}
 	
-	public function GetInputValueAll($form_name)
+	public function GetInputValueAll( $form_name, $force=false )
 	{
 		if(!$form = $this->GetConfig( $form_name )){
-			return false;
+			if( $force ){
+				$this->mark("form_name = $form_name is not initialized. but force get.");
+			}else{
+				return false;
+			}
 		}
 		
 		$config = new Config();
@@ -1279,10 +1283,14 @@ class Form5 extends OnePiece5
 		return null;
 	}
 	
-	public function Clear($form_name)
+	public function Clear( $form_name, $force=false )
 	{
 		if(!$this->CheckConfig($form_name)){
-			return false;
+			if( $force ){
+				$this->mark("form_name = $form_name is not initialized. buy force cleard.");
+			}else{
+				return false;
+			}
 		}
 
         //  Submit value is clear
