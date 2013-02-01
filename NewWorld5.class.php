@@ -580,6 +580,21 @@ class App extends NewWorld5
 		return $this->SetEnv('controller-name', $var);
 	}
 	
+	function SetSettingName( $var )
+	{
+		return $this->SetEnv('setting-name', $var);
+	}
+	
+	function SetModelDir( $var )
+	{
+		return $this->SetEnv('model-dir', $var);
+	}
+
+	function SetModuleDir( $var )
+	{
+		return $this->SetEnv('module-dir', $var);
+	}
+	
 	function SetLayoutDir( $var )
 	{
 		$this->SetEnv('layout-root',$this->ConvertURL($var));
