@@ -468,10 +468,10 @@ class Form5 extends OnePiece5
 	
 	public function GetInputValueAll( $form_name, $force=false )
 	{
-		if(!$form = $this->GetConfig( $form_name )){
-			if( $force ){
-				$this->mark("form_name = $form_name is not initialized. but force get.");
-			}else{
+		if( $force ){
+			$this->mark("form_name = $form_name is not initialized. but force get.");
+		}else{
+			if(!$form = $this->GetConfig( $form_name )){
 				return false;
 			}
 		}
