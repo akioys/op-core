@@ -4,6 +4,12 @@ abstract class ConfigMgr extends OnePiece5
 {
 	protected $config;
 	
+	function config()
+	{
+		$this->mark('Your misstake','misstake');
+		return $this;
+	}
+	
 	function Init($config=null)
 	{
 		parent::Init();
