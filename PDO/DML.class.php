@@ -722,13 +722,16 @@ class DML extends OnePiece5
 				continue;
 				
 			}else if( is_null($var) or strtolower($var) === 'null' ){
+				//  TODO: more speed up!
 				$join[] = "$column IS NULL";
 				continue;
-			}else if( strtolower($var) === '!null' or strtolower($var) === 'not null' ){
+			}else if( strtolower($var) === '!null' or strtolower($var) === '! null' or strtolower($var) === 'not null' ){
+				//  TODO: more speed up!
 				$join[] = "$column IS NOT NULL";
 				continue;
 		//	}else if(preg_match('/^([><]?=) ([-0-9: ]+)$/i',$var,$match)){
-			}else if(preg_match('/^([><]?=?) ([-0-9: ]+)$/i',$var,$match)){				
+			}else if(preg_match('/^([><]?=?) ([-0-9: ]+)$/i',$var,$match)){
+				//  TODO: more speed up!				
 				$ope = $match[1];
 				$var = trim($match[2]);
 			}else{
