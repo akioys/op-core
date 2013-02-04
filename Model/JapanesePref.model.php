@@ -20,6 +20,12 @@ class Model_JapanesePref extends Model_Model
 		return $pref;
 	}
 
+	function GetName( $index )
+	{
+		$pref = $this->Get();
+		return $pref[$index];
+	}
+	
 	function UsedToForm( $args=null )
 	{
 		return self::UsedToForms( $args );
