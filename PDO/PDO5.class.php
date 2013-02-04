@@ -587,17 +587,6 @@ class PDO5 extends OnePiece5
 		
 		//  execute
 		$num = $this->query($qu,'update');
-		/*
-		if( $st = $this->pdo->query($qu) ){
-			//  num rows
-			$num = $st->rowCount();
-		}else{
-			//  failed
-			$num = false;
-			$temp = $this->pdo->errorInfo();
-			$this->StackError("{$temp[2]} : {$this->qu}");
-		}
-		*/
 		
 		return $num;
 	}
@@ -621,15 +610,7 @@ class PDO5 extends OnePiece5
 		}
 		
 		//  execute
-		if( $st = $this->pdo->query($this->qu) ){
-			//  num rows
-			$num = $st->rowCount();
-		}else{
-			//  failed
-			$num = false;
-			$temp = $this->pdo->errorInfo();
-			$this->StackError("{$temp[2]} : {$this->qu}");
-		}
+		$num = $this->query($qu,'update');
 		
 		return $num;
 	}
