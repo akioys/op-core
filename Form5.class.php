@@ -495,6 +495,10 @@ class Form5 extends OnePiece5
 			$config->$input_name = $this->GetInputValueRaw( $input_name, $form_name );
 		}
 		
+		//  remove submit button
+		unset($config->submit);
+		unset($config->submit_button);
+		
 		return $config;
 	}
 
