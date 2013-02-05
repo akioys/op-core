@@ -573,7 +573,6 @@ class DML extends OnePiece5
 			if(!$this->ConvertAggregate( $conf, $agg )){
 				return false;
 			}
-		//	$join = array_merge( $join, $agg );
 		}
 		
 		if( isset($conf['case']) ){
@@ -591,13 +590,9 @@ class DML extends OnePiece5
 		}
 		
 		//  exists select column
-		$count = count($join) + count($agg);
-		if( $count ){
-			if( $count === 1 ){
-				if( empty($join[0]) ){
-					return '*';
-				}
-			}
+		if( !count($join) and !count($agg) and !$cols){
+			$return = '*';
+		}else{
 			
 			//  Standard
 			//if( $temp = array_diff( $join, $agg ) ){
@@ -605,15 +600,12 @@ class DML extends OnePiece5
 				$return .= $return ? ', ': '';
 				$return .= '`'.implode( '`, `', $join ).'`';
 			}
-			
+						
 			//  aggregate
 			if( $agg ){
 				$return .= $return ? ', ': '';
 				$return .= implode( ', ', $agg );
 			}
-		//	return $return;
-		}else{
-		//	return '*';
 		}
 		
 		return $return ? $return: '*';
