@@ -573,7 +573,6 @@ class DML extends OnePiece5
 			if(!$this->ConvertAggregate( $conf, $agg )){
 				return false;
 			}
-		//	$join = array_merge( $join, $agg );
 		}
 		
 		if( isset($conf['case']) ){
@@ -591,13 +590,9 @@ class DML extends OnePiece5
 		}
 		
 		//  exists select column
-		$count = count($join) + count($agg);
-		if( $count ){
-			if( $count === 1 ){
-				if( empty($join[0]) ){
-					return '*';
-				}
-			}
+		if( !count($join) and !count($agg) and !$cols){
+			$return = '*';
+		}else{
 			
 			//  Standard
 			//if( $temp = array_diff( $join, $agg ) ){
@@ -605,15 +600,12 @@ class DML extends OnePiece5
 				$return .= $return ? ', ': '';
 				$return .= '`'.implode( '`, `', $join ).'`';
 			}
-			
+						
 			//  aggregate
 			if( $agg ){
 				$return .= $return ? ', ': '';
 				$return .= implode( ', ', $agg );
 			}
-		//	return $return;
-		}else{
-		//	return '*';
 		}
 		
 		return $return ? $return: '*';
@@ -722,13 +714,16 @@ class DML extends OnePiece5
 				continue;
 				
 			}else if( is_null($var) or strtolower($var) === 'null' ){
+				//  TODO: more speed up!
 				$join[] = "$column IS NULL";
 				continue;
-			}else if( strtolower($var) === '!null' or strtolower($var) === 'not null' ){
+			}else if( strtolower($var) === '!null' or strtolower($var) === '! null' or strtolower($var) === 'not null' ){
+				//  TODO: more speed up!
 				$join[] = "$column IS NOT NULL";
 				continue;
 		//	}else if(preg_match('/^([><]?=) ([-0-9: ]+)$/i',$var,$match)){
-			}else if(preg_match('/^([><]?=?) ([-0-9: ]+)$/i',$var,$match)){				
+			}else if(preg_match('/^([><]?=?) ([-0-9: ]+)$/i',$var,$match)){
+				//  TODO: more speed up!				
 				$ope = $match[1];
 				$var = trim($match[2]);
 			}else{

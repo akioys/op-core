@@ -495,6 +495,10 @@ class Form5 extends OnePiece5
 			$config->$input_name = $this->GetInputValueRaw( $input_name, $form_name );
 		}
 		
+		//  remove submit button
+		unset($config->submit);
+		unset($config->submit_button);
+		
 		return $config;
 	}
 
@@ -1658,7 +1662,7 @@ class Form5 extends OnePiece5
 	
 	/*******************************************************************************/
 	
-	function Debug($form_name=null)
+	function Debug( $form_name=null, $label=null )
 	{
 		if(!$this->admin() ){
 			$this->mark('Not admin.');
@@ -1667,7 +1671,7 @@ class Form5 extends OnePiece5
 		
 		if(!$form_name){
 			if(!$form_name = $this->GetCurrentFormName()){
-				$this->mark('Empty form_name.');
+				$this->mark('![ .red [Debug method is required form_name.]]');
 				return false;
 			}
 		}
@@ -1677,9 +1681,9 @@ class Form5 extends OnePiece5
 		$temp['Error']	 = Toolbox::toArray($this->status->$form_name->error);
 		$temp['Errors']	 = $this->status->$form_name->stack;
 		$temp['session'] = $this->GetSession('form');
-
-		$this->mark(__METHOD__,'debug');
-		$this->d($temp,'debug');
+		
+		$this->mark( __METHOD__, $label );
+		$this->d( $temp, $label);
 	}
 	
 	function Error( $input_name, $html='span 0xff0000', $form_name=null )
