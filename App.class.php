@@ -144,7 +144,7 @@ class App extends NewWorld5
 
 	function SetLang( $var )
 	{
-		$this->SetEnv('lang',$args);
+		$this->SetEnv('lang',$var);
 	}
 	
 	function Lang()
@@ -154,7 +154,7 @@ class App extends NewWorld5
 
 	function SetCharset( $var )
 	{
-		$this->SetEnv('charset',$args);
+		$this->SetEnv('charset',$var);
 	}
 	
 	function Charset( $args=null )
@@ -176,12 +176,12 @@ class App extends NewWorld5
 	
 	function SetKeyword( $var )
 	{
-		$this->SetEnv('keywords',$args);
+		$this->SetEnv('keywords',$var);
 	}
 	
 	function SetKeywords( $var )
 	{
-		$this->SetEnv('keywords',$args);
+		$this->SetEnv('keywords',$var);
 	}
 	
 	function Keywords()
@@ -191,7 +191,7 @@ class App extends NewWorld5
 
 	function SetDescription( $var )
 	{
-		$this->SetEnv('description',$args);
+		$this->SetEnv('description',$var);
 	}
 	
 	function Description()
