@@ -16,7 +16,7 @@ if(!function_exists('__autoload')){
 				return;
 				
 			case 'App':
-				$class_name = 'NewWorld5';
+			//	$class_name = 'NewWorld5';
 			
 			case 'DML':
 			case 'DML5':
@@ -42,7 +42,7 @@ if(!function_exists('__autoload')){
 		// check
 		foreach( $dirs as $dir ){
 			$file_path = rtrim($dir,DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $file_name;
-			//print $file_path . '<br/>' . PHP_EOL;
+		//	print $file_path . '<br/>' . PHP_EOL;
 			if( file_exists($file_path) ){
 				include_once($file_path);
 				break;
