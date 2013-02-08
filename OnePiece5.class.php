@@ -15,8 +15,8 @@ if(!function_exists('__autoload')){
 			case 'Memcached':
 				return;
 				
-			case 'App':
-				$class_name = 'NewWorld5';
+		//	case 'App':
+		//		$class_name = 'NewWorld5';
 			
 			case 'DML':
 			case 'DML5':
@@ -1862,7 +1862,7 @@ __EOL__;
 	 * @param boolen $args
 	 */
 	function Vivre( $register )
-	{		
+	{
 		if( $register ){
 			// 　register
 			if($this->GetEnv('vivre')){
