@@ -56,4 +56,21 @@ class Config extends stdClass
 			}
 		}
 	}
+	
+	function D()
+	{
+		$cli  = $this->GetEnv('cli');
+		$line = $this->GetCallerLine();
+		
+		//  
+		$this->p($line,'div');
+		
+		//  
+		if( $cli ){
+			var_dump( Toolbox::toArray($this) );
+		}else{
+			Dump::D(Toolbox::toArray($this));
+		}
+	}
 }
+
