@@ -33,6 +33,9 @@ abstract class NewWorld5 extends OnePiece5
 		//  init
 		//$this->Init();
 		
+		//  Vivre
+		$this->vivre(true);
+		
 		//  result
 		return $io;
 	}
@@ -47,6 +50,8 @@ abstract class NewWorld5 extends OnePiece5
 		//  flush buffer
 		ob_end_flush();
 		
+		//  Vivre
+		$this->vivre(false);
 		
 		//  
 		$io = parent::__destruct();
