@@ -278,7 +278,9 @@ abstract class NewWorld5 extends OnePiece5
 		
 		//  
 		if( $this->content ){
-			$this->p('![ .big .bold .red [ Lost <?php $this->Content(); ?> ]]');
+			$message = 'Does not call Content-method. Please call to Content-method from layout.'.PHP_EOL.
+					   'Example: <?php $this->Content(); ?>';
+			$this->p("![ .big .bold .red [$message]]");
 			print $this->content;
 			$this->content = '';
 		}
