@@ -679,35 +679,19 @@ class Form5 extends OnePiece5
 	
 	private function SaveFile( $input, $form_name )
 	{
-//		$this->mark(__METHOD__ .": ".$input->name);
-		
 		$input_name = $input->name;
-
+		
 		$save_value = $this->GetInputValueRaw($input->name,$form_name);
 		$post_value = $this->GetRequest($input->name, $form_name);
-
-		/*
-		$this->d($input->name);
-		$this->d($post_value);
-		$this->d($save_value);
-		var_dump($save_value);
-		*/
 		
 		if( $save_value ){
-			/*
-			$this->mark($input->type);
-			$this->mark($save_value);
-			$this->mark($post_value);
-			$this->mark('![ .green [count='.count($post_value).']]');
-			*/
 			
 			//  delete routine
 			if( is_array($post_value) and count($post_value) == 1 and empty($post_value[0]) ){
 				
-			//	$this->mark('![ .red [challenge to delete the upload file.]]');
-				
 				//  challenge to delete the upload file.
 				if(!unlink($save_value)){
+					
 					//  delete is failed.
 					$this->StackError("Can not delete the file. ($value)");
 
@@ -715,10 +699,8 @@ class Form5 extends OnePiece5
 					$value = $this->ConvertURL($save_value);
 					$id = $form_name.'-'.$input_name.'-'.md5($value);
 					
+					//  ???
 					$_POST[$input_name][$id] = $value;
-
-					//  check
-					$this->d($_POST);
 					
 					return false;
 				}
@@ -726,7 +708,7 @@ class Form5 extends OnePiece5
 				//  Reset form config.
 				$this->SetInputValue(null, $input_name, $form_name);
 				
-				//$this->mark("![ .red [Remove $save_value]]");
+				//  Status
 				$this->SetStatus( $form_name, "XX: File delete is success. ($form_name, $input_name)");
 				return true;
 			}
@@ -734,7 +716,6 @@ class Form5 extends OnePiece5
 		
 		if( isset($_FILES[$input->name]) ){
 			$_file = $_FILES[$input->name];
-//			$this->d($_file);
 			
 			$name  = $_file['name'];
 			$type  = $_file['type'];
@@ -790,14 +771,14 @@ class Form5 extends OnePiece5
 					$path = sys_get_temp_dir() .DIRECTORY_SEPARATOR. md5($name . $op_uniq_id).".$ext";
 				}
 
-                //  mkdir
-                if(!file_exists(dirname($path))){
+                //  Check directory exists
+                if(!file_exists( dirname($path) )){
                     if(!$io = mkdir( dirname($path), 0766, true ) ){                    	
-                    	$this->StackError("Failed make directory. ($path)");
+                    	$this->StackError("Failed make directory. (".dirname($path).")");
                     	return false;
                     }
                 }
-
+				
 				//  file is copy
                 $io = copy($tmp, $path);
                 
@@ -805,10 +786,7 @@ class Form5 extends OnePiece5
 				
 				if( $io ){
 					$this->SetStatus( $form_name, "OK: file copy to $path");
-					
-					$this->mark("TEST: $path");
 					$this->SetInputValue( $path, $input_name, $form_name );
-					
 					return $path;
 				}else{
 					$this->SetStatus( $form_name, "NG: file copy to $path");
@@ -1575,7 +1553,7 @@ class Form5 extends OnePiece5
 					if( isset($checked) and $checked ){
 						$attr .= ' checked="checked"';
 					}
-					$tag .= sprintf('<input type="%s" name="%s" value="%s" id="%s" %s />%s', $type, $name, $value, $id, $attr, $label);
+					$tag .= sprintf('<nobr><input type="%s" name="%s" value="%s" id="%s" %s />%s</nobr>', $type, $name, $value, $id, $attr, $label);
 				}
 				break;
 		}
