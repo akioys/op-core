@@ -1,7 +1,7 @@
 <?php
 
 include_once('OnePiece5.class.php');
- 
+
 class Form5 extends OnePiece5
 {
 	public	$status;
@@ -166,6 +166,7 @@ class Form5 extends OnePiece5
 	
 	const STATUS_VISIT_FIRST       = '1st visit';
 	const STATUS_SESSION_DESTORY   = 'session is destory';
+	const STATUS_TOKEN_KEY_EMPTY   = 'empty submit token key';
 	const STATUS_TOKEN_KEY_MATCH   = 'match token key';
 	const STATUS_TOKEN_KEY_UNMATCH = 'unmatch token key';
 	const STATUS_UNKNOWN_ERROR     = 'unknown error';
@@ -176,17 +177,32 @@ class Form5 extends OnePiece5
 			return false;
 		}
 		
+		$token_key_name = $this->GetTokenKeyName($form_name);
 		$save_token = $this->GetTokenKey($form_name);
-		$post_token = Toolbox::GetRequest($this->GetTokenKeyName($form_name));
+		$post_token = Toolbox::GetRequest( $token_key_name );
 		
-		//$this->mark("save=$save_token");
-		//$this->mark("post=$post_token");
+		/*
+		$this->mark("key=$token_key_name");
+		$this->mark("save=$save_token");
+		$this->mark("post=$post_token");
+		*/
 		
 		if( !$save_token and !$post_token ){
 			$this->SetStatus( $form_name, self::STATUS_VISIT_FIRST );
 			return false;
 		}else if(!$save_token and $post_token){
 			$this->SetStatus( $form_name, self::STATUS_SESSION_DESTORY );
+			return false;
+		}else if( $save_token and !$post_token ){
+			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_EMPTY );
+			
+			if( $_SERVER['REQUEST_URI']{strlen($_SERVER['REQUEST_URI'])-1} !== '/' ){
+				//  Apatch is forward by real directory.
+				if( file_exists($_SERVER['DOCUMENT_ROOT'].$_SERVER['REQUEST_URI']) ){
+					$this->mark('Add to slash(/) at action tail.');
+				}
+			}
+			
 			return false;
 		}else if( $save_token !== $post_token ){
 			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_UNMATCH );
@@ -333,17 +349,47 @@ class Form5 extends OnePiece5
 	
 	/*******************************************************************************/
 	
+	/**
+	 * Direct print
+	 * 
+	 * @param  unknown $input_name
+	 * @param  string  $joint
+	 * @return string
+	 */
 	public function Value( $input_name, $form_name=null, $joint=null )
 	{
-		print $this->GetInputValue( $input_name, $form_name, $joint );
+		$form_name = null;
+		$value = $this->GetInputValue( $input_name, $form_name, $joint );
+		
+		$input = $this->GetConfig( $form_name, $input_name );
+		
+		if( in_array( $input->type, array('select','checkbox','radio') ) ){
+			if( isset($input->options->$value) ){
+		//	if( array_key_exists($value, $input->options) ){
+				$value = $input->options->$value->label;
+			}else{
+			//	$this->d( Toolbox::toArray($input->options) );
+				foreach( $input->options as $option ){
+					if( $option->value == $value ){
+						$value = $option->label;
+						break;
+					}
+				} 
+			}
+		}
+		
+		print nl2br($value);
+		
 		return 'This method(function) is print.';
 	}
 
+	/*
     public function InputValue( $input_name, $form_name=null, $joint=null )
 	{
 		print $this->GetInputValue( $input_name, $form_name, $joint );
 		return 'This method(function) is print.';
 	}
+	*/
 	
 	public function GetValue( $input_name, $form_name=null, $joint=null )
 	{
@@ -423,10 +469,14 @@ class Form5 extends OnePiece5
 		return $value;
 	}
 	
-	public function GetInputValueAll($form_name)
+	public function GetInputValueAll( $form_name, $force=false )
 	{
-		if(!$form = $this->GetConfig( $form_name )){
-			return false;
+		if( $force ){
+			$this->mark("form_name = $form_name is not initialized. but force get.");
+		}else{
+			if(!$form = $this->GetConfig( $form_name )){
+				return false;
+			}
 		}
 		
 		$config = new Config();
@@ -448,7 +498,29 @@ class Form5 extends OnePiece5
 			$config->$input_name = $this->GetInputValueRaw( $input_name, $form_name );
 		}
 		
+		//  remove submit button
+		unset($config->submit);
+		unset($config->submit_button);
+		
 		return $config;
+	}
+
+	function GetInputOptionValue( $option_name, $input_name, $form_name=null )
+	{
+		if(!$options = $this->GetConfig( $form_name, $input_name, 'options' )){
+			return false;
+		}
+		
+		$this->d($options);
+		
+		
+		return $value;
+	}
+	
+	function GetInputOptionLabel( $option_name, $input_name, $form_name )
+	{
+
+		return $label;
 	}
 	
 	public function SetInputValue( $value, $input_name, $form_name )
@@ -1164,9 +1236,9 @@ class Form5 extends OnePiece5
 		$form_name = $form->name;
 		$method	 = $form->method === 'get' ? 'GET' : 'POST';
 		$charset = isset($form->charset)   ? $form->charset: $this->GetEnv('charset');
-		$class	 = empty($form->class)     ? '':     sprintf('class="%s"', $form->class);
-		$style	 = empty($form->style)     ? '':     sprintf('style="%s"', $form->style);
-		$enctype = empty($form->multipart) ? '':     sprintf('enctype="multipart/form-data"');
+		$class	 = empty($form->class)     ? null: sprintf('class="%s"', $form->class);
+		$style	 = empty($form->style)     ? null: sprintf('style="%s"', $form->style);
+		$enctype = empty($form->multipart) ? null: sprintf('enctype="multipart/form-data"');
 		
 		//  action
 		if( is_null($action) ){
@@ -1218,10 +1290,14 @@ class Form5 extends OnePiece5
 		return null;
 	}
 	
-	public function Clear($form_name)
+	public function Clear( $form_name, $force=false )
 	{
 		if(!$this->CheckConfig($form_name)){
-			return false;
+			if( $force ){
+				$this->mark("form_name = $form_name is not initialized. buy force cleard.");
+			}else{
+				return false;
+			}
 		}
 
         //  Submit value is clear
@@ -1291,7 +1367,7 @@ class Form5 extends OnePiece5
 					$join[] = sprintf('%s="%s"',$key,$var);
 			}
 		}
-
+		
         //  name
         if(empty($name)){
             $name = $input->name;
@@ -1368,8 +1444,12 @@ class Form5 extends OnePiece5
 			}
 		}
 		
+		//  tail
+		$tail = $this->Decode($tail);
+		
 		//  Escape
-		$value = $this->Escape($value);
+		//var_dump($value);
+		//$value = $this->Escape($value);
 		
 		// radio
 		if('radio' === $type){
@@ -1439,7 +1519,7 @@ class Form5 extends OnePiece5
 					// create remover
 					$tag = $this->CreateInputTag($remover, $form_name);
 				}else{
-					$tag = sprintf('<input type="%s" name="%s" value="%s" %s />', $type, $input_name, $value, $attr);
+					$tag = sprintf('<input type="%s" name="%s" value="%s" %s />'.$tail, $type, $input_name, $value, $attr);
 				}
 				break;
 				
@@ -1512,7 +1592,7 @@ class Form5 extends OnePiece5
 	{
 		$options = '';
 		foreach( $args as $option ){
-			
+			//  
 			$value = $option->value;
 			$label = isset($option->label) ? $option->label: $value;
 			$selected = $value == $save_value ? 'selected="selected"': '';
@@ -1550,21 +1630,6 @@ class Form5 extends OnePiece5
 		return 'This method(function) is print.';
 	}
 	
-	function Textarea( $input_name, $form_name=null )
-	{
-		$this->Input( $input_name, $form_name=null );
-	}
-	
-	function Select( $input_name, $form_name=null )
-	{
-		$this->Input( $input_name, $form_name=null );
-	}
-	
-	function Button( $input_name, $form_name=null )
-	{
-		$this->Input( $input_name, $form_name=null );
-	}
-	
 	function Label( $input_name, $form_name=null )
 	{
 		print $this->GetInputLabel( $input_name, $form_name=null );
@@ -1573,7 +1638,8 @@ class Form5 extends OnePiece5
 	
 	function InputLabel( $input_name, $form_name=null )
 	{
-		print $this->GetInputLabel( $input_name, $form_name=null );
+		$label = $this->GetInputLabel( $input_name, $form_name=null );
+		print $label;
 		return 'This method(function) is print.';
 	}
 
@@ -1599,7 +1665,7 @@ class Form5 extends OnePiece5
 	
 	/*******************************************************************************/
 	
-	function Debug($form_name=null)
+	function Debug( $form_name=null, $label=null )
 	{
 		if(!$this->admin() ){
 			$this->mark('Not admin.');
@@ -1608,19 +1674,19 @@ class Form5 extends OnePiece5
 		
 		if(!$form_name){
 			if(!$form_name = $this->GetCurrentFormName()){
-				$this->mark('Empty form_name.');
+				$this->mark('![ .red [Debug method is required form_name.]]');
 				return false;
 			}
 		}
 		
-		$this->mark('Output of Debug()');
 		$temp['form_name'] = $form_name;
 		$temp['Status']	 = $this->GetStatus($form_name);
 		$temp['Error']	 = Toolbox::toArray($this->status->$form_name->error);
 		$temp['Errors']	 = $this->status->$form_name->stack;
 		$temp['session'] = $this->GetSession('form');
 		
-		$this->d($temp);
+		$this->mark( __METHOD__, $label );
+		$this->d( $temp, $label);
 	}
 	
 	function Error( $input_name, $html='span 0xff0000', $form_name=null )

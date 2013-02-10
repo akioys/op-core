@@ -34,4 +34,26 @@ class Config extends stdClass
 			printf('<p>%s, %s</p>',__METHOD__, $name);
 		}
 	}
+	
+	function Merge( $config )
+	{
+		foreach( $config as $key => $var ){
+			if( empty($this->$key) ){
+				$this->$key = $var;
+			}else{
+				switch( gettype( $this->$key ) ){
+					case 'object':
+						$this->$key->merge($var);
+						break;
+						
+					case 'array':
+						print '<p>' . __FILE__ . __LINE__ . '</p>';
+						break;
+						
+					default:
+						$this->$key = $var;
+				}
+			}
+		}
+	}
 }
