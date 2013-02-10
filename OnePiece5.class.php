@@ -15,8 +15,8 @@ if(!function_exists('__autoload')){
 			case 'Memcached':
 				return;
 				
-			case 'App':
-				$class_name = 'NewWorld5';
+		//	case 'App':
+		//		$class_name = 'NewWorld5';
 			
 			case 'DML':
 			case 'DML5':
@@ -175,9 +175,11 @@ if(!function_exists('OnePieceExceptionHandler')){
 }
 
 /**
+ * OnePiece is OnePiece-Framework's core.
  * 
- * @author Tomoaki Nagahara
- *
+ * @version   1.0
+ * @author    Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
+ * @copyright 2009 (C) Tomoaki Nagahara All right reserved.
  */
 class OnePiece5
 {
@@ -675,6 +677,7 @@ __EOL__;
 	static private function Env( $key, $var=null, $ope )
 	{
 		// convert key name
+		//switch( strcasecmp($key) ){
 		$key = strtolower($key);
 		switch( $key ){
 			case 'nl':
@@ -998,7 +1001,12 @@ __EOL__;
 				if(!$args[0]){
 					$args = '![.red[null]]';
 				}else{
-					$str = var_export($args[0],true);
+					if( is_object($args[0]) ){
+						$var_export = get_class($args[0]);
+					}else{
+						$var_export = var_export($args[0],true);
+					}
+					$str = $var_export;
 					$str = str_replace(array("\n","\r","\t"), '', $str);
 					$str = str_replace("\\'", "'", $str);
 					$str = str_replace(",)", ") ", $str);
@@ -1235,6 +1243,36 @@ __EOL__;
 			print strip_tags($line);
 			print serialize($args);
 		}
+	}
+	
+	static function Decode( $args, $charset=null)
+	{
+		if(!$charset){
+			$charset = self::GetEnv('charset');
+		}
+
+		switch($type = gettype($args)){
+			
+			case 'array':
+			case 'object':
+				foreach( $args as $key => $var ){
+					$key  = self::Decode( $key, $charset );
+					$var  = self::Decode( $var, $charset );
+					if( $type === 'array' ){
+						$temp[$key] = $var;
+					}else if( $type === 'object' ){
+						$temp->$key = $var;
+					}
+				}
+				$args = $temp;
+				break;
+				
+			default:
+				$args = html_entity_decode( $args, ENT_QUOTES, $charset );
+				break;
+		}
+		
+		return $args;
 	}
 	
 	/**
@@ -1630,62 +1668,68 @@ __EOL__;
 	
 	function Model($name)
 	{
-		if( $name == 'Account' ){
-			$this->mark();
-		}
-		
-		//  name check
-		if(!$name){
-			$this->StackError('Model name is empty.');
-			return false;
-		}
-		
-		//  already instanced?
-		if( isset( $_SERVER['test']['model'][$name] ) ){
-			return $_SERVER['test']['model'][$name];
-		}
-		
-		//  include Model_model
-		if(!class_exists( 'Model_Model', false ) ){
-			$path = self::ConvertPath('op:/Model/Model.model.php');
-			if(!$io = include_once($path)){
-				$msg = "Failed to include the Model_model. ($path)";
-				$this->StackError($msg);
-				throw new OpException($msg);
+		try{
+			if( $name == 'Account' ){
+				$this->mark();
 			}
-		}
-		
-		//  master
-		$path = self::ConvertPath("op:/Model/{$name}.model.php");
-		if( $io = file_exists($path) ){
-			$io = include_once($path);
-		}
-		
-		//  user
-		if(!$io ){
-			$model_dir = $this->GetEnv('model-dir');
-			$path  = self::ConvertPath("{$model_dir}{$name}.model.php");
+			
+			//  name check
+			if(!$name){
+				$this->StackError('Model name is empty.');
+				return false;
+			}
+			
+			//  already instanced?
+			if( isset( $_SERVER['test']['model'][$name] ) ){
+				return $_SERVER['test']['model'][$name];
+			}
+			
+			//  include Model_model
+			if(!class_exists( 'Model_Model', false ) ){
+				$path = self::ConvertPath('op:/Model/Model.model.php');
+				if(!$io = include_once($path)){
+					$msg = "Failed to include the Model_model. ($path)";
+					$this->StackError($msg);
+					throw new OpException($msg);
+				}
+			}
+			
+			//  master
+			$path = self::ConvertPath("op:/Model/{$name}.model.php");
 			if( $io = file_exists($path) ){
 				$io = include_once($path);
 			}
+			
+			//  user
+			if(!$io ){
+				$model_dir = $this->GetEnv('model-dir');
+				$path  = self::ConvertPath("{$model_dir}{$name}.model.php");
+				if( $io = file_exists($path) ){
+					$io = include_once($path);
+				}
+			}
+			
+			//  Could be include?
+			if(!$io){
+				$msg = "Failed to include the $name_model. ($path)";
+				$this->StackError($msg);
+				throw new OpModelException($msg);
+			}
+			
+			//  instance of model
+			$model_name = 'Model_'.$name;//.'_model';
+			if(!$_SERVER['test']['model'][$name] = new $model_name ){
+				$msg = "Failed to include the Model_Model. ($path)";
+				$this->StackError($msg);
+				throw new OpModelException($msg);
+			}
+			
+			return $_SERVER['test']['model'][$name];
+		}catch( Exception $e ){
+			$this->mark( $e->getMessage() );
+			$this->StackError( $e->getMessage() );
+			return new OnePiece5();
 		}
-		
-		//  Could be include?
-		if(!$io){
-			$msg = "Failed to include the $name_model. ($path)";
-			$this->StackError($msg);
-			throw new OpModelException($msg);
-		}
-		
-		//  instance of model
-		$model_name = 'Model_'.$name;//.'_model';
-		if(!$_SERVER['test']['model'][$name] = new $model_name ){
-			$msg = "Failed to include the Model_Model. ($path)";
-			$this->StackError($msg);
-			throw new OpModelException($msg);
-		}
-		
-		return $_SERVER['test']['model'][$name];
 	}
 	
 	/* @var $pdo PDO5 */
@@ -1820,7 +1864,7 @@ __EOL__;
 	 * @param boolen $args
 	 */
 	function Vivre( $register )
-	{		
+	{
 		if( $register ){
 			// 　register
 			if($this->GetEnv('vivre')){

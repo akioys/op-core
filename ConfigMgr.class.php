@@ -4,6 +4,12 @@ abstract class ConfigMgr extends OnePiece5
 {
 	protected $config;
 	
+	function config()
+	{
+		$this->mark('Your misstake','misstake');
+		return $this;
+	}
+	
 	function Init($config=null)
 	{
 		parent::Init();
@@ -151,9 +157,11 @@ abstract class ConfigMgr extends OnePiece5
 
 	function GenerateFormFromDatabase( $struct, $record=null )
 	{
+	//	$this->d($struct);
+		
+		
 		//  init form config
 		$config = new Config();
-		//$this->d($struct);
 		
 		//  
 		foreach( $struct as $name => $column ){
@@ -219,6 +227,8 @@ abstract class ConfigMgr extends OnePiece5
 					$input->type = 'datetime';
 					$input->validate->permit = 'datetime';
 					break;
+				default:
+					$input->type = $column['type'];
 			}
 			//$this->mark($type);
 			

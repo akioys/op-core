@@ -389,7 +389,7 @@ class PDO5 extends OnePiece5
 			//$this->d( Toolbox::toArray($config) );
 			return false;
 		}
-	
+		
 		//  return all
 		if( !$column or $limit != 1 ){
 			return $record;
@@ -397,12 +397,14 @@ class PDO5 extends OnePiece5
 	
 		//  return one
 		if( count($columns) === 1 ){
-			return isset($record[$columns[0]]) ? $record[$columns[0]]: null;
+		//	return isset($record[$columns[0]]) ? $record[$columns[0]]: null;
+			return array_shift($record);
 		}
 	
 		//  return many
 		foreach( $record as $key => $var ){
-			$return[$key] = $var;
+		//	$return[$key] = $var; // default is not index key.
+			$return[] = $var;
 		}
 	
 		return $return;
@@ -585,17 +587,6 @@ class PDO5 extends OnePiece5
 		
 		//  execute
 		$num = $this->query($qu,'update');
-		/*
-		if( $st = $this->pdo->query($qu) ){
-			//  num rows
-			$num = $st->rowCount();
-		}else{
-			//  failed
-			$num = false;
-			$temp = $this->pdo->errorInfo();
-			$this->StackError("{$temp[2]} : {$this->qu}");
-		}
-		*/
 		
 		return $num;
 	}
@@ -619,15 +610,7 @@ class PDO5 extends OnePiece5
 		}
 		
 		//  execute
-		if( $st = $this->pdo->query($this->qu) ){
-			//  num rows
-			$num = $st->rowCount();
-		}else{
-			//  failed
-			$num = false;
-			$temp = $this->pdo->errorInfo();
-			$this->StackError("{$temp[2]} : {$this->qu}");
-		}
+		$num = $this->query($qu,'update');
 		
 		return $num;
 	}
