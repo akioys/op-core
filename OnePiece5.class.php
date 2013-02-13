@@ -15,9 +15,6 @@ if(!function_exists('__autoload')){
 			case 'Memcached':
 				return;
 				
-			case 'App':
-			//	$class_name = 'NewWorld5';
-			
 			case 'DML':
 			case 'DML5':
 			case 'DDL':
@@ -1666,62 +1663,68 @@ __EOL__;
 	
 	function Model($name)
 	{
-		if( $name == 'Account' ){
-			$this->mark();
-		}
-		
-		//  name check
-		if(!$name){
-			$this->StackError('Model name is empty.');
-			return false;
-		}
-		
-		//  already instanced?
-		if( isset( $_SERVER['test']['model'][$name] ) ){
-			return $_SERVER['test']['model'][$name];
-		}
-		
-		//  include Model_model
-		if(!class_exists( 'Model_Model', false ) ){
-			$path = self::ConvertPath('op:/Model/Model.model.php');
-			if(!$io = include_once($path)){
-				$msg = "Failed to include the Model_model. ($path)";
-				$this->StackError($msg);
-				throw new OpException($msg);
+		try{
+			if( $name == 'Account' ){
+				$this->mark();
 			}
-		}
-		
-		//  master
-		$path = self::ConvertPath("op:/Model/{$name}.model.php");
-		if( $io = file_exists($path) ){
-			$io = include_once($path);
-		}
-		
-		//  user
-		if(!$io ){
-			$model_dir = $this->GetEnv('model-dir');
-			$path  = self::ConvertPath("{$model_dir}{$name}.model.php");
+			
+			//  name check
+			if(!$name){
+				$this->StackError('Model name is empty.');
+				return false;
+			}
+			
+			//  already instanced?
+			if( isset( $_SERVER['test']['model'][$name] ) ){
+				return $_SERVER['test']['model'][$name];
+			}
+			
+			//  include Model_model
+			if(!class_exists( 'Model_Model', false ) ){
+				$path = self::ConvertPath('op:/Model/Model.model.php');
+				if(!$io = include_once($path)){
+					$msg = "Failed to include the Model_model. ($path)";
+					$this->StackError($msg);
+					throw new OpException($msg);
+				}
+			}
+			
+			//  master
+			$path = self::ConvertPath("op:/Model/{$name}.model.php");
 			if( $io = file_exists($path) ){
 				$io = include_once($path);
 			}
+			
+			//  user
+			if(!$io ){
+				$model_dir = $this->GetEnv('model-dir');
+				$path  = self::ConvertPath("{$model_dir}{$name}.model.php");
+				if( $io = file_exists($path) ){
+					$io = include_once($path);
+				}
+			}
+			
+			//  Could be include?
+			if(!$io){
+				$msg = "Failed to include the $name_model. ($path)";
+				$this->StackError($msg);
+				throw new OpModelException($msg);
+			}
+			
+			//  instance of model
+			$model_name = 'Model_'.$name;//.'_model';
+			if(!$_SERVER['test']['model'][$name] = new $model_name ){
+				$msg = "Failed to include the Model_Model. ($path)";
+				$this->StackError($msg);
+				throw new OpModelException($msg);
+			}
+			
+			return $_SERVER['test']['model'][$name];
+		}catch( Exception $e ){
+			$this->mark( $e->getMessage() );
+			$this->StackError( $e->getMessage() );
+			return new OnePiece5();
 		}
-		
-		//  Could be include?
-		if(!$io){
-			$msg = "Failed to include the $name_model. ($path)";
-			$this->StackError($msg);
-			throw new OpModelException($msg);
-		}
-		
-		//  instance of model
-		$model_name = 'Model_'.$name;//.'_model';
-		if(!$_SERVER['test']['model'][$name] = new $model_name ){
-			$msg = "Failed to include the Model_Model. ($path)";
-			$this->StackError($msg);
-			throw new OpModelException($msg);
-		}
-		
-		return $_SERVER['test']['model'][$name];
 	}
 	
 	/* @var $pdo PDO5 */
@@ -1856,7 +1859,7 @@ __EOL__;
 	 * @param boolen $args
 	 */
 	function Vivre( $register )
-	{		
+	{
 		if( $register ){
 			// 　register
 			if($this->GetEnv('vivre')){

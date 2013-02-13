@@ -113,22 +113,27 @@ class App extends NewWorld5
 		$this->SetEnv('doctype',$args);
 	}
 	
-	function Doctype($doctype=null)
+	function Doctype( $doctype=null, $version=null )
 	{
 		if(!$doctype){
 			$doctype = $this->GetEnv('doctype');
 		}
 		
 		switch($doctype){
-			case '<?xml version="1.0" encoding="UTF-8"?>':
+			case 'xml':
+				$doctype = '<?xml version="1.0" encoding="UTF-8"?>';
 				break;
 				
 			case 'xhtml':
 				$doctype = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN">';
 				break;
-				
+
 			case 'html':
-				$doctype = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">';
+				if( $version == 4 or $version == 4.01 ){
+					$doctype = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">';
+				}else{
+					$doctype = '<!DOCTYPE html>';
+				}
 				break;
 				
 			default:
@@ -139,7 +144,7 @@ class App extends NewWorld5
 
 	function SetLang( $var )
 	{
-		$this->SetEnv('lang',$args);
+		$this->SetEnv('lang',$var);
 	}
 	
 	function Lang()
@@ -149,7 +154,7 @@ class App extends NewWorld5
 
 	function SetCharset( $var )
 	{
-		$this->SetEnv('charset',$args);
+		$this->SetEnv('charset',$var);
 	}
 	
 	function Charset( $args=null )
@@ -171,12 +176,12 @@ class App extends NewWorld5
 	
 	function SetKeyword( $var )
 	{
-		$this->SetEnv('keywords',$args);
+		$this->SetEnv('keywords',$var);
 	}
 	
 	function SetKeywords( $var )
 	{
-		$this->SetEnv('keywords',$args);
+		$this->SetEnv('keywords',$var);
 	}
 	
 	function Keywords()
@@ -186,7 +191,7 @@ class App extends NewWorld5
 
 	function SetDescription( $var )
 	{
-		$this->SetEnv('description',$args);
+		$this->SetEnv('description',$var);
 	}
 	
 	function Description()
