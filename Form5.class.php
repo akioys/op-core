@@ -1,7 +1,7 @@
 <?php
 
 include_once('OnePiece5.class.php');
- 
+
 class Form5 extends OnePiece5
 {
 	public	$status;
@@ -197,7 +197,10 @@ class Form5 extends OnePiece5
 			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_EMPTY );
 			
 			if( $_SERVER['REQUEST_URI']{strlen($_SERVER['REQUEST_URI'])-1} !== '/' ){
-				$this->mark('Add slash(/) to action tail.');
+				//  Apatch is forward by real directory.
+				if( file_exists($_SERVER['DOCUMENT_ROOT'].$_SERVER['REQUEST_URI']) ){
+					$this->mark('Add to slash(/) at action tail.');
+				}
 			}
 			
 			return false;
