@@ -5,15 +5,8 @@ include_once('OnePiece5.class.php');
 /**
  * The NewWorld is the new world.
  * 
- * NewWorld's job is dispatched to index.php, only.
- * before index.php is your like. 
- * 
- * - 2012-06-xx NewWorld5
- * - 2011-01-xx NewWorld
- * - 2010-01-xx NewWorld0
- * 
- * 1st Attend system is NewWorld0 - 2010-12
- * 2nd Attend system is replace at NewWorld - 2011-09
+ * NewWorld's job is only to dispatch the index.php.
+ * After dispatch to index.php, your freedom.
  * 
  * @author Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
  *
@@ -25,33 +18,47 @@ abstract class NewWorld5 extends OnePiece5
 	 * 
 	 * @var array
 	 */
-	private $routeTable = null;
 	private $isDispatch = null;
+	private $routeTable = null;
 	private $content    = null;
 	
 	function __construct($args=array())
 	{
-		// output is buffering.
+		//  output is buffering.
 		$io = ob_start();
 		$io = parent::__construct($args);
-		$this->StackLog('START');
-		$this->Init();
+
+		//$this->StackLog('START');
 		
+		//  init
+		//$this->Init();
+		
+		//  result
 		return $io;
 	}
 	
 	function __destruct()
 	{
+		//  Called dispatch?
 		if(!$this->isDispatch){
 			$this->StackError('App has not dispatched. Please call $app->Dispatch();');
 		}
+		
+		//  flush buffer
 		ob_end_flush();
+		
+		
+		//  
 		$io = parent::__destruct();
+		
 		return $io;
 	}
 	
 	function Init()
 	{
+		//$this->isInit = true;
+		parent::Init();
+		
 		$this->GetEnv('doctype','html');
 		$this->GetEnv('title','The NewWorld is the new world');
 	}
@@ -91,98 +98,16 @@ abstract class NewWorld5 extends OnePiece5
 		// separate query
 		list( $path, $query_string ) = explode('?',$request_uri.'?');
 		$full_path = $_SERVER['DOCUMENT_ROOT'] . $path;
-		//$this->mark($full_path);
 		
 		// Does path exist?
 		if( $route = @$this->routeTable[md5($path)] ){
 			return $route;
 		}
 		
-		//  Real file is target of path through.
+		//  Real file is pass through.
 		if( preg_match('/\/([-_a-z0-9]+)\.(html|css|js)$/i',$path,$match) ){
-			
-			//  file extension
-			$extension = $match[2];
-			
-			//  access file name
-			$file_name = $match[1].'.'.$match[2];
-			
-			//  current path is App path.
-			$app_root = getcwd();
-			
-			//  document root path
-			$doc_path = $_SERVER['DOCUMENT_ROOT'];
-			
-			//  create app path
-			if( preg_match("|^$app_root(.+)|", $full_path, $match) ){
-				$app_path = $match[1];
-			}else if( preg_match("|^$doc_path(.+)|", $full_path, $match) ){
-				$app_path = $match[1];
-			}
-			
-			
-			/*
-			preg_match("|^$doc_path(.+)$file_name|",$full_path,$match);
-			$this->d($match);
-			$app_path = $match[1];
-			*/
-			
-			$route = array();
-			$route['app_root'] = $app_root;
-			$route['fullpath'] = $full_path;
-//			$route['path'] = dirname($path);
-			$route['path'] = dirname($app_path);
-			$route['file'] = $file_name;
-			$route['args'] = null;
-			$route['pass'] = true;
-			$route['ctrl'] = null;
-			$route = $this->Escape($route);
-			
-			//  Simple controller search
-			$temp = $route['path'];
-			foreach( array_reverse( explode('/',$route['path'].'/') ) as $dir ){
-				$temp = preg_replace( "|/$dir$|", '', $temp);
-				if( file_exists( getcwd() . $temp .'/'. $controller ) ){
-					$route['ctrl'] = $temp;
-					break;
-				}
-			}
-			
-			//  file exists path
-			$real_path = rtrim($app_root,'/').'/'.trim($route['path'],'/').'/'.ltrim($route['file'],'/');
-			
-			/*
-			$this->d($route);
-			$this->mark($app_path);
-			$this->mark('real_path='.$real_path);
-			*/
-			
-			//  
-			if( file_exists($real_path) ){
-				
-			//	$this->mark();
-				
-				switch( strtolower($extension) ){
-					case 'html':
-						if( $this->GetEnv('HtmlPassThrough') ){
-							return $route;
-						}else{
-							$this->mark("![.red[HtmlPassThrough is off. please \$app->SetEnv('HtmlPassThrough',true);]]");
-						}
-						break;
-						
-					case 'css':
-						$this->doCss($route);
-						exit(0);
-						
-					case 'js':
-						$this->doJs($route);
-						exit(0);
-					default:
-						$this->mark("![.red[Does not match extension. ($extension)]]");
-				}
-			}else{
-			//	$this->mark();
+			if( $route = $this->HtmlPassThrough( $match, $full_path ) ){
+				return $route;
 			}
 		}
 		
@@ -191,9 +116,6 @@ abstract class NewWorld5 extends OnePiece5
 		
 		// create absolute path
 		$absolute_path = $_SERVER['DOCUMENT_ROOT'] . $path;
-		
-		// execute dir
-//		chdir( dirname($_SERVER['SCRIPT_FILENAME']) );
 		
 		//$app_root = getcwd();
 		$app_root = $this->GetEnv('AppRoot');
@@ -231,7 +153,7 @@ abstract class NewWorld5 extends OnePiece5
 		}
 		
 		//  build
-		$route['path'] = join('/',$dirs);
+		$route['path'] = '/'.join('/',$dirs);
 		$route['file'] = $controller;
 		$route['args'] = array_reverse($args);
 		//$this->d($route);
@@ -242,9 +164,65 @@ abstract class NewWorld5 extends OnePiece5
 		return $route;
 	}
 	
-	function HtmlPassThrough()
+	function HtmlPassThrough( $match, $full_path )
 	{
+			//  file extension
+			$extension = $match[2];
+			
+			//  access file name
+			$file_name = $match[1].'.'.$match[2];
+			
+			//  current path is App path.
+			$app_root = getcwd();
+			
+			//  document root path
+			$doc_path = $_SERVER['DOCUMENT_ROOT'];
+			
+			//  create app path
+			if( preg_match("|^$app_root(.+)|", $full_path, $match) ){
+				$app_path = $match[1];
+			}else if( preg_match("|^$doc_path(.+)|", $full_path, $match) ){
+				$app_path = $match[1];
+			}
+			
+			$route = array();
+			$route['app_root'] = $app_root;
+			$route['fullpath'] = $full_path;
+			$route['path'] = dirname($app_path);
+			$route['file'] = $file_name;
+			$route['args'] = null;
+			$route['pass'] = true;
+			$route['ctrl'] = null;
+			$route = $this->Escape($route);
+			
+			//  full path is real path.
+			$real_path = $route['fullpath'];
+			
+			//  file is exists?
+			if( file_exists($real_path) ){
+				
+				switch( strtolower($extension) ){
+					case 'html':
+						if( $this->GetEnv('HtmlPassThrough') ){
+							return $route;
+						}else{
+							$this->mark("![.red[HtmlPassThrough is off. please \$app->SetEnv('HtmlPassThrough',true);]]");
+						}
+						break;
+						
+					case 'css':
+						$this->doCss($route);
+						exit(0);
+						
+					case 'js':
+						$this->doJs($route);
+						exit(0);
+					default:
+						$this->mark("![.red[Does not match extension. ($extension)]]");
+				}
+			}
 		
+		return false;
 	}
 	
 	function Dispatch($route=null)
@@ -267,8 +245,8 @@ abstract class NewWorld5 extends OnePiece5
 		// route info
 		$this->SetEnv('route',$route);
 		
-		// settigns
-		$this->doSettings($route);
+		// setting
+		$this->doSetting($route);
 		
 		// controller root
 		$app_root = $this->GetEnv('AppRoot');
@@ -278,7 +256,14 @@ abstract class NewWorld5 extends OnePiece5
 		
 		// change dir
 		$chdir = rtrim($app_root,'/') .'/'. trim($route['path'],'/');
-		chdir( $chdir );
+		
+		if( isset($route['pass']) and $route['pass'] ){
+		//	$this->mark( $chdir );
+			chdir( dirname($route['fullpath']) );
+		//	$this->mark( getcwd() );
+		}else{
+			chdir( $chdir );
+		}
 		
 		//  content
 		$this->doContent();
@@ -318,7 +303,7 @@ abstract class NewWorld5 extends OnePiece5
 		return true;
 	}
 	
-	function doSettings($route)
+	function doSetting($route)
 	{
 		/**
 		 * Search begins from AppRoot.
@@ -326,7 +311,7 @@ abstract class NewWorld5 extends OnePiece5
 		 */
 		 
 		//  Get settings file name.
-		if(!$settings = $this->GetEnv('settings-name')){
+		if(!$setting = $this->GetEnv('setting-name') ){
 			return true;
 		}
 		
@@ -336,9 +321,9 @@ abstract class NewWorld5 extends OnePiece5
 		
 		//  Search settings file, and execute settings.
 		$save_dir = getcwd();
-		foreach(explode('/', '/'. $route['path']) as $dir){
+		foreach(explode('/', $route['path']) as $dir){
 			$dirs[] = $dir;
-			$path = $app_root.join('/',$dirs)."/$settings";
+			$path = $app_root.join('/',$dirs)."/$setting";
 			
 			if( file_exists($path) ){
 				chdir( dirname($path) );
@@ -513,69 +498,6 @@ abstract class NewWorld5 extends OnePiece5
 		return $io;
 	}
 	
-	function Doctype( $args=null )
-	{
-		if( $args ){
-			$this->SetEnv('doctype',$args);
-		}else{
-			switch($this->GetEnv('doctype')){
-				case 'xhtml':
-					break;
-				case 'html, 4.01, strict':
-					break;
-				case 'html':
-				default:
-					$doctype = 'html';
-			}
-			print $doctype;
-		}
-	}
-	
-	function Lang( $args=null )
-	{
-		if( $args ){
-			$this->SetEnv('lang',$args);
-		}else{
-			print $this->GetEnv('lang');
-		}
-	}
-	
-	function Charset( $args=null )
-	{
-		if( $args ){
-			$this->SetEnv('charset',$args);
-		}else{
-			print $this->GetEnv('charset');
-		}
-	}
-	
-	function Keywords( $args=null )
-	{
-		if( $args ){
-			$this->SetEnv('keywords',$args);
-		}else{
-			print $this->GetEnv('keywords');
-		}
-	}
-	
-	function Description( $args=null )
-	{
-		if( $args ){
-			$this->SetEnv('description',$args);
-		}else{
-			print $this->GetEnv('description');
-		}
-	}
-	
-	function Title( $args=null )
-	{
-		if( $args ){
-			$this->SetEnv('title',$args);
-		}else{
-			print $this->GetEnv('title');
-		}
-	}
-	
 	function GetContent()
 	{
 		return $this->content;
@@ -619,7 +541,21 @@ abstract class NewWorld5 extends OnePiece5
  */
 class App extends NewWorld5
 {
+	function Init()
+	{
+		parent::Init();
+	}
+	
+	/**
+	 * @var ConfigMgr
+	 */
 	private $cmgr = null;
+	
+	/**
+	 * 
+	 * @param  string $cmgr
+	 * @return ConfigMgr
+	 */
 	function Config( $cmgr=null )
 	{
 		if( $cmgr ){
@@ -638,6 +574,138 @@ class App extends NewWorld5
 		}
 		return $action;
 	}
+	
+	function SetControllerName( $var )
+	{
+		return $this->SetEnv('controller-name', $var);
+	}
+	
+	function SetLayoutDir( $var )
+	{
+		$this->SetEnv('layout-root',$this->ConvertURL($var));
+		return $this->SetEnv('layout-dir', $var);
+	}
+	
+	function SetLayoutName( $var )
+	{
+		return $this->SetEnv('layout', $var);
+	}
+	
+	function SetLayoutPath( $var )
+	{
+		return $this->SetEnv('layout', $var);
+	}
+	
+	function GetTemplateDir( $var )
+	{
+		return $this->GetEnv('template-dir');
+	}
+
+	function SetTemplateDir( $var )
+	{
+		return $this->SetEnv('template-dir', $var);
+	}
+	
+	function SetHtmlPassThrough( $var )
+	{
+		return $this->SetEnv('HtmlPassThrough', $var);
+	}
+	
+	function SetTitle( $var )
+	{
+		return $this->SetEnv('title', $var);
+	}
+	
+	function Title()
+	{
+		print $this->GetEnv('title');
+	}
+	
+	function SetDoctype( $var )
+	{
+		$this->SetEnv('doctype',$args);
+	}
+	
+	function Doctype($doctype=null)
+	{
+		if(!$doctype){
+			$doctype = $this->GetEnv('doctype');
+		}
+		
+		switch($doctype){
+			case '<?xml version="1.0" encoding="UTF-8"?>':
+				break;
+				
+			case 'xhtml':
+				$doctype = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN">';
+				break;
+				
+			case 'html':
+				$doctype = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">';
+				break;
+				
+			default:
+				$doctype = '<!DOCTYPE html>';
+		}
+		print $doctype;
+	}
+
+	function SetLang( $var )
+	{
+		$this->SetEnv('lang',$args);
+	}
+	
+	function Lang()
+	{
+		print $this->GetEnv('lang');
+	}
+
+	function SetCharset( $var )
+	{
+		$this->SetEnv('charset',$args);
+	}
+	
+	function Charset( $args=null )
+	{
+		print $this->GetEnv('charset');
+	}
+	
+	function AddKeyword( $var )
+	{
+		$this->AddKeywords( $var );
+	}
+	
+	function AddKeywords( $var )
+	{
+		$keywords = $this->GetEnv('keywords');
+		$keywords.= ", $var";
+		$this->SetEnv('keywords',$keywords);
+	}
+	
+	function SetKeyword( $var )
+	{
+		$this->SetEnv('keywords',$args);
+	}
+	
+	function SetKeywords( $var )
+	{
+		$this->SetEnv('keywords',$args);
+	}
+	
+	function Keywords()
+	{
+		print $this->GetEnv('keywords');
+	}
+
+	function SetDescription( $var )
+	{
+		$this->SetEnv('description',$args);
+	}
+	
+	function Description()
+	{
+		print $this->GetEnv('description');
+	}
 }
 
 /**
@@ -649,6 +717,7 @@ class App extends NewWorld5
  * @author Tomoaki Nagahara
  *
  */
+/*
 abstract class NewWorld5Action extends OnePiece5
 {
 	function Init()
@@ -743,11 +812,6 @@ abstract class NewWorld5Action extends OnePiece5
 		print join( $separater, $join );
 	}
 	
-	/**
-	 * Set current page
-	 * 
-	 * @param integer $rpp
-	 */
 	function SetPageCurrent($page)
 	{
 		if( $page >= 1 ){
@@ -755,26 +819,17 @@ abstract class NewWorld5Action extends OnePiece5
 		}
 	}
 	
-	/**
-	 * Set Records per page.
-	 * 
-	 * @param integer $rpp
-	 */
 	function SetPageRecordsPer($rpp = 20 )
 	{
 		$this->page->per = $rpp;
 	}
 	
-	/**
-	 * Set to records count by SQL
-	 * 
-	 * @param integer $rpp
-	 */
 	function SetPageRecordsMax($count)
 	{
 		$this->page->max = $count;
 	}
 }
+*/
 
 /**
  * Abstract class is inherit.
@@ -785,6 +840,7 @@ abstract class NewWorld5Action extends OnePiece5
  * @author Tomoaki Nagahara
  *
  */
+/*
 class myAction extends NewWorld5Action
 {
 	function Init()
@@ -816,3 +872,5 @@ class myAction extends NewWorld5Action
 		return $this->{$method}($_args);
 	}
 }
+*/
+

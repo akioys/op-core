@@ -1,6 +1,6 @@
 <?php
 
-abstract class Model_model extends OnePiece5
+abstract class Model_Model extends OnePiece5
 {
 	//  Config object
 	private $config = null;
@@ -13,6 +13,8 @@ abstract class Model_model extends OnePiece5
 	
 	function Init()
 	{
+		parent::Init();
+		
 		//  init config
 		$this->config = new Config();
 		$this->config();

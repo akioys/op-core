@@ -1,27 +1,4 @@
 
-[Mark]
-
- 	* Overview
- 	
- 		* Marking line.
- 		
- 		* print only admin.
-
-	* How to use
-	
-		$op->Mark();
-
-[D]
-
- 	* Overview
- 	
- 		* Dump
-	
-	* How to use
-	
-		$op->D($_SESSION);
-		
-
 [SESSION]
  	
  	* Overview
@@ -55,7 +32,55 @@
 	Mark & D method.
 		
 		
-[example]		
+[Mark]
+
+ 	* Overview
+ 	
+ 		* Marking line.
+ 		
+ 		* print only admin.
+
+	* How to use
+	
+		$op->Mark();
+
+[D]
+
+ 	* Overview
+ 	
+ 		* Dump
+	
+	* How to use
+	
+		$op->D($_SESSION);
+		
+[P]
+	
+	* Easy print p tag.
+	
+	* How to use
+		
+		$op->p("Please input value.");
+		
+		$op->p("This is headline.", "h1");
+	
+[Wiki2]
+	
+	* Mark, D, P, and StackError methods support Wiki2 language.
+	  (Wraped OnePiece5::Wiki2 method.)
+	
+	* How to use
+		
+		$options = array();
+		$options['id']     = true;
+		$options['tag']    = true;
+		$options['class']  = true;
+		$options['style']  = false;
+		$options['script'] = false;	
+		$op->Wiki2("![ div .bold margin:10px #id 0xFcF030 [Wiki2 is Grate!]]",$options);
+	
+	
+[example]
 
 <?php
 

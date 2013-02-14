@@ -10,6 +10,7 @@ class Form5 extends OnePiece5
 	
 	function Init()
 	{
+		parent::Init();
 		$this->config = new Config();
 		$this->status = new Config();
 //		$io = session_regenerate_id(true);
@@ -96,7 +97,7 @@ class Form5 extends OnePiece5
 	public function GetStatus( $form_name )
 	{
 		if(!isset($form_name)){
-			$this->mark('Empty form_name');
+			$this->mark('Form name is required to GetStatus($form_name).');
 			return false;
 		}
 		
@@ -163,11 +164,11 @@ class Form5 extends OnePiece5
 		return isset($token[$form_name]) ? $token[$form_name]: null;
 	}
 	
-	const VISIT_FIRST       = '1st visit';
-	const SESSION_DESTORY   = 'session is destory';
-	const TOKEN_KEY_MATCH   = 'match token key';
-	const TOKEN_KEY_UNMATCH = 'unmatch token key';
-	const UNKNOWN_ERROR     = 'unknown error';
+	const STATUS_VISIT_FIRST       = '1st visit';
+	const STATUS_SESSION_DESTORY   = 'session is destory';
+	const STATUS_TOKEN_KEY_MATCH   = 'match token key';
+	const STATUS_TOKEN_KEY_UNMATCH = 'unmatch token key';
+	const STATUS_UNKNOWN_ERROR     = 'unknown error';
 	
 	private function CheckTokenKey( $form_name )
 	{
@@ -182,19 +183,19 @@ class Form5 extends OnePiece5
 		//$this->mark("post=$post_token");
 		
 		if( !$save_token and !$post_token ){
-			$this->SetStatus( $form_name, self::VISIT_FIRST );
+			$this->SetStatus( $form_name, self::STATUS_VISIT_FIRST );
 			return false;
 		}else if(!$save_token and $post_token){
-			$this->SetStatus( $form_name, self::SESSION_DESTORY );
+			$this->SetStatus( $form_name, self::STATUS_SESSION_DESTORY );
 			return false;
 		}else if( $save_token !== $post_token ){
-			$this->SetStatus( $form_name, self::TOKEN_KEY_UNMATCH );
+			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_UNMATCH );
 			return false;
 		}else if( $save_token === $post_token ){
-			$this->SetStatus( $form_name, self::TOKEN_KEY_MATCH );
+			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_MATCH );
 			return true;
 		}else{
-			$this->SetStatus( $form_name, self::UNKNOWN_ERROR );
+			$this->SetStatus( $form_name, self::STATUS_UNKNOWN_ERROR );
 			return false;
 		}
 	}
@@ -960,14 +961,10 @@ class Form5 extends OnePiece5
 		}
 		
 		//  Check
-//		$this->d(Toolbox::toArray($config));
 		if(!isset($config->name)){
 			$this->StackError('Is this $config a single config form? There is no form name in the $config.($config->name)');
 			return false;
 		}
-		
-		//  debug
-//		$this->d(Toolbox::toArray($config));
 		
 		//  check form name
 		if(empty($config->name)){
@@ -1004,11 +1001,9 @@ class Form5 extends OnePiece5
 		}
 		
 		foreach( $config->input as $index => $input ){
-			/*
 			if( empty($input->name) ){
-				$input->name = $input_name;
+				$input->name = $index;
 			}
-			*/
 			$this->AddInput( $input, $form_name );
 		}
 		
@@ -1090,10 +1085,17 @@ class Form5 extends OnePiece5
 		}
 		
 		//  checkbox
-		if( $type === 'checkbox' ){
-			if(!isset($input->option) and (!isset($input->value) or !strlen($input->value)) ){
-				$this->mark("![.red[Empty checkbox value. ($form_name, $input_name)]]");
-				$this->StackError("Empty checkbox value. ($form_name, $input_name)");
+		if( in_array($type,array('checkbox','radio','select')) ){
+
+			if( empty($input->options) ){
+				if( isset($input->option) ){
+					$input->options = $input->option;
+				}
+			}
+			
+			if(!isset($input->options) and (!isset($input->value) or !strlen($input->value)) ){
+				$this->mark("![.red[Empty $type value. ($form_name, $input_name)]]");
+				$this->StackError("Empty $type value. ($form_name, $input_name)");
 			}
 		}
 		
@@ -1128,7 +1130,7 @@ class Form5 extends OnePiece5
 			return false;
 		}
 		
-		$input->option->md5(serialize($option))->$option;
+		$input->options->md5(serialize($option))->$option;
 		
 		return true;
 	}
@@ -1227,6 +1229,9 @@ class Form5 extends OnePiece5
 		if( isset($form[$form_name]) ){
 			unset($form[$form_name]);
 		}
+		if( true /*$_POST['form_name'] === $form_name*/ ){
+			$_POST = array();
+		}
 		$this->SetSession('form',$form);
 		
 		return true;
@@ -1271,6 +1276,7 @@ class Form5 extends OnePiece5
 					$input->save = $var;
 				case 'error':
 				case 'option':
+				case 'options':
 				case 'validate':
 				case 'cookie':
 				case 'index':
@@ -1285,24 +1291,20 @@ class Form5 extends OnePiece5
 					$join[] = sprintf('%s="%s"',$key,$var);
 			}
 		}
-		$attr = join(' ',$join);
 
-        //  name (Anti IDE notice, PhpStorm )
-        if(!isset($name)){
+        //  name
+        if(empty($name)){
             $name = $input->name;
         }
         $input_name = $input->name;
 
         //  type
-        if(!isset($type)){
+        if(empty($type)){
             $type = 'text';
         }
-
-		// request
-		$_request = $this->GetRequest( null, $form_name );
-	
+		
 		//  id
-		if(!isset($id)){
+		if(empty($id)){
 			$id = $form_name.'-'.$input_name;
 			if( $type !== 'checkbox' or $type !== 'radio' ){
 				//  Why join value?
@@ -1313,7 +1315,14 @@ class Form5 extends OnePiece5
 				}
 			}
 		}
+		$join[] = sprintf('id="%s"',$id);
+		
+		//  Other attributes
+		$attr = join(' ',$join);
 
+		// request
+		$_request = $this->GetRequest( null, $form_name );
+		
 		/*
 		if( $type === 'submit' or $type === 'button' ){
 		
@@ -1400,7 +1409,16 @@ class Form5 extends OnePiece5
 				break;
 				
 			case 'select':
-				$tag = sprintf('<select name="%s" %s>%s</select>'.$tail, $name, $attr, $this->CreateOption($input->option, $value));
+				if( isset($input->options) ){
+					$options = $input->options;
+					/*
+				}else if( isset($input->option) ){
+					$options = $input->option;
+					*/
+				}else{
+					$options = array();
+				}
+				$tag = sprintf('<select name="%s" %s>%s</select>'.$tail, $name, $attr, $this->CreateOption( $options, $value));
 				break;
 				
 			case 'file':
@@ -1427,14 +1445,14 @@ class Form5 extends OnePiece5
 				
 			default:
 				//  single or multi
-				if(isset($input->option)){
+				if(isset($input->options)){
 					//  multi
 					//  child
-					foreach($input->option as $index => $option){
+					foreach($input->options as $index => $option){
 						$child = Toolbox::Copy($input);
 						$child->child = true;
 						$child->index = $index;
-						unset($child->option);
+						unset($child->options);
 						
 						//  copy option value to child
 						foreach($option as $key => $var){
@@ -1493,13 +1511,26 @@ class Form5 extends OnePiece5
 	function CreateOption( $args, $save_value )
 	{
 		$options = '';
-		foreach($args as $option){
+		foreach( $args as $option ){
 			
 			$value = $option->value;
 			$label = isset($option->label) ? $option->label: $value;
 			$selected = $value == $save_value ? 'selected="selected"': '';
 			
-			$options .= sprintf('<option value="%s" %s>%s</option>', $value, $selected, $label);
+			//  attributes
+			$attr = array();
+			foreach( $option as $key => $var ){
+				switch( $key ){
+					case 'selected':
+						continue;
+					default:
+						$attr[] = sprintf('%s="%s"', $key, $var);
+				}
+			}
+			$attr = implode(' ', $attr);
+			
+			//  joint
+			$options .= sprintf('<option value="%s" %s %s>%s</option>', $value, $attr, $selected, $label);
 		}
 		
 		return $options;
@@ -1595,13 +1626,13 @@ class Form5 extends OnePiece5
 	function Error( $input_name, $html='span 0xff0000', $form_name=null )
 	{
 		print $this->GetInputError( $input_name, $html, $form_name=null );
-		return 'This method(function) is print.';
+		return $this->i18n()->Get('This method(function) is print.');
 	}
 	
 	function InputError( $input_name, $html='span 0xff0000', $form_name=null )
 	{
 		print $this->GetInputError( $input_name, $html, $form_name=null );
-		return 'This method(function) is print.';
+		return $this->i18n()->Get('This method(function) is print.');
 	}
 
 	function GetError( $input_name, $html='span 0xff0000', $form_name=null )
@@ -1624,10 +1655,14 @@ class Form5 extends OnePiece5
 			
 			foreach($this->status->$form_name->error->$input_name as $key => $value){
 				
+				$key   = $this->i18n()->get($key);
+				$value = $this->i18n()->get($value);
+				
 				if( isset($input->error->$key) ){
 					$format = '![ $html ['.$input->error->$key.']]';
 				}else{
-					$format = '![ $html [$label is error. This field is $key. ($value)]]';
+					$format = $this->i18n()->Get('$label is error. This field is $key. ($value)');
+					$format = "![ $html [$format]]";
 				}
 				
 				$patt = array('/\$label/', '/\$key/', '/\$value2/', '/\$value/', '/\$html/');
@@ -1682,8 +1717,8 @@ class Form5 extends OnePiece5
 			return false;
 		}
 		
-		if(isset($input->option)){
-			foreach($input->option as $child){
+		if( isset($input->options) ){
+			foreach($input->options as $child){
 				$child->name = $input->name;
 				if(!$io = $this->CheckInputValue($child, $form_name)){
 					return false;
@@ -1996,6 +2031,41 @@ class Form5 extends OnePiece5
 	function ValidatePermit( $input, $form_name, $value )
 	{
 		switch( $key = $input->validate->permit ){
+			
+			// English only
+			case 'english':
+				//  Array is convert string.
+				if(is_array($value)){
+					$value = implode('',$value);
+				}
+				//  Check character
+				if( $io = preg_match('/([^-_a-z0-9\s\/\\\!\?\(\)\[\]\{\}\.,:;\'"`@#$%&*+^~|]+)/i',$value,$match)){					
+					//$this->d($match);
+					$this->SetInputError( $input->name, $form_name, 'permit-english', $match[1] );
+					//  Permit is failed
+					$io = false;
+				}else{
+					$io = true;
+				}
+				break;
+
+			// Use for password
+			case 'password':
+				//  Array is convert string.
+				if(is_array($value)){
+					$value = implode('',$value);
+				}
+				//  Check character
+				if( $io = preg_match('/([^-_a-z0-9\/\\\!\?\(\)\[\]\{\}:;\'"`@#$%&*+^~|]+)/i',$value,$match)){
+					//$this->d($match);
+					$this->SetInputError( $input->name, $form_name, 'permit-password', $match[1] );
+					//  Permit is failed
+					$io = false;
+				}else{
+					$io = true;
+				}
+				break;
+				
 			// including decimal
 			case 'number':
 				if(is_array($value)){
@@ -2029,6 +2099,7 @@ class Form5 extends OnePiece5
 				if(is_array($value)){
 					$value = implode('@',$value);
 				}
+				//$io = filter_var( $value, FILTER_VALIDATE_EMAIL);
 				$io = $this->ValidatePermitEmail($input, $form_name, $value);
 				break;
 			
@@ -2108,7 +2179,8 @@ class Form5 extends OnePiece5
 		}
 		
 		// check exists host
-		if( $this->GetEnv('REMOTE_ADDR') == '127.0.0.1' ){
+		if( $_SERVER['REMOTE_ADDR'] == '127.0.0.1' or 
+			$_SERVER['REMOTE_ADDR'] == '::1' ){
 			$this->SetStatus($form_name, "XX: Skip check host. ($input->name, $value)");
 			return true;
 		}
