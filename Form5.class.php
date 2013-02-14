@@ -527,15 +527,16 @@ class Form5 extends OnePiece5
 	{
 		$input = $this->GetConfig( $form_name, $input_name );
 		if( $io = $this->CheckInputValue( $input, $form_name, $value ) ){
-			$this->SetStatus($form_name,"OK: SetInputValue ({$input->name})");
+			$this->SetStatus( $form_name, "OK: SetInputValue ({$input->name})" );
 			
-			//  save to session
+			//  TODO: Every call is slow. more fast!
+			//  save to session 
 			$session = $this->GetSession('form');
 			$session[$form_name][$input_name]['value'] = $value;
-			$this->SetSession('form', $session);
+			$this->SetSession( 'form', $session );
 			
 		}else{
-			$this->SetStatus($form_name,"NG: SetInputValue ({$input->name})");
+			$this->SetStatus( $form_name, "NG: SetInputValue ({$input->name})" );
 		}
 		
 		return $io;
@@ -693,9 +694,9 @@ class Form5 extends OnePiece5
 				if(!unlink($save_value)){
 					
 					//  delete is failed.
-					$this->StackError("Can not delete the file. ($value)");
-
-					//  recovery post value
+					$this->StackError("Can not delete the file. ($save_value)");
+					
+					//  recovery post value TODO: Is this correct????
 					$value = $this->ConvertURL($save_value);
 					$id = $form_name.'-'.$input_name.'-'.md5($value);
 					
@@ -706,7 +707,7 @@ class Form5 extends OnePiece5
 				}
 				
 				//  Reset form config.
-				$this->SetInputValue(null, $input_name, $form_name);
+				$this->SetInputValue( null, $input_name, $form_name );
 				
 				//  Status
 				$this->SetStatus( $form_name, "XX: File delete is success. ($form_name, $input_name)");
@@ -1116,8 +1117,8 @@ class Form5 extends OnePiece5
 		//  file is neccesary multi-part
 		if( $type === 'file' ){
 			//  force change
-			$this->SetStatus($form_name, 'XX: Change multipart(method is force post)');
-			$this->config->$form_name->method = 'post';
+			$this->SetStatus( $form_name, 'XX: Change multipart(method is force post)' );
+			$this->config->$form_name->method    = 'post';
 			$this->config->$form_name->multipart = true;
 			
 			/*
@@ -1481,8 +1482,10 @@ class Form5 extends OnePiece5
 				
 			case 'file':
 				//  remove checkbox
-				if( $value = $this->GetInputValue($input_name) ){
+				$value = $this->GetInputValue($input_name);
+				if( is_string($value) ){
 					if( method_exists( $this, 'GetInputConfigRemover')){
+						//  If you can method over ride.
 						$remover = $this->GetInputConfigRemover( $input, $form_name );
 					}else{
 						//  default remover
