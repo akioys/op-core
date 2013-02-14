@@ -405,6 +405,7 @@ class Form5 extends OnePiece5
 		*/
 		
 		$value = $this->GetInputValueRaw( $input_name, $form_name, $joint );
+		$this->d($value);
 		
 		// if null
 		if( is_null($value) ){
@@ -1500,6 +1501,7 @@ class Form5 extends OnePiece5
 				
 			case 'file':
 				//  remove checkbox
+				var_dump($this->GetInputValue($input_name));
 				if( $value = $this->GetInputValue($input_name) ){
 					if( method_exists( $this, 'GetInputConfigRemover')){
 						$remover = $this->GetInputConfigRemover( $input, $form_name );
@@ -1513,9 +1515,10 @@ class Form5 extends OnePiece5
 						$remover->label   = $value;
 						$remover->checked = true;
 					}
-					// create remover
+					//  Create remover
 					$tag = $this->CreateInputTag($remover, $form_name);
 				}else{
+					//  Create file tag
 					$tag = sprintf('<input type="%s" name="%s" value="%s" %s />'.$tail, $type, $input_name, $value, $attr);
 				}
 				break;

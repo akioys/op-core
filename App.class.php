@@ -9,7 +9,9 @@
  *
  */
 
-include_once('NewWorld5.class.php');
+if(!include_once('NewWorld5.class.php')){
+	exit(0);
+}
 
 class App extends NewWorld5
 {

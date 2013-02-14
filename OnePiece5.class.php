@@ -1,6 +1,6 @@
 <?php
 /**
- * TODO: I (will|should) support to spl_autoload_register
+ * TODO: We (will|should) support to spl_autoload_register
  * @see http://www.php.net/manual/ja/function.spl-autoload-register.php
  */
 if(!function_exists('__autoload')){
@@ -167,7 +167,10 @@ if(!function_exists('OnePieceErrorHandler')){
 if(!function_exists('OnePieceExceptionHandler')){
 	function OnePieceExceptionHandler($e)
 	{
-		print "<h1>Please implement the e-mail alert.</h1>";
+		//  TODO: 
+		//print "<h1>Please implement the e-mail alert.</h1>";
+		$op = new OnePiece5();
+		$op->StackError( $e->getMessage() );
 		printf('<div><p>[%s] %s</p><p>%s : %s</p></div>', get_class($e), $e->GetMessage(), $e->GetFile(), $e->GetLine() );
 		dump::d(Toolbox::toArray($e));
 	}
