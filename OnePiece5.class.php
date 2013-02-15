@@ -704,7 +704,7 @@ __EOL__;
 				break;
 			
 			case 'origin':
-				$this->mark($key);
+				self::mark($key);
 				break;
 				
 			default:
@@ -963,7 +963,7 @@ __EOL__;
 		// init
 		$call_line = '';
 		$depth++;
-		$nl = $this->GetEnv('nl');
+		$nl = self::GetEnv('nl');
 		
 		
 		if( version_compare(PHP_VERSION, '5.2.5') >= 0 ){
@@ -1016,7 +1016,7 @@ __EOL__;
 					$str = str_replace("\\'", "'", $str);
 					$str = str_replace(",)", ") ", $str);
 					$str = str_replace(",  )", ") ", $str);
-					$str = $this->Escape($str);
+					$str = self::Escape($str);
 					$args = $str;
 				}
 			}else{
@@ -1163,7 +1163,7 @@ __EOL__;
 		$attr['class'] = array('OnePiece','mark');
 		$attr['style'] = array('font-size'=>'9pt','background-color'=>'white');
 		$string = self::Html("$nl\t$call_line - $str $memory$nl",'div',$attr);
-		if( $this->GetEnv('cli') ){
+		if( self::GetEnv('cli') ){
 			$string = strip_tags($string);
 		}
 		
@@ -1179,7 +1179,7 @@ __EOL__;
 	 */
 	function Html($str, $tag='span', $attr=null)
 	{
-		$nl    = $this->GetEnv('newline');
+		$nl    = self::GetEnv('newline');
 		$str   = self::Escape($str);
 		$tag   = self::Escape($tag);
 		$attr  = self::Escape($attr);
