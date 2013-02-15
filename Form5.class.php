@@ -408,11 +408,24 @@ class Form5 extends OnePiece5
 		*/
 		
 		$value = $this->GetInputValueRaw( $input_name, $form_name, $joint );
+		//$this->mark($value);
 		
-		// if null
-		if( is_null($value) ){
-			//$value = ''; // return to null
-		}else if( is_array($value) ){
+		switch( $type = gettype($value) ){
+			case 'null':
+				return null;
+				
+			case 'string':
+				return nl2br($value);
+			
+			case 'boolean':
+			case 'array':
+				break;
+				
+			default:
+				$this->mark("undefined type. ($type)");
+		}
+		
+		if( is_array($value) ){
 			if( strlen(join('',$value)) ){
 				//  joint
 				/*
@@ -434,7 +447,7 @@ class Form5 extends OnePiece5
 			}
 		}
 		
-		return nl2br($value);
+		return $value;
 	}
 	
 	public function GetInputValueRaw( $input_name, $form_name=null, &$joint=null )
@@ -1483,7 +1496,10 @@ class Form5 extends OnePiece5
 			case 'file':
 				//  remove checkbox
 				$value = $this->GetInputValue($input_name);
-				if( is_string($value) ){
+				
+			//	$this->mark(gettype($value).': '. $value);
+				
+				if( is_string($value) and $value ){
 					if( method_exists( $this, 'GetInputConfigRemover')){
 						//  If you can method over ride.
 						$remover = $this->GetInputConfigRemover( $input, $form_name );
