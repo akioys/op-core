@@ -13,8 +13,8 @@ if(!function_exists('__autoload')){
 		switch($class_name){
 			case 'Memcache':
 			case 'Memcached':
-				break;
-			
+				return;
+							
 			case 'DML':
 			case 'DML5':
 			case 'DDL':
@@ -173,9 +173,11 @@ if(!function_exists('OnePieceExceptionHandler')){
 }
 
 /**
+ * OnePiece is OnePiece-Framework's core.
  * 
- * @author Tomoaki Nagahara
- *
+ * @version   1.0
+ * @author    Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
+ * @copyright 2009 (C) Tomoaki Nagahara All right reserved.
  */
 class OnePiece5
 {
@@ -673,6 +675,7 @@ __EOL__;
 	static private function Env( $key, $var=null, $ope )
 	{
 		// convert key name
+		//switch( strcasecmp($key) ){
 		$key = strtolower($key);
 		switch( $key ){
 			case 'nl':
@@ -1003,7 +1006,12 @@ __EOL__;
 				if(!$args[0]){
 					$args = '![.red[null]]';
 				}else{
-					$str = var_export($args[0],true);
+					if( is_object($args[0]) ){
+						$var_export = get_class($args[0]);
+					}else{
+						$var_export = var_export($args[0],true);
+					}
+					$str = $var_export;
 					$str = str_replace(array("\n","\r","\t"), '', $str);
 					$str = str_replace("\\'", "'", $str);
 					$str = str_replace(",)", ") ", $str);
@@ -1242,6 +1250,36 @@ __EOL__;
 		}
 	}
 	
+	static function Decode( $args, $charset=null)
+	{
+		if(!$charset){
+			$charset = self::GetEnv('charset');
+		}
+
+		switch($type = gettype($args)){
+			
+			case 'array':
+			case 'object':
+				foreach( $args as $key => $var ){
+					$key  = self::Decode( $key, $charset );
+					$var  = self::Decode( $var, $charset );
+					if( $type === 'array' ){
+						$temp[$key] = $var;
+					}else if( $type === 'object' ){
+						$temp->$key = $var;
+					}
+				}
+				$args = $temp;
+				break;
+				
+			default:
+				$args = html_entity_decode( $args, ENT_QUOTES, $charset );
+				break;
+		}
+		
+		return $args;
+	}
+	
 	/**
 	 * 
 	 * @param string|array $args
@@ -1416,95 +1454,101 @@ __EOL__;
 	}
 	
 	/**
+	 * e-mail 
 	 * 
-	 * @param array $args
+	 * @param  array|Config $config
+	 * @return boolean
 	 */
-	function Mail($args)
+	function Mail( $args )
 	{
-		if( false and class_exists('_Mail',true) ){
-			$this->mark('start Mail','memory');
-			$mail = new Mail();
-			$mail->Send($args);
-			$this->mark('finish Mail','memory');
-		}else{
-			// optimize
-			$lang = $this->GetEnv('lang');
-			$char = $this->GetEnv('charset');
-			if( $lang and $char ){
-				// save
-				$save_lang = mb_language();
-				$save_char = mb_internal_encoding();
-				
-				// set
-				mb_language($lang);
-				mb_internal_encoding($char);
-			}
+		// optimize
+		$lang = $this->GetEnv('lang');
+		$char = $this->GetEnv('charset');
+		if( $lang and $char ){
+			// save
+			$save_lang = mb_language();
+			$save_char = mb_internal_encoding();
 			
-			if( is_object($args) ){
-				$args = Toolbox::toArray($args);
-			}
-			
-			//  init
-			$from	 = isset($args['from'])    ? $args['from']    : self::GetEnv('admin-mail');
-			$to      = isset($args['to'])      ? $args['to']      : null;
-			$title   = isset($args['title'])   ? $args['title']   : '';
-			$subject = isset($args['subject']) ? $args['subject'] : $title;
-			$body    = isset($args['body'])    ? $args['body']    : '';
-			$message = isset($args['message']) ? $args['message'] : $body;
-			$headers = array();
-			
-			//  subject
-			$subject = mb_encode_mimeheader($subject);
-			
-			// From
-			if( is_string($from) ){
-				$headers[]  = "From: " . $from;
-			}
-			// Cc
-			if( isset($args['cc']) ){
-				if( is_string($args['cc']) ){
-					$headers[] = "Cc: " . $args['cc'];
-				}else if(is_array($args['cc'])){
-					$this->mark('Does not implements yet.');
-				}
-			}
-			// Bcc
-			if( isset($args['bcc']) ){
-				if( is_string($args['bcc']) ){
-					$headers[]  = "Bcc: " . $args['bcc'];
-				}else if( is_array($args['bcc']) ){
-					$this->mark('Does not implements yet.');
-				}
-			}
-			// X-Mailer
-			if( $this->admin() ){
-				$headers[] = "X-Mailer: OnePiece-Framework";
-			}
-			
-			//	encording format
-			if( $char ){
-				$headers[] = "Content-Type: text/plain; charset=$char";
-			}else{
-				//	$headers[] = "Content-Transfer-Encoding: base64";
-			}
-			
-			$add_header = implode("\n", $headers);
-			$add_params = null;
-			
-			// SMTP server response: 503 5.0.0 Need RCPT (recipient) 
-			$add_params = '-f '.$from;
-		
-			// @todo: I should support multi-byte-language
-			$io = mail($to, $subject, $message, $add_header, $add_params );
-			
-			// recovery
-			if( $save_lang and $save_char ){
-				mb_language($save_lang);
-				mb_internal_encoding($save_char);
-			}
-			
-			return $io;
+			// set
+			mb_language($lang);
+			mb_internal_encoding($char);
 		}
+		
+		//  Convert object to array.
+		if( is_object($args) ){
+			$args = Toolbox::toArray($args);
+		}
+		
+		//  init
+		$headers = array();
+		$from	 = isset($args['from'])    ? $args['from']    : self::GetEnv('admin-mail');
+		$to      = isset($args['to'])      ? $args['to']      : null;
+		$title   = isset($args['title'])   ? $args['title']   : 'No subject';
+		$subject = isset($args['subject']) ? $args['subject'] : $title;
+		$body    = isset($args['body'])    ? $args['body']    : null;
+		$message = isset($args['message']) ? $args['message'] : $body;
+		
+		//  Sender name
+		$from_name = isset($args['from-name']) ? $args['from-name'] : null;
+		$to_name   = isset($args['to-name'])   ? $args['to-name']   : null;
+
+		//  Check
+		if( empty($from) or empty($to) or empty($message) ){
+			$this->StackError("Empty! from=$from, to=$to, message=$message");
+			return false;
+		}
+		
+		//  Subject
+		$subject = mb_encode_mimeheader($subject);
+		
+		// From
+		if( is_string($from) ){
+			$headers[]  = "From: " . $from;
+		}
+		// Cc
+		if( isset($args['cc']) ){
+			if( is_string($args['cc']) ){
+				$headers[] = "Cc: " . $args['cc'];
+			}else if(is_array($args['cc'])){
+				$this->mark('Does not implements yet.');
+			}
+		}
+		// Bcc
+		if( isset($args['bcc']) ){
+			if( is_string($args['bcc']) ){
+				$headers[]  = "Bcc: " . $args['bcc'];
+			}else if( is_array($args['bcc']) ){
+				$this->mark('Does not implements yet.');
+			}
+		}
+		// X-Mailer
+		if( $this->admin() ){
+			$headers[] = "X-Mailer: OnePiece-Framework";
+		}
+		
+		//	encording format
+		if( $char ){
+			$headers[] = "Content-Type: text/plain; charset=$char";
+		}else{
+			//	$headers[] = "Content-Transfer-Encoding: base64";
+		}
+		
+		$add_header = implode("\n", $headers);
+		$add_params = null;
+		
+		// SMTP server response: 503 5.0.0 Need RCPT (recipient) 
+		$add_params = '-f '.$from;
+	
+		// @todo: I should support multi-byte-language
+		$io = mail($to, $subject, $message, $add_header, $add_params );
+		
+		// recovery
+		if( $save_lang and $save_char ){
+			mb_language($save_lang);
+			mb_internal_encoding($save_char);
+		}
+		
+		return $io;
 	}
 	
 	/**
@@ -1635,62 +1679,68 @@ __EOL__;
 	
 	function Model($name)
 	{
-		if( $name == 'Account' ){
-			$this->mark();
-		}
-		
-		//  name check
-		if(!$name){
-			$this->StackError('Model name is empty.');
-			return false;
-		}
-		
-		//  already instanced?
-		if( isset( $_SERVER['test']['model'][$name] ) ){
-			return $_SERVER['test']['model'][$name];
-		}
-		
-		//  include Model_model
-		if(!class_exists( 'Model_Model', false ) ){
-			$path = self::ConvertPath('op:/Model/Model.model.php');
-			if(!$io = include_once($path)){
-				$msg = "Failed to include the Model_model. ($path)";
-				$this->StackError($msg);
-				throw new OpException($msg);
+		try{
+			if( $name == 'Account' ){
+				$this->mark();
 			}
-		}
-		
-		//  master
-		$path = self::ConvertPath("op:/Model/{$name}.model.php");
-		if( $io = file_exists($path) ){
-			$io = include_once($path);
-		}
-		
-		//  user
-		if(!$io ){
-			$model_dir = $this->GetEnv('model-dir');
-			$path  = self::ConvertPath("{$model_dir}{$name}.model.php");
+			
+			//  name check
+			if(!$name){
+				$this->StackError('Model name is empty.');
+				return false;
+			}
+			
+			//  already instanced?
+			if( isset( $_SERVER['test']['model'][$name] ) ){
+				return $_SERVER['test']['model'][$name];
+			}
+			
+			//  include Model_model
+			if(!class_exists( 'Model_Model', false ) ){
+				$path = self::ConvertPath('op:/Model/Model.model.php');
+				if(!$io = include_once($path)){
+					$msg = "Failed to include the Model_model. ($path)";
+					$this->StackError($msg);
+					throw new OpException($msg);
+				}
+			}
+			
+			//  master
+			$path = self::ConvertPath("op:/Model/{$name}.model.php");
 			if( $io = file_exists($path) ){
 				$io = include_once($path);
 			}
+			
+			//  user
+			if(!$io ){
+				$model_dir = $this->GetEnv('model-dir');
+				$path  = self::ConvertPath("{$model_dir}{$name}.model.php");
+				if( $io = file_exists($path) ){
+					$io = include_once($path);
+				}
+			}
+			
+			//  Could be include?
+			if(!$io){
+				$msg = "Failed to include the $name_model. ($path)";
+				$this->StackError($msg);
+				throw new OpModelException($msg);
+			}
+			
+			//  instance of model
+			$model_name = 'Model_'.$name;//.'_model';
+			if(!$_SERVER['test']['model'][$name] = new $model_name ){
+				$msg = "Failed to include the Model_Model. ($path)";
+				$this->StackError($msg);
+				throw new OpModelException($msg);
+			}
+			
+			return $_SERVER['test']['model'][$name];
+		}catch( Exception $e ){
+			$this->mark( $e->getMessage() );
+			$this->StackError( $e->getMessage() );
+			return new OnePiece5();
 		}
-		
-		//  Could be include?
-		if(!$io){
-			$msg = "Failed to include the $name_model. ($path)";
-			$this->StackError($msg);
-			throw new OpModelException($msg);
-		}
-		
-		//  instance of model
-		$model_name = 'Model_'.$name;//.'_model';
-		if(!$_SERVER['test']['model'][$name] = new $model_name ){
-			$msg = "Failed to include the Model_Model. ($path)";
-			$this->StackError($msg);
-			throw new OpModelException($msg);
-		}
-		
-		return $_SERVER['test']['model'][$name];
 	}
 	
 	/* @var $pdo PDO5 */
@@ -1825,7 +1875,7 @@ __EOL__;
 	 * @param boolen $args
 	 */
 	function Vivre( $register )
-	{		
+	{
 		if( $register ){
 			// 　register
 			if($this->GetEnv('vivre')){

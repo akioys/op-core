@@ -4,6 +4,12 @@ abstract class ConfigMgr extends OnePiece5
 {
 	protected $config;
 	
+	function config()
+	{
+		$this->mark('Your misstake','misstake');
+		return $this;
+	}
+	
 	function Init($config=null)
 	{
 		parent::Init();
@@ -128,14 +134,16 @@ abstract class ConfigMgr extends OnePiece5
 		return $config;
 	}
 	
-	function select( $table_name=null ){
+	function select( $table_name=null )
+	{
 		$config = new Config();
 		$config->table = $table_name;
 		$config->where->deleted = null;
 		return $config;
 	}
 	
-	function update( $table_name=null ){
+	function update( $table_name=null )
+	{
 		$config = new Config();
 		$config->table = $table_name;
 		$config->set->updated = gmdate('Y-m-d H:i:s');
@@ -151,9 +159,11 @@ abstract class ConfigMgr extends OnePiece5
 
 	function GenerateFormFromDatabase( $struct, $record=null )
 	{
+	//	$this->d($struct);
+		
+		
 		//  init form config
 		$config = new Config();
-		//$this->d($struct);
 		
 		//  
 		foreach( $struct as $name => $column ){
@@ -219,6 +229,8 @@ abstract class ConfigMgr extends OnePiece5
 					$input->type = 'datetime';
 					$input->validate->permit = 'datetime';
 					break;
+				default:
+					$input->type = $column['type'];
 			}
 			//$this->mark($type);
 			
