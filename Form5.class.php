@@ -398,17 +398,20 @@ class Form5 extends OnePiece5
 
     public function GetInputValue( $input_name, $form_name=null, $joint=null )
 	{
-		/**
-		
 		//  more fast.
 		if(!$input = $this->GetConfig( $form_name, $input_name )){
+			$this->StackError("Does not exists config.(form: $form_name, input: $input_name)");
 			return false;
 		}
 		
-		*/
-		
 		$value = $this->GetInputValueRaw( $input_name, $form_name, $joint );
 		//$this->mark($value);
+		
+		switch( $type = strtolower($input->type) ){
+			case 'file':
+				//  Convert Full-path to Document-root-path.
+				return str_replace( rtrim($_SERVER['DOCUMENT_ROOT'],'/'), '', $value);
+		}
 		
 		switch( $type = gettype($value) ){
 			case 'null':
