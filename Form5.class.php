@@ -5,7 +5,7 @@ include_once('OnePiece5.class.php');
 class Form5 extends OnePiece5
 {
 	public	$status;
-	private	$config;
+	private $config;
 	private	$session;
 	
 	function Init()
@@ -203,7 +203,8 @@ class Form5 extends OnePiece5
 				}
 			}
 			
-			return false;
+			return null;
+			
 		}else if( $save_token !== $post_token ){
 			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_UNMATCH );
 			return false;
@@ -358,9 +359,10 @@ class Form5 extends OnePiece5
 	 */
 	public function Value( $input_name, $form_name=null, $joint=null )
 	{
-		$form_name = null;
+		//  Get input value.
 		$value = $this->GetInputValue( $input_name, $form_name, $joint );
 		
+		//  Get config.
 		$input = $this->GetConfig( $form_name, $input_name );
 		
 		if( in_array( $input->type, array('select','checkbox','radio') ) ){
@@ -485,15 +487,12 @@ class Form5 extends OnePiece5
 		return $value;
 	}
 	
-	public function GetInputValueAll( $form_name, $force=false )
+	public function GetInputValueAll( $form_name /*, $force=false */ )
 	{
-		if( $force ){
-			$this->mark("form_name = $form_name is not initialized. but force get.");
-		}else{
-			if(!$form = $this->GetConfig( $form_name )){
-				return false;
-			}
+		if(!$form = $this->GetConfig($form_name)){
+			return false;
 		}
+//		$this->d( Toolbox::toArray($form) );
 		
 		$config = new Config();
 		foreach( $form->input as $input_name => $input ){
@@ -1750,7 +1749,7 @@ class Form5 extends OnePiece5
 	
 	function SetInputError( $input_name, $form_name, $key, $value='' )
 	{
-		if( !$input_name or !$form_name or !$key or !strlen($value) ){
+		if( !$input_name or !$form_name or !$key /* or !$value or !strlen($value) */ ){
 			$this->StackError("One or more empty. form_name=$form_name, input_name=$input_name, key=$key, value=$value");
 			return false;
 		}
