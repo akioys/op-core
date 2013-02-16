@@ -6,7 +6,7 @@
  * @author  Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
  * @copyright (C) 2004 Tomoaki Nagahara All rights reserved.
  */
-class Config extends stdClass
+class Config extends OnePiece5
 {
 	function Config()
 	{
