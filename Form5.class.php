@@ -5,7 +5,7 @@ include_once('OnePiece5.class.php');
 class Form5 extends OnePiece5
 {
 	public	$status;
-	private	$config;
+	private $config;
 	private	$session;
 	
 	function Init()
@@ -203,7 +203,8 @@ class Form5 extends OnePiece5
 				}
 			}
 			
-			return false;
+			return null;
+			
 		}else if( $save_token !== $post_token ){
 			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_UNMATCH );
 			return false;
@@ -358,9 +359,10 @@ class Form5 extends OnePiece5
 	 */
 	public function Value( $input_name, $form_name=null, $joint=null )
 	{
-		$form_name = null;
+		//  Get input value.
 		$value = $this->GetInputValue( $input_name, $form_name, $joint );
 		
+		//  Get config.
 		$input = $this->GetConfig( $form_name, $input_name );
 		
 		if( in_array( $input->type, array('select','checkbox','radio') ) ){
@@ -398,21 +400,37 @@ class Form5 extends OnePiece5
 
     public function GetInputValue( $input_name, $form_name=null, $joint=null )
 	{
-		/**
-		
 		//  more fast.
 		if(!$input = $this->GetConfig( $form_name, $input_name )){
+			$this->StackError("Does not exists config.(form: $form_name, input: $input_name)");
 			return false;
 		}
 		
-		*/
-		
 		$value = $this->GetInputValueRaw( $input_name, $form_name, $joint );
+		//$this->mark($value);
 		
-		// if null
-		if( is_null($value) ){
-			//$value = ''; // return to null
-		}else if( is_array($value) ){
+		switch( $type = strtolower(gettype($value)) ){
+			case 'null':
+				return null;
+				
+			case 'string':
+				return nl2br($value);
+			
+			case 'boolean':
+			case 'array':
+				break;
+				
+			default:
+				$this->mark("undefined type. ($type)");
+		}
+
+		switch( $type = strtolower($input->type) ){
+			case 'file':
+				//  Convert Full-path to Document-root-path.
+				return str_replace( rtrim($_SERVER['DOCUMENT_ROOT'],'/'), '', $value);
+		}
+		
+		if( is_array($value) ){
 			if( strlen(join('',$value)) ){
 				//  joint
 				/*
@@ -434,7 +452,7 @@ class Form5 extends OnePiece5
 			}
 		}
 		
-		return nl2br($value);
+		return $value;
 	}
 	
 	public function GetInputValueRaw( $input_name, $form_name=null, &$joint=null )
@@ -469,15 +487,12 @@ class Form5 extends OnePiece5
 		return $value;
 	}
 	
-	public function GetInputValueAll( $form_name, $force=false )
+	public function GetInputValueAll( $form_name /*, $force=false */ )
 	{
-		if( $force ){
-			$this->mark("form_name = $form_name is not initialized. but force get.");
-		}else{
-			if(!$form = $this->GetConfig( $form_name )){
-				return false;
-			}
+		if(!$form = $this->GetConfig($form_name)){
+			return false;
 		}
+//		$this->d( Toolbox::toArray($form) );
 		
 		$config = new Config();
 		foreach( $form->input as $input_name => $input ){
@@ -527,15 +542,16 @@ class Form5 extends OnePiece5
 	{
 		$input = $this->GetConfig( $form_name, $input_name );
 		if( $io = $this->CheckInputValue( $input, $form_name, $value ) ){
-			$this->SetStatus($form_name,"OK: SetInputValue ({$input->name})");
+			$this->SetStatus( $form_name, "OK: SetInputValue ($value, $input_name, $form_name)" );
 			
-			//  save to session
+			//  TODO: Every call is slow. more fast!
+			//  save to session 
 			$session = $this->GetSession('form');
 			$session[$form_name][$input_name]['value'] = $value;
-			$this->SetSession('form', $session);
+			$this->SetSession( 'form', $session );
 			
 		}else{
-			$this->SetStatus($form_name,"NG: SetInputValue ({$input->name})");
+			$this->SetStatus( $form_name, "NG: SetInputValue ($value, $input_name, $form_name)" );
 		}
 		
 		return $io;
@@ -677,64 +693,60 @@ class Form5 extends OnePiece5
 		return true;
 	}
 	
+	/**
+	 * Auto save (and remove) the upload file.
+	 * 
+	 * File upload is input's type is file.
+	 * return value is file path or success/fail.
+	 * 
+	 * @param  string $input
+	 * @param  string $form_name
+	 * @return boolean|string|NULL 
+	 */
 	private function SaveFile( $input, $form_name )
 	{
-//		$this->mark(__METHOD__ .": ".$input->name);
-		
 		$input_name = $input->name;
-
+		
 		$save_value = $this->GetInputValueRaw($input->name,$form_name);
 		$post_value = $this->GetRequest($input->name, $form_name);
-
-		/*
-		$this->d($input->name);
-		$this->d($post_value);
-		$this->d($save_value);
-		var_dump($save_value);
-		*/
 		
 		if( $save_value ){
-			/*
-			$this->mark($input->type);
-			$this->mark($save_value);
-			$this->mark($post_value);
-			$this->mark('![ .green [count='.count($post_value).']]');
-			*/
 			
 			//  delete routine
 			if( is_array($post_value) and count($post_value) == 1 and empty($post_value[0]) ){
 				
-			//	$this->mark('![ .red [challenge to delete the upload file.]]');
-				
 				//  challenge to delete the upload file.
 				if(!unlink($save_value)){
+					
 					//  delete is failed.
-					$this->StackError("Can not delete the file. ($value)");
-
-					//  recovery post value
+					$this->StackError("Can not delete the file. ($save_value)");
+					
+					//  recovery post value TODO: Is this correct????
 					$value = $this->ConvertURL($save_value);
 					$id = $form_name.'-'.$input_name.'-'.md5($value);
 					
+					//  ???
 					$_POST[$input_name][$id] = $value;
-
-					//  check
-					$this->d($_POST);
 					
 					return false;
 				}
 				
-				//  Reset form config.
-				$this->SetInputValue(null, $input_name, $form_name);
+				//  Reset form config. 
+				$this->SetInputValue( null, $input_name, $form_name );
+			
+				//	TODO: SetInputValue　Fails permit=image case.
+				$_SESSION['OnePiece5']['Form5']['form'][$form_name][$input_name]['value'] = '';
 				
-				//$this->mark("![ .red [Remove $save_value]]");
+				//  Status
 				$this->SetStatus( $form_name, "XX: File delete is success. ($form_name, $input_name)");
-				return true;
+				
+				//  Return value is empty path.
+				return '';
 			}
 		}
 		
 		if( isset($_FILES[$input->name]) ){
 			$_file = $_FILES[$input->name];
-//			$this->d($_file);
 			
 			$name  = $_file['name'];
 			$type  = $_file['type'];
@@ -748,7 +760,7 @@ class Form5 extends OnePiece5
 			
 		}else{
 			$value = $this->GetRequest($input_name, $form_name);
-			if(is_array($value)){
+			if( is_array($value) ){
 				if(!strlen(implode('',$value))){
 					$error = -1;
 				}else{
@@ -790,14 +802,14 @@ class Form5 extends OnePiece5
 					$path = sys_get_temp_dir() .DIRECTORY_SEPARATOR. md5($name . $op_uniq_id).".$ext";
 				}
 
-                //  mkdir
-                if(!file_exists(dirname($path))){
+                //  Check directory exists
+                if(!file_exists( dirname($path) )){
                     if(!$io = mkdir( dirname($path), 0766, true ) ){                    	
-                    	$this->StackError("Failed make directory. ($path)");
+                    	$this->StackError("Failed make directory. (".dirname($path).")");
                     	return false;
                     }
                 }
-
+				
 				//  file is copy
                 $io = copy($tmp, $path);
                 
@@ -805,10 +817,7 @@ class Form5 extends OnePiece5
 				
 				if( $io ){
 					$this->SetStatus( $form_name, "OK: file copy to $path");
-					
-					$this->mark("TEST: $path");
 					$this->SetInputValue( $path, $input_name, $form_name );
-					
 					return $path;
 				}else{
 					$this->SetStatus( $form_name, "NG: file copy to $path");
@@ -818,10 +827,11 @@ class Form5 extends OnePiece5
 			
 			//  
 			case 4:
-				$this->SetStatus( $form_name, "XX: File is not sent. ($form_name, $input_name)");
+				$this->SetStatus( $form_name, "XX: File has not been submit. ($form_name, $input_name)");
 				return null;
 			
-			//  remove
+			//  TODO: This is not needed anymore?
+			//  remove 
 			case -1:
 				$this->SetStatus( $form_name, "OK: File is remove. ($form_name, $input_name)");
 				return '';
@@ -1138,22 +1148,9 @@ class Form5 extends OnePiece5
 		//  file is neccesary multi-part
 		if( $type === 'file' ){
 			//  force change
-			$this->SetStatus($form_name, 'XX: Change multipart(method is force post)');
-			$this->config->$form_name->method = 'post';
+			$this->SetStatus( $form_name, 'XX: Change multipart(method is force post)' );
+			$this->config->$form_name->method    = 'post';
 			$this->config->$form_name->multipart = true;
-			
-			/*
-			//  remover (This is delete of upload file from remover checkbox.)
-			if( isset($_POST[$input->name]) and count($_POST[$input->name]) == 1 ){
-				$value = $this->GetSavedValue( $input->name, $form_name );
-				if( $value ){
-					//  upload file is delete.
-					if(!unlink($value)){
-						$this->StackError("Does not delete file. ($value)");
-					}
-				}
-			}
-			*/
 		}
 		
 		//  checkbox
@@ -1503,8 +1500,13 @@ class Form5 extends OnePiece5
 				
 			case 'file':
 				//  remove checkbox
-				if( $value = $this->GetInputValue($input_name) ){
+				$value = $this->GetInputValue($input_name);
+				
+			//	$this->mark(gettype($value).': '. $value);
+				
+				if( is_string($value) and $value ){
 					if( method_exists( $this, 'GetInputConfigRemover')){
+						//  If you can method over ride.
 						$remover = $this->GetInputConfigRemover( $input, $form_name );
 					}else{
 						//  default remover
@@ -1575,7 +1577,7 @@ class Form5 extends OnePiece5
 					if( isset($checked) and $checked ){
 						$attr .= ' checked="checked"';
 					}
-					$tag .= sprintf('<input type="%s" name="%s" value="%s" id="%s" %s />%s', $type, $name, $value, $id, $attr, $label);
+					$tag .= sprintf('<nobr><input type="%s" name="%s" value="%s" id="%s" %s />%s</nobr>', $type, $name, $value, $id, $attr, $label);
 				}
 				break;
 		}
@@ -1747,7 +1749,7 @@ class Form5 extends OnePiece5
 	
 	function SetInputError( $input_name, $form_name, $key, $value='' )
 	{
-		if( !$input_name or !$form_name or !$key or !strlen($value) ){
+		if( !$input_name or !$form_name or !$key /* or !$value or !strlen($value) */ ){
 			$this->StackError("One or more empty. form_name=$form_name, input_name=$input_name, key=$key, value=$value");
 			return false;
 		}
@@ -1786,7 +1788,7 @@ class Form5 extends OnePiece5
 		if( isset($input->options) ){
 			foreach($input->options as $child){
 				$child->name = $input->name;
-				if(!$io = $this->CheckInputValue($child, $form_name)){
+				if(!$io = $this->CheckInputValue($child, $form_name)){						
 					return false;
 				}
 			}
@@ -1794,7 +1796,7 @@ class Form5 extends OnePiece5
 		
 		//  validate
 		if(isset($input->validate)){
-			if(!$this->CheckValidate($input, $form_name, $value)){
+			if(!$this->CheckValidate($input, $form_name, $value)){					
 				return false;
 			}
 		}
@@ -2307,12 +2309,12 @@ class Form5 extends OnePiece5
 		*/
 		
 		if(!isset($_FILES[$input->name])){
-			$this->SetStatus($form_name,"NG: missing input name. ({$input->name})");
+			$this->SetStatus($form_name,"NG: Does not find in \$_FILES. ({$input->name})");
 			return false;
 		}
 		
 		if($_FILES[$input->name]['error'] == 4){
-			$this->SetStatus($form_name,"XX: empty file. ({$input->name})");
+			$this->SetStatus($form_name,"XX: File has not been submit. ({$input->name})");
 			return true;
 		}
 		

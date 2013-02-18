@@ -19,7 +19,18 @@ class Model_JapanesePref extends Model_Model
 		
 		return $pref;
 	}
-
+	
+	function GetNo( $str )
+	{
+		return $this->GetIndex( $str );
+	}
+	
+	function GetIndex( $str )
+	{
+		$index = array_search($str, $this->get());
+		return $index;
+	}
+	
 	function GetName( $index )
 	{
 		$pref = $this->Get();
