@@ -680,10 +680,7 @@ class Form5 extends OnePiece5
 	
 	private function SaveFile( $input, $form_name )
 	{
-//		$this->mark(__METHOD__ .": ".$input->name);
-		
 		$input_name = $input->name;
-
 		$save_value = $this->GetInputValueRaw($input->name,$form_name);
 		$post_value = $this->GetRequest($input->name, $form_name);
 
@@ -725,7 +722,7 @@ class Form5 extends OnePiece5
 				}
 				
 				//  Reset form config.
-				$this->SetInputValue(null, $input_name, $form_name);
+				$this->SetInputValue( null, $input_name, $form_name );
 				
 				//$this->mark("![ .red [Remove $save_value]]");
 				$this->SetStatus( $form_name, "XX: File delete is success. ($form_name, $input_name)");
@@ -1773,6 +1770,9 @@ class Form5 extends OnePiece5
 	/*******************************************************************************/
 	
 	/**
+	 * Pass to CheckValidate method.
+	 * 
+	 * Is this necessary?
 	 * 
 	 * @param  Config $input
 	 * @param  string $form_name
@@ -1805,10 +1805,16 @@ class Form5 extends OnePiece5
 		return true;
 	}
 	
+	/**
+	 * Convert value.
+	 * 
+	 * @param  string $value
+	 * @param  string $option
+	 * @param  string $charset
+	 * @return string
+	 */
 	function CheckConvert( $value, $option, $charset )
 	{
-        //$this->mark(__METHOD__ . ", $value, $option");
-
 		switch( strtolower($option) ){
 			case 'hankaku':
             case 'zen-han':
