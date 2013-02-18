@@ -175,9 +175,11 @@ if(!function_exists('OnePieceExceptionHandler')){
 }
 
 /**
+ * OnePiece is OnePiece-Framework's core.
  * 
- * @author Tomoaki Nagahara
- *
+ * @version   1.0
+ * @author    Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
+ * @copyright 2009 (C) Tomoaki Nagahara All right reserved.
  */
 class OnePiece5
 {
@@ -704,7 +706,7 @@ __EOL__;
 				break;
 			
 			case 'origin':
-				$this->mark($key);
+				self::mark($key);
 				break;
 				
 			default:
@@ -963,8 +965,14 @@ __EOL__;
 		// init
 		$call_line = '';
 		$depth++;
-		$nl = $this->GetEnv('nl');
-		$back = debug_backtrace( false );
+		
+		$nl = self::GetEnv('nl');
+		
+		if( version_compare(PHP_VERSION, '5.2.5') >= 0 ){
+			$back = debug_backtrace(false);
+		}else{
+			$back = debug_backtrace();
+		}
 		
 		// num
 		if( $num >= count($back) or $num <= 0 ){
@@ -1009,7 +1017,7 @@ __EOL__;
 					$str = str_replace("\\'", "'", $str);
 					$str = str_replace(",)", ") ", $str);
 					$str = str_replace(",  )", ") ", $str);
-					$str = $this->Escape($str);
+					$str = self::Escape($str);
 					$args = $str;
 				}
 			}else{
@@ -1156,7 +1164,7 @@ __EOL__;
 		$attr['class'] = array('OnePiece','mark');
 		$attr['style'] = array('font-size'=>'9pt','background-color'=>'white');
 		$string = self::Html("$nl\t$call_line - $str $memory$nl",'div',$attr);
-		if( $this->GetEnv('cli') ){
+		if( self::GetEnv('cli') ){
 			$string = strip_tags($string);
 		}
 		
@@ -1172,7 +1180,7 @@ __EOL__;
 	 */
 	function Html($str, $tag='span', $attr=null)
 	{
-		$nl    = $this->GetEnv('newline');
+		$nl    = self::GetEnv('newline');
 		$str   = self::Escape($str);
 		$tag   = self::Escape($tag);
 		$attr  = self::Escape($attr);
@@ -1447,95 +1455,101 @@ __EOL__;
 	}
 	
 	/**
+	 * e-mail 
 	 * 
-	 * @param array $args
+	 * @param  array|Config $config
+	 * @return boolean
 	 */
-	function Mail($args)
+	function Mail( $args )
 	{
-		if( false and class_exists('_Mail',true) ){
-			$this->mark('start Mail','memory');
-			$mail = new Mail();
-			$mail->Send($args);
-			$this->mark('finish Mail','memory');
-		}else{
-			// optimize
-			$lang = $this->GetEnv('lang');
-			$char = $this->GetEnv('charset');
-			if( $lang and $char ){
-				// save
-				$save_lang = mb_language();
-				$save_char = mb_internal_encoding();
-				
-				// set
-				mb_language($lang);
-				mb_internal_encoding($char);
-			}
+		// optimize
+		$lang = $this->GetEnv('lang');
+		$char = $this->GetEnv('charset');
+		if( $lang and $char ){
+			// save
+			$save_lang = mb_language();
+			$save_char = mb_internal_encoding();
 			
-			if( is_object($args) ){
-				$args = Toolbox::toArray($args);
-			}
-			
-			//  init
-			$from	 = isset($args['from'])    ? $args['from']    : self::GetEnv('admin-mail');
-			$to      = isset($args['to'])      ? $args['to']      : null;
-			$title   = isset($args['title'])   ? $args['title']   : '';
-			$subject = isset($args['subject']) ? $args['subject'] : $title;
-			$body    = isset($args['body'])    ? $args['body']    : '';
-			$message = isset($args['message']) ? $args['message'] : $body;
-			$headers = array();
-			
-			//  subject
-			$subject = mb_encode_mimeheader($subject);
-			
-			// From
-			if( is_string($from) ){
-				$headers[]  = "From: " . $from;
-			}
-			// Cc
-			if( isset($args['cc']) ){
-				if( is_string($args['cc']) ){
-					$headers[] = "Cc: " . $args['cc'];
-				}else if(is_array($args['cc'])){
-					$this->mark('Does not implements yet.');
-				}
-			}
-			// Bcc
-			if( isset($args['bcc']) ){
-				if( is_string($args['bcc']) ){
-					$headers[]  = "Bcc: " . $args['bcc'];
-				}else if( is_array($args['bcc']) ){
-					$this->mark('Does not implements yet.');
-				}
-			}
-			// X-Mailer
-			if( $this->admin() ){
-				$headers[] = "X-Mailer: OnePiece-Framework";
-			}
-			
-			//	encording format
-			if( $char ){
-				$headers[] = "Content-Type: text/plain; charset=$char";
-			}else{
-				//	$headers[] = "Content-Transfer-Encoding: base64";
-			}
-			
-			$add_header = implode("\n", $headers);
-			$add_params = null;
-			
-			// SMTP server response: 503 5.0.0 Need RCPT (recipient) 
-			$add_params = '-f '.$from;
-		
-			// @todo: I should support multi-byte-language
-			$io = mail($to, $subject, $message, $add_header, $add_params );
-			
-			// recovery
-			if( $save_lang and $save_char ){
-				mb_language($save_lang);
-				mb_internal_encoding($save_char);
-			}
-			
-			return $io;
+			// set
+			mb_language($lang);
+			mb_internal_encoding($char);
 		}
+		
+		//  Convert object to array.
+		if( is_object($args) ){
+			$args = Toolbox::toArray($args);
+		}
+		
+		//  init
+		$headers = array();
+		$from	 = isset($args['from'])    ? $args['from']    : self::GetEnv('admin-mail');
+		$to      = isset($args['to'])      ? $args['to']      : null;
+		$title   = isset($args['title'])   ? $args['title']   : 'No subject';
+		$subject = isset($args['subject']) ? $args['subject'] : $title;
+		$body    = isset($args['body'])    ? $args['body']    : null;
+		$message = isset($args['message']) ? $args['message'] : $body;
+		
+		//  Sender name
+		$from_name = isset($args['from-name']) ? $args['from-name'] : null;
+		$to_name   = isset($args['to-name'])   ? $args['to-name']   : null;
+
+		//  Check
+		if( empty($from) or empty($to) or empty($message) ){
+			$this->StackError("Empty! from=$from, to=$to, message=$message");
+			return false;
+		}
+		
+		//  Subject
+		$subject = mb_encode_mimeheader($subject);
+		
+		// From
+		if( is_string($from) ){
+			$headers[]  = "From: " . $from;
+		}
+		// Cc
+		if( isset($args['cc']) ){
+			if( is_string($args['cc']) ){
+				$headers[] = "Cc: " . $args['cc'];
+			}else if(is_array($args['cc'])){
+				$this->mark('Does not implements yet.');
+			}
+		}
+		// Bcc
+		if( isset($args['bcc']) ){
+			if( is_string($args['bcc']) ){
+				$headers[]  = "Bcc: " . $args['bcc'];
+			}else if( is_array($args['bcc']) ){
+				$this->mark('Does not implements yet.');
+			}
+		}
+		// X-Mailer
+		if( $this->admin() ){
+			$headers[] = "X-Mailer: OnePiece-Framework";
+		}
+		
+		//	encording format
+		if( $char ){
+			$headers[] = "Content-Type: text/plain; charset=$char";
+		}else{
+			//	$headers[] = "Content-Transfer-Encoding: base64";
+		}
+		
+		$add_header = implode("\n", $headers);
+		$add_params = null;
+		
+		// SMTP server response: 503 5.0.0 Need RCPT (recipient) 
+		$add_params = '-f '.$from;
+	
+		// @todo: I should support multi-byte-language
+		$io = mail($to, $subject, $message, $add_header, $add_params );
+		
+		// recovery
+		if( $save_lang and $save_char ){
+			mb_language($save_lang);
+			mb_internal_encoding($save_char);
+		}
+		
+		return $io;
 	}
 	
 	/**
@@ -1673,6 +1687,12 @@ __EOL__;
 				return false;
 		//	}else if( strpos( $name, '_') ){
 		//		$this->mark('Underscore(_) is reserved. For the feature functions. (maybe, namespace)');
+			}
+			
+			//  name check
+			if(!$name){
+				$this->StackError('Model name is empty.');
+				return false;
 			}
 			
 			//  already instanced?
