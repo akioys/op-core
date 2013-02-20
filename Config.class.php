@@ -4,7 +4,7 @@
  * @version 1.0
  * @since   2012
  * @author  Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
- * @copyright (C) 2004 Tomoaki Nagahara All rights reserved.
+ * @copyright (C) 2012 Tomoaki Nagahara All rights reserved.
  */
 class Config extends stdClass
 {
@@ -27,7 +27,7 @@ class Config extends stdClass
 	function __get($name)
 	{
 		if(!isset($this->{$name})){
-			//  use property chain
+			//  Use to property chain.
 			$this->{$name} = new Config();
 			return $this->{$name};
 		}else{
