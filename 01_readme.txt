@@ -49,6 +49,8 @@ Welcome to OnePiece-Framework!!
 	
 		* Present form.
 		
+		* Anti-CSRF.
+		
 	4. PDO
 		
 		* Present database access.
