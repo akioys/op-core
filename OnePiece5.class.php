@@ -1025,7 +1025,7 @@ __EOL__;
 				foreach($args as $var){
 					switch(gettype($var)){
 						case 'string':
-							$vars[] = $this->Escape($var);
+							$vars[] = self::Escape($var);
 							break;
 						case 'array':
 							$str = var_export($var,true);
@@ -1033,7 +1033,7 @@ __EOL__;
 							$str = str_replace("\\'", "'", $str);
 							$str = str_replace(",)", ") ", $str);
 							$str = str_replace(",  )", ") ", $str);
-							$vars[] = $this->Escape($str);
+							$vars[] = self::Escape($str);
 							break;
 						case 'object':
 							$vars[] = get_class($var);
@@ -1463,14 +1463,16 @@ __EOL__;
 	function Mail( $args )
 	{
 		// optimize
-		$lang = $this->GetEnv('lang');
+	//	$lang = $this->GetEnv('lang');
+		$lang = 'uni'; // Unicode only
 		$char = $this->GetEnv('charset');
+		
 		if( $lang and $char ){
-			// save
+			// Save original.
 			$save_lang = mb_language();
 			$save_char = mb_internal_encoding();
 			
-			// set
+			// Set language use mail function.
 			mb_language($lang);
 			mb_internal_encoding($char);
 		}
@@ -1490,8 +1492,8 @@ __EOL__;
 		$message = isset($args['message']) ? $args['message'] : $body;
 		
 		//  Sender name
-		$from_name = isset($args['from-name']) ? $args['from-name'] : null;
-		$to_name   = isset($args['to-name'])   ? $args['to-name']   : null;
+		$from_name = isset($args['from_name']) ? $args['from_name'] : null;
+		$to_name   = isset($args['to_name'])   ? $args['to_name']   : null;
 
 		//  Check
 		if( empty($from) or empty($to) or empty($message) ){
@@ -1502,10 +1504,22 @@ __EOL__;
 		//  Subject
 		$subject = mb_encode_mimeheader($subject);
 		
-		// From
-		if( is_string($from) ){
-			$headers[]  = "From: " . $from;
+		//  To
+		if( $to_name ){
+			$to_name = mb_encode_mimeheader($from_name);
+			$headers[]  = "To: $to_name <$to>";
 		}
+		
+		//  From
+	//	if( is_string($from) ){
+			if( $from_name ){
+				$from_name = mb_encode_mimeheader($from_name);
+				$headers[]  = "From: $from_name <$from>";
+			}else{
+				$headers[]  = "From: $from";
+			}
+	//	}
+		
 		// Cc
 		if( isset($args['cc']) ){
 			if( is_string($args['cc']) ){
@@ -1514,6 +1528,7 @@ __EOL__;
 				$this->mark('Does not implements yet.');
 			}
 		}
+		
 		// Bcc
 		if( isset($args['bcc']) ){
 			if( is_string($args['bcc']) ){
@@ -1522,6 +1537,7 @@ __EOL__;
 				$this->mark('Does not implements yet.');
 			}
 		}
+		
 		// X-Mailer
 		if( $this->admin() ){
 			$headers[] = "X-Mailer: OnePiece-Framework";
