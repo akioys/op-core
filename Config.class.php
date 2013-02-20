@@ -56,4 +56,24 @@ class Config extends stdClass
 			}
 		}
 	}
+	
+	function D()
+	{
+		if( $io = OnePiece5::GetEnv('admin')){
+			return;
+		}
+		
+		$cli  = OnePiece5::GetEnv('cli');
+		$line = OnePiece5::GetCallerLine();
+		
+		//
+		OnePiece5::p($line,'div');
+		
+		//
+		if( $cli ){
+			var_dump( Toolbox::toArray($this) );
+		}else{
+			Dump::D(Toolbox::toArray($this));
+		}
+	}
 }
