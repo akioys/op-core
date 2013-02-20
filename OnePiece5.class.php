@@ -957,7 +957,7 @@ __EOL__;
 	 * @param integer $num
 	 * @param string  $format
 	 */
-	function GetCallerLine( $depth=0, $num=1, $format=null )
+	static function GetCallerLine( $depth=0, $num=1, $format=null )
 	{
 		// TODO: file system encoding
 		$encode_file_system = PHP_OS == 'WINNT' ? 'sjis': 'utf-8';
@@ -1085,7 +1085,7 @@ __EOL__;
 	 * @param  string $file_path
 	 * @return string $file_path
 	 */
-	function CompressPath( $path )
+	static function CompressPath( $path )
 	{
 		// TODO: file system encoding. (Does not support multi language, yet)
 		$encode_file_system = PHP_OS == 'WINNT' ? 'sjis': 'utf-8';
@@ -1178,7 +1178,7 @@ __EOL__;
 	 * @param array  $attr
 	 * @return string
 	 */
-	function Html($str, $tag='span', $attr=null)
+	static function Html($str, $tag='span', $attr=null)
 	{
 		$nl    = self::GetEnv('newline');
 		$str   = self::Escape($str);
@@ -1213,7 +1213,7 @@ __EOL__;
 	 * @param string $tag
 	 * @param array $attr
 	 */
-	function P( $str='OnePiece!', $tag='p', $attr=null)
+	static function P( $str='OnePiece!', $tag='p', $attr=null)
 	{
 		print self::Html( $str, $tag, $attr );
 	}
@@ -1455,7 +1455,7 @@ __EOL__;
 	}
 	
 	/**
-	 * e-mail 
+	 * Send mail method
 	 * 
 	 * @param  array|Config $config
 	 * @return boolean
