@@ -367,10 +367,8 @@ class Form5 extends OnePiece5
 		
 		if( in_array( $input->type, array('select','checkbox','radio') ) ){
 			if( isset($input->options->$value) ){
-		//	if( array_key_exists($value, $input->options) ){
 				$value = $input->options->$value->label;
 			}else{
-			//	$this->d( Toolbox::toArray($input->options) );
 				foreach( $input->options as $option ){
 					if( $option->value == $value ){
 						$value = $option->label;
@@ -1208,18 +1206,27 @@ class Form5 extends OnePiece5
 	
 	public function Start( $form_name=null, $action=null )
 	{
+		//  Check
 		if(!$form_name){
 			$this->StackError('form_name is empty. please set form_name.');
 			return false;
 		}
-		
+
+		//  Check
 		if(!$this->CheckConfig($form_name)){
 			return false;
 		}
 		
+		//  Check
 		if( $temp_name = $this->GetCurrentFormName() ){
 			$this->StackError("Form is not finishing. (Open form is $temp_name)");
 			return sprintf('<fail class="%s, %s, %s, %s"  />', 'OnePiece', get_class($this), __FUNCTION__, __LINE__);
+		}
+
+		//  Check
+		if( $action and !is_string($action) ){
+			$this->mark('$action is not string');
+			$action = null;
 		}
 		
 		// re-generate token key
@@ -1247,7 +1254,6 @@ class Form5 extends OnePiece5
 		
 		//  print form tag.
 		printf('<form name="%s" action="%s" method="%s" %s Accept-Charset="%s" %s %s>'.$nl, $form_name, $action, $method, $enctype, $charset, $class, $style);
-		//printf('<input type="hidden" name="form_name" value="%s" />'.$nl, $form_name);
 		printf('<input type="hidden" name="%s" value="%s" />'.$nl, $token_key_name, $token_key);
 		
 		$this->SetCurrentFormName($form_name);
@@ -1569,14 +1575,18 @@ class Form5 extends OnePiece5
 					}else{
 						$label = '';
 					}
+					
 					//  tail
 					if(isset($tail)){
 						$label .= $tail;
 					}
+					
 					//  checked
 					if( isset($checked) and $checked ){
 						$attr .= ' checked="checked"';
 					}
+					
+					//  create tag
 					$tag .= sprintf('<nobr><input type="%s" name="%s" value="%s" id="%s" %s />%s</nobr>', $type, $name, $value, $id, $attr, $label);
 				}
 				break;
