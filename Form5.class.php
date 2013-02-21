@@ -405,7 +405,6 @@ class Form5 extends OnePiece5
 		}
 		
 		$value = $this->GetInputValueRaw( $input_name, $form_name, $joint );
-		//$this->mark($value);
 		
 		switch( $type = strtolower(gettype($value)) ){
 			case 'null':
@@ -704,7 +703,6 @@ class Form5 extends OnePiece5
 	private function SaveFile( $input, $form_name )
 	{
 		$input_name = $input->name;
-		
 		$save_value = $this->GetInputValueRaw($input->name,$form_name);
 		$post_value = $this->GetRequest($input->name, $form_name);
 		
@@ -728,7 +726,7 @@ class Form5 extends OnePiece5
 					
 					return false;
 				}
-				
+			
 				//  Reset form config. 
 				$this->SetInputValue( null, $input_name, $form_name );
 			
@@ -1507,9 +1505,6 @@ class Form5 extends OnePiece5
 			case 'file':
 				//  remove checkbox
 				$value = $this->GetInputValue($input_name);
-				
-			//	$this->mark(gettype($value).': '. $value);
-				
 				if( is_string($value) and $value ){
 					if( method_exists( $this, 'GetInputConfigRemover')){
 						//  If you can method over ride.
@@ -1524,9 +1519,10 @@ class Form5 extends OnePiece5
 						$remover->label   = $value;
 						$remover->checked = true;
 					}
-					// create remover
+					//  Create remover
 					$tag = $this->CreateInputTag($remover, $form_name);
 				}else{
+					//  Create file tag
 					$tag = sprintf('<input type="%s" name="%s" value="%s" %s />'.$tail, $type, $input_name, $value, $attr);
 				}
 				break;
@@ -1782,6 +1778,9 @@ class Form5 extends OnePiece5
 	/*******************************************************************************/
 	
 	/**
+	 * Pass to CheckValidate method.
+	 * 
+	 * Is this necessary?
 	 * 
 	 * @param  Config $input
 	 * @param  string $form_name
@@ -1814,10 +1813,16 @@ class Form5 extends OnePiece5
 		return true;
 	}
 	
+	/**
+	 * Convert value.
+	 * 
+	 * @param  string $value
+	 * @param  string $option
+	 * @param  string $charset
+	 * @return string
+	 */
 	function CheckConvert( $value, $option, $charset )
 	{
-        //$this->mark(__METHOD__ . ", $value, $option");
-
 		switch( strtolower($option) ){
 			case 'hankaku':
             case 'zen-han':
