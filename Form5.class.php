@@ -1663,10 +1663,10 @@ class Form5 extends OnePiece5
 	
 	/*******************************************************************************/
 	
-	function Debug( $form_name=null, $label=null )
+	function Debug( $form_name=null )
 	{
 		if(!$this->admin() ){
-			$this->mark('Not admin.');
+			$this->mark('Does not view debug info. because you are not admin.');
 			return false;
 		}
 		
@@ -1683,8 +1683,9 @@ class Form5 extends OnePiece5
 		$temp['Errors']	 = $this->status->$form_name->stack;
 		$temp['session'] = $this->GetSession('form');
 		
-		$this->mark( __METHOD__, $label );
-		$this->d( $temp, $label);
+		$call = $this->GetCallerLine();
+		$this->p("Form debugging[ ![.small[ $call ]] ]");
+		Dump::d($temp);
 	}
 	
 	function Error( $input_name, $html='span 0xff0000', $form_name=null )
