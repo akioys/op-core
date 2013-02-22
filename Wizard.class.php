@@ -1,5 +1,9 @@
 <?php
-
+/**
+ * 
+ * @author Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
+ * 
+ */
 class Wizard extends OnePiece5
 {
 	private $config = null;
@@ -56,7 +60,7 @@ class Wizard extends OnePiece5
 			$this->CreateGrant($config);
 			
 		}else{
-			$this->form()->Debug($form_name);
+		//	$this->form()->Debug($form_name);
 		}
 		
 		//  Print form.
@@ -105,6 +109,10 @@ class Wizard extends OnePiece5
 	
 	function CreateTable($config)
 	{
+		if(empty($config->table)){
+			return true;
+		}
+		
 		foreach( $config->table as $table ){
 			if( empty($table->database) ){
 				$table->database = $config->database->database;
@@ -179,6 +187,37 @@ class WizardConfig extends ConfigMgr
 		$config->input->$input_name->name  = $input_name;
 		$config->input->$input_name->type  = 'submit';
 		$config->input->$input_name->value = 'Submit';
+		
+		return $config;
+	}
+}
+
+class WizardHelper extends OnePiece5
+{
+	/**
+	 * Create base config
+	 * 
+	 * @param string $user_name
+	 * @param string $password
+	 * @param string $host_name
+	 * @param string $database_name
+	 * @param string $table_name
+	 * @param string $driver
+	 * @param string $charset
+	 */
+	static function GetBase( $user_name, $password, $host_name, $database_name, $table_name, $driver='mysql', $charset='utf8' )
+	{
+		$database  = new Config();
+		
+		//  init
+		$database->driver   = $driver;	 // $conf['driver']   ? $conf['driver']:   null;
+		$database->host     = $host_name;	 // $conf['host']     ? $conf['host']:     null;
+		$database->user     = $user_name;	 // $conf['user']     ? $conf['user']:     null;
+		$database->password = $password; // $conf['password'] ? $conf['password']: null;
+		$database->database = $database_name; // $conf['database'] ? $conf['database']: null;
+		$database->charset  = $charset;	 // $conf['charset']  ? $conf['charset']:  $this->GetEnv('charset');
+		
+		$config->database = $database;
 		
 		return $config;
 	}
