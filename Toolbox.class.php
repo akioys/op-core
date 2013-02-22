@@ -236,6 +236,10 @@ class Toolbox
 	
 	static function Copy($args)
 	{
+		if( !$args ){
+			return null;
+		}
+		
 		$return = new stdClass();
 		foreach( $args as $key => $var ){
 			// value
