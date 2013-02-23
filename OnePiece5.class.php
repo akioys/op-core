@@ -723,8 +723,8 @@ __EOL__;
 		
 		// get key's value
 		switch($key){
-			case isset($_SERVER[strtolower($key)]):
-				$var = $_SERVER[strtolower($key)];
+			case isset($_SERVER[strtoupper($key)]):
+				$var = $_SERVER[strtoupper($key)];
 				break;
 				
 			case 'url':
