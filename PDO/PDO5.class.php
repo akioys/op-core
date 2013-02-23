@@ -115,9 +115,17 @@ class PDO5 extends OnePiece5
 	
 	function Query( $qu, $key=null )
 	{
+		//  Check PDO object
+		if(!$this->pdo instanceof PDO ){
+			$this->StackError("PDO is not instanced.");
+			return false;
+		}
+		
+		//  Save query.
 		$this->qu($qu);
-				
-		if( $st = $this->pdo->query($this->qu) ){
+		
+		//  Execute
+		if( $st = $this->pdo->query( $this->qu ) ){
 			//  success
 			if( $st instanceof PDOStatement ){
 				switch($key){

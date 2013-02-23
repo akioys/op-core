@@ -1,6 +1,6 @@
 <?php
 /**
- * TODO: I (will|should) support to spl_autoload_register
+ * TODO: We (will|should) support to spl_autoload_register
  * @see http://www.php.net/manual/ja/function.spl-autoload-register.php
  */
 if(!function_exists('__autoload')){
@@ -14,9 +14,6 @@ if(!function_exists('__autoload')){
 			case 'Memcache':
 			case 'Memcached':
 				return;
-				
-		//	case 'App':
-		//		$class_name = 'NewWorld5';
 			
 			case 'DML':
 			case 'DML5':
@@ -167,7 +164,10 @@ if(!function_exists('OnePieceErrorHandler')){
 if(!function_exists('OnePieceExceptionHandler')){
 	function OnePieceExceptionHandler($e)
 	{
-		print "<h1>Please implement the e-mail alert.</h1>";
+		//  TODO: 
+		//print "<h1>Please implement the e-mail alert.</h1>";
+		$op = new OnePiece5();
+		$op->StackError( $e->getMessage() );
 		printf('<div><p>[%s] %s</p><p>%s : %s</p></div>', get_class($e), $e->GetMessage(), $e->GetFile(), $e->GetLine() );
 		dump::d(Toolbox::toArray($e));
 	}
@@ -706,7 +706,7 @@ __EOL__;
 				break;
 			
 			case 'origin':
-				$this->mark($key);
+				self::mark($key);
 				break;
 				
 			default:
@@ -723,8 +723,8 @@ __EOL__;
 		
 		// get key's value
 		switch($key){
-			case isset($_SERVER[strtolower($key)]):
-				$var = $_SERVER[strtolower($key)];
+			case isset($_SERVER[strtoupper($key)]):
+				$var = $_SERVER[strtoupper($key)];
 				break;
 				
 			case 'url':
@@ -957,7 +957,7 @@ __EOL__;
 	 * @param integer $num
 	 * @param string  $format
 	 */
-	function GetCallerLine( $depth=0, $num=1, $format=null )
+	static function GetCallerLine( $depth=0, $num=1, $format=null )
 	{
 		// TODO: file system encoding
 		$encode_file_system = PHP_OS == 'WINNT' ? 'sjis': 'utf-8';
@@ -965,8 +965,14 @@ __EOL__;
 		// init
 		$call_line = '';
 		$depth++;
-		$nl = $this->GetEnv('nl');
-		$back = debug_backtrace( false );
+		
+		$nl = self::GetEnv('nl');
+		
+		if( version_compare(PHP_VERSION, '5.2.5') >= 0 ){
+			$back = debug_backtrace(false);
+		}else{
+			$back = debug_backtrace();
+		}
 		
 		// num
 		if( $num >= count($back) or $num <= 0 ){
@@ -1011,7 +1017,7 @@ __EOL__;
 					$str = str_replace("\\'", "'", $str);
 					$str = str_replace(",)", ") ", $str);
 					$str = str_replace(",  )", ") ", $str);
-					$str = $this->Escape($str);
+					$str = self::Escape($str);
 					$args = $str;
 				}
 			}else{
@@ -1019,7 +1025,7 @@ __EOL__;
 				foreach($args as $var){
 					switch(gettype($var)){
 						case 'string':
-							$vars[] = $this->Escape($var);
+							$vars[] = self::Escape($var);
 							break;
 						case 'array':
 							$str = var_export($var,true);
@@ -1027,7 +1033,7 @@ __EOL__;
 							$str = str_replace("\\'", "'", $str);
 							$str = str_replace(",)", ") ", $str);
 							$str = str_replace(",  )", ") ", $str);
-							$vars[] = $this->Escape($str);
+							$vars[] = self::Escape($str);
 							break;
 						case 'object':
 							$vars[] = get_class($var);
@@ -1079,7 +1085,7 @@ __EOL__;
 	 * @param  string $file_path
 	 * @return string $file_path
 	 */
-	function CompressPath( $path )
+	static function CompressPath( $path )
 	{
 		// TODO: file system encoding. (Does not support multi language, yet)
 		$encode_file_system = PHP_OS == 'WINNT' ? 'sjis': 'utf-8';
@@ -1158,7 +1164,7 @@ __EOL__;
 		$attr['class'] = array('OnePiece','mark');
 		$attr['style'] = array('font-size'=>'9pt','background-color'=>'white');
 		$string = self::Html("$nl\t$call_line - $str $memory$nl",'div',$attr);
-		if( $this->GetEnv('cli') ){
+		if( self::GetEnv('cli') ){
 			$string = strip_tags($string);
 		}
 		
@@ -1172,9 +1178,9 @@ __EOL__;
 	 * @param array  $attr
 	 * @return string
 	 */
-	function Html($str, $tag='span', $attr=null)
+	static function Html($str, $tag='span', $attr=null)
 	{
-		$nl    = $this->GetEnv('newline');
+		$nl    = self::GetEnv('newline');
 		$str   = self::Escape($str);
 		$tag   = self::Escape($tag);
 		$attr  = self::Escape($attr);
@@ -1207,7 +1213,7 @@ __EOL__;
 	 * @param string $tag
 	 * @param array $attr
 	 */
-	function P( $str='OnePiece!', $tag='p', $attr=null)
+	static function P( $str='OnePiece!', $tag='p', $attr=null)
 	{
 		print self::Html( $str, $tag, $attr );
 	}
@@ -1449,7 +1455,7 @@ __EOL__;
 	}
 	
 	/**
-	 * e-mail 
+	 * Send mail method
 	 * 
 	 * @param  array|Config $config
 	 * @return boolean
@@ -1457,14 +1463,16 @@ __EOL__;
 	function Mail( $args )
 	{
 		// optimize
-		$lang = $this->GetEnv('lang');
+	//	$lang = $this->GetEnv('lang');
+		$lang = 'uni'; // Unicode only
 		$char = $this->GetEnv('charset');
+		
 		if( $lang and $char ){
-			// save
+			// Save original.
 			$save_lang = mb_language();
 			$save_char = mb_internal_encoding();
 			
-			// set
+			// Set language use mail function.
 			mb_language($lang);
 			mb_internal_encoding($char);
 		}
@@ -1484,8 +1492,8 @@ __EOL__;
 		$message = isset($args['message']) ? $args['message'] : $body;
 		
 		//  Sender name
-		$from_name = isset($args['from-name']) ? $args['from-name'] : null;
-		$to_name   = isset($args['to-name'])   ? $args['to-name']   : null;
+		$from_name = isset($args['from_name']) ? $args['from_name'] : null;
+		$to_name   = isset($args['to_name'])   ? $args['to_name']   : null;
 
 		//  Check
 		if( empty($from) or empty($to) or empty($message) ){
@@ -1496,10 +1504,22 @@ __EOL__;
 		//  Subject
 		$subject = mb_encode_mimeheader($subject);
 		
-		// From
-		if( is_string($from) ){
-			$headers[]  = "From: " . $from;
+		//  To
+		if( $to_name ){
+			$to_name = mb_encode_mimeheader($from_name);
+			$headers[]  = "To: $to_name <$to>";
 		}
+		
+		//  From
+	//	if( is_string($from) ){
+			if( $from_name ){
+				$from_name = mb_encode_mimeheader($from_name);
+				$headers[]  = "From: $from_name <$from>";
+			}else{
+				$headers[]  = "From: $from";
+			}
+	//	}
+		
 		// Cc
 		if( isset($args['cc']) ){
 			if( is_string($args['cc']) ){
@@ -1508,6 +1528,7 @@ __EOL__;
 				$this->mark('Does not implements yet.');
 			}
 		}
+		
 		// Bcc
 		if( isset($args['bcc']) ){
 			if( is_string($args['bcc']) ){
@@ -1516,6 +1537,7 @@ __EOL__;
 				$this->mark('Does not implements yet.');
 			}
 		}
+		
 		// X-Mailer
 		if( $this->admin() ){
 			$headers[] = "X-Mailer: OnePiece-Framework";
@@ -1675,8 +1697,12 @@ __EOL__;
 	function Model($name)
 	{
 		try{
-			if( $name == 'Account' ){
-				$this->mark();
+			//  name check
+			if(!$name){
+				$this->StackError('Model name is empty.');
+				return false;
+		//	}else if( strpos( $name, '_') ){
+		//		$this->mark('Underscore(_) is reserved. For the feature functions. (maybe, namespace)');
 			}
 			
 			//  name check
