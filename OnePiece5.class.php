@@ -185,11 +185,12 @@ class OnePiece5
 {
 	const OP_UNIQ_ID = 'op-uniq-id';
 	
-	public  $env     = array();
-	public  $laptime = null;
+//	public  $env     = array();
+//	public  $laptime = null;
 	private $errors  = array();
 	private $session = array();
 	private $isInit  = null;
+	private $_env;
 	
 	/**
 	 * 
@@ -263,7 +264,7 @@ class OnePiece5
 			$this->StackError( $message );
 		}
 		
-		$this->PrintTime();
+	//	$this->PrintTime();
 		$this->PrintError();
 	}
 	
@@ -1443,9 +1444,7 @@ __EOL__;
 		return "$elapsed ($lap)";
 	}
 	
-	/**
-	 * 
-	 */
+	/*
 	function PrintTime(){
 		if($this->GetEnv('cli')){ return; }
 		if(!$this->laptime){ return; }
@@ -1453,6 +1452,7 @@ __EOL__;
 			self::d($this->laptime);
 		}
 	}
+	*/
 	
 	/**
 	 * Send mail method
@@ -1764,7 +1764,11 @@ __EOL__;
 		}
 	}
 	
-	/* @var $pdo PDO5 */
+	/**
+	 * Separate for each instance.
+	 * 
+	 * @var PDO5
+	 */
 	private $pdo;
 	
 	/**
@@ -1795,45 +1799,71 @@ __EOL__;
 		return $this->pdo;
 	}
 	
-	/* @var $mysql MySQL */
+	/**
+	 * @var MySQL
+	 */
 	private $mysql;
 	
 	/**
 	 * Return MySQL Object
 	 * 
-	 * @param  array|string configuration or configuration file path
+	 * @param  array|string configuration-array or configuration-file-path
 	 * @return MySQL $mysql
 	 */
 	function MySQL($args=null)
 	{
-		if( isset($this->mysql) ){
-			// ok
-		}else{
+		if( empty($this->mysql) ){
 			include_once('SQL/MySQL.class.php');
 			$this->mysql = new MySQL( $args, $this );
 		}
 		return $this->mysql;
-	} 
+	}
+	
+	/**
+	 * @var Form5
+	 */
+	private $form = null;
 	
 	/**
 	 * Abstract Form object.
 	 * 
-	 * @param unknown $args
+	 * @param  string $name Class name
 	 * @return Form5
 	 */
-	function Form($args='Form5')
+	function Form( $name='Form5' )
 	{
+		/*
 		if(!isset($_SERVER[__CLASS__][strtoupper($args)])){
 			if(!$_SERVER[__CLASS__][strtoupper($args)] = new $args()){
 				return false;
 			}
 		}
 		return $_SERVER[__CLASS__][strtoupper($args)];
+		*/
+		
+		if( !isset($this->_env[$name]) ){
+			if( !$this->_env[$name] = new $name() ){
+				return new OnePiece5();
+			}
+		}
+		
+		return $this->_env[$name];
 	}
 	
-	/* @var $form Form5 */
-	private $form = null;
-	
+	/*
+	protected function _instance( $name, $instance=null )
+	{
+		static $env;
+		
+		if( $instance ){
+			$env[$name] = $instance;
+		}else{
+			$instance = $env[$name];
+		}
+		
+		return $instance;
+	}
+	*/
 	
 	/**
 	 *  @var $i18n i18n
