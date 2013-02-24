@@ -18,14 +18,11 @@ abstract class ConfigMgr extends OnePiece5
 	}
 	
 	function pdo($name=null)
-	{
-	//	static $init; // static value is shared different instanced object. 
+	{ 
 		if(!$this->_init_pdo){
 			$config = $this->database();
 			parent::pdo()->Connect($config);
 			$this->_init_pdo = true;
-		}else{
-		//	$this->mark();
 		}
 		return parent::pdo($name);
 	}
