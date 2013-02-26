@@ -4,6 +4,10 @@ class Model_JapanesePref extends Model_Model
 {
 	function Get( $value=null )
 	{
+		if( is_numeric($value) ){
+			$value = (int)$value;
+		}
+		
 		switch($type = gettype($value)){
 			case 'null':
 			case 'NULL':
