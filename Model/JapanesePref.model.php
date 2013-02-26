@@ -2,7 +2,31 @@
 
 class Model_JapanesePref extends Model_Model
 {
-	function Get($type='iso')
+	function Get( $value=null )
+	{
+		switch($type = gettype($value)){
+			case 'null':
+			case 'NULL':
+				$return = $this->GetList();
+				break;
+				
+			case 'integer':
+				$return = $this->GetName($value);
+				break;
+				
+			case 'string':
+				$return = $this->GetIndex($value);
+				break;
+				
+			default:
+				$this->mark("undefined type. ($type)");
+				$return = null;
+		}
+		
+		return $return;
+	}
+	
+	function GetList($type='iso')
 	{
 		$pref = array(
 				'01' => '北海道', '02' => '青森県', '03' => '岩手県', '04' => '宮城県', '05' => '秋田県',
