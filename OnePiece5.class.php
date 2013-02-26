@@ -1877,6 +1877,13 @@ __EOL__;
 	 */
 	private $cache = null;
 	
+	/**
+	 * Cache is presents the [memcache/memcached/other] interface. 
+	 * 
+	 * @param  string $name
+	 * @throws Exception
+	 * @return Cache
+	 */
 	function Cache($name='Cache')
 	{
 		if(!$this->cache){

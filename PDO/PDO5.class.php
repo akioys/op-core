@@ -535,7 +535,15 @@ class PDO5 extends OnePiece5
 		if(!is_array($conf)){
 			$conf = Toolbox::toArray($conf);
 		}
-
+		
+		//  Check cache setting.
+		if(!empty($conf['cache'])){
+			$key = serialize($conf);
+			if($records = $this->Cache()->Get($key)){
+				return $records;
+			}
+		}
+		
 		//  get select query
 		if(!$qu = $this->dml()->GetSelect($conf)){
 			return false;
@@ -551,6 +559,12 @@ class PDO5 extends OnePiece5
 			if( isset($records[0]) ){
 				return $records[0];
 			}
+		}
+		
+		//  Check cache setting.
+		if(!empty($conf['cache'])){
+			$key = serialize($conf);
+			$this->Cache()->Set( $key, $records, (int)$conf['cache'] );
 		}
 		
 		//  return to records.
