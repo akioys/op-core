@@ -162,9 +162,11 @@ class PDO5 extends OnePiece5
 		return $return;
 	}
 	
-	function ConvertCharset( $config )
+	function ConvertCharset( $charset=null )
 	{
-		$charset = isset($config->charset) ? $config->charset: $this->GetEnv('charset');
+		if( empty($charset) ){
+			$charset = $this->GetEnv('charset');
+		} 
 		
 		switch( $charset ){
 			case 'utf8':
@@ -200,18 +202,17 @@ class PDO5 extends OnePiece5
 		}
 		
 		//  init
-		$this->driver   = $config->driver;	 // $conf['driver']   ? $conf['driver']:   null;
-		$this->host     = $config->host;	 // $conf['host']     ? $conf['host']:     null;
-		$this->user     = $config->user;	 // $conf['user']     ? $conf['user']:     null;
-		$password       = $config->password; // $conf['password'] ? $conf['password']: null;
-		$this->database = $config->database; // $conf['database'] ? $conf['database']: null;
-		$this->charset  = $config->charset;	 // $conf['charset']  ? $conf['charset']:  $this->GetEnv('charset');
+		$this->driver   = $config->driver;
+		$this->host     = $config->host;
+		$this->user     = $config->user;
+		$password       = $config->password;
+		$this->database = isset($config->database) ? $config->database: null;
+		$this->charset  = isset($config->charset)  ? $config->charset : null;
 		
-		$dsn = "{$this->driver}:dbname={$this->database};host={$this->host}";
 		$options = array();
 		
 		try {
-			if(!$this->pdo = new PDO( $dsn, $this->user, $password, $options )){
+			if(!$this->pdo = new PDO( "{$this->driver}:host={$this->host}", $this->user, $password, $options )){
 				$this->StackError("Can not connect database. ($key)");
 				return false;
 			}
@@ -220,10 +221,16 @@ class PDO5 extends OnePiece5
 			return false;
 		}
 		
-		//  charset
-		$charset = $this->ConvertCharset($config);
-		if( $this->query("SET NAMES $charset") === false ){
-			return;
+		//  Database select
+		if( $this->database ){
+			$io = $this->Database($this->database);
+			if( $io ){
+				//  Set charset
+				$charset = $this->ConvertCharset($this->charset);
+				if( $this->query("SET NAMES $charset") === false ){
+					return;
+				}
+			}
 		}
 		
 		//  connected flag
