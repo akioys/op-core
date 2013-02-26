@@ -39,7 +39,7 @@ if(!function_exists('__autoload')){
 		// check
 		foreach( $dirs as $dir ){
 			$file_path = rtrim($dir,DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $file_name;
-			//print $file_path . '<br/>' . PHP_EOL;
+		//	print $file_path . '<br/>' . PHP_EOL;
 			if( file_exists($file_path) ){
 				include_once($file_path);
 				break;
@@ -1575,6 +1575,12 @@ __EOL__;
 	 */
 	function Template( $file, $data=null )
 	{
+		if(!is_string($file)){
+			$this->StackError("Passed arguments is not string. (".gettype($file).")");
+			return false;
+		}
+		
+		//  for developper's debug
 		$this->mark($file,'template');
 		
 		//  access is deny, above current directory
@@ -1827,7 +1833,9 @@ __EOL__;
 	 */
 	function Form( $name='Form5' )
 	{
-		static $obj;
+		//static $obj;
+		
+		$obj = &$_SERVER[__CLASS__][__METHOD__];
 		
 		if( empty($obj) ){
 			if(!$obj = new $name()){
@@ -1902,8 +1910,10 @@ __EOL__;
 	function Cache($name='Cache')
 	{
 		if(!$this->cache){
-			if(!include("$name.class.php") ){
-				throw new Exception("Include is failed. ($name)");
+			if(!class_exists($name)){
+				if(!include("$name.class.php") ){
+					throw new Exception("Include is failed. ($name)");
+				}
 			}
 			if(!$this->cache = new $name() ){
 				throw new Exception("Instance object is failed. ($name)");

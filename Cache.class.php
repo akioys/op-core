@@ -66,10 +66,13 @@ class Cache extends OnePiece5
 	
 	function Set( $key, $value, $expire=0 )
 	{
-		$this->mark( get_class($this->cache) );
+		switch( $name = get_class($this->cache) ){
+			case 'Memcache':
+			//	$compress = MEMCACHE_COMPRESSED;
+				$compress = null;
+				break;
+		}
 		
-	//	$compress = MEMCACHE_COMPRESSED
-		$compress = null;
 		
 		$this->cache->Set( $key, $value, $compress, $expire );
 	}
@@ -77,7 +80,7 @@ class Cache extends OnePiece5
 	function Get( $key )
 	{
 		if( $this->cache ){
-			return $this->cache->Get( $key );
+			return $this->cache->Get( $key /* ,MEMCACHE_COMPRESSED */ );
 		}else{
 			return null;
 		}

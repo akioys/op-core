@@ -139,6 +139,7 @@ abstract class ConfigMgr extends OnePiece5
 		$config = new Config();
 		$config->table = $table_name;
 		$config->where->deleted = null;
+		$config->cache = 1;
 		return $config;
 	}
 	
