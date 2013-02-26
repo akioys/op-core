@@ -1820,11 +1820,6 @@ __EOL__;
 	}
 	
 	/**
-	 * @var Form5
-	 */
-	private $form = null;
-	
-	/**
 	 * Abstract Form object.
 	 * 
 	 * @param  string $name Class name
@@ -1832,38 +1827,16 @@ __EOL__;
 	 */
 	function Form( $name='Form5' )
 	{
-		/*
-		if(!isset($_SERVER[__CLASS__][strtoupper($args)])){
-			if(!$_SERVER[__CLASS__][strtoupper($args)] = new $args()){
-				return false;
-			}
-		}
-		return $_SERVER[__CLASS__][strtoupper($args)];
-		*/
+		static $obj;
 		
-		if( !isset($this->_env[$name]) ){
-			if( !$this->_env[$name] = new $name() ){
-				return new OnePiece5();
+		if( empty($obj) ){
+			if(!$obj = new $name()){
+				$obj = OnePiece5();
 			}
 		}
 		
-		return $this->_env[$name];
+		return $obj;
 	}
-	
-	/*
-	protected function _instance( $name, $instance=null )
-	{
-		static $env;
-		
-		if( $instance ){
-			$env[$name] = $instance;
-		}else{
-			$instance = $env[$name];
-		}
-		
-		return $instance;
-	}
-	*/
 	
 	/**
 	 *  @var $i18n i18n
@@ -1876,8 +1849,19 @@ __EOL__;
 	 * @param  string $name Object name
 	 * @return i18n
 	 */
-	function i18n($name='i18n')
+	function i18n( $name='i18n' )
 	{
+		static $obj;
+
+		if( empty($obj) ){
+			if(!$obj = new $name()){
+				$obj = OnePiece5();
+			}
+		}
+		
+		return $obj;
+		
+		/*
 		if( empty($this->i18n) ){
 			if(!$this->i18n = new $name()){
 				return $this;
@@ -1885,6 +1869,7 @@ __EOL__;
 		}
 		
 		return $this->i18n;
+		*/
 	}
 	
 	/**
