@@ -24,7 +24,7 @@ class PDO5 extends OnePiece5
 					throw new Exception("Include failed.(PDO/DML.class.php)");
 				}
 			}
-				
+			
 			//  Init
 			$this->dml = new DML();
 			$this->dml->SetPDO( $this->pdo, $this->driver );
@@ -400,8 +400,6 @@ class PDO5 extends OnePiece5
 		//  get record
 		$record = $this->Select($config);
 		if( $record === false ){
-			//$this->qu('Quick-Select is failed');
-			//$this->d( Toolbox::toArray($config) );
 			return false;
 		}
 		
@@ -527,7 +525,14 @@ class PDO5 extends OnePiece5
 	
 	function Select( $conf )
 	{
+		if(!$this->isConnect){
+			$this->StackError("Does not isConnect.");
+			return false;
+		}
+		
+		//  Check
 		if(!$this->pdo){
+			$this->StackError("Does not instanced PDO object.");
 			return false;
 		}
 		
@@ -550,7 +555,9 @@ class PDO5 extends OnePiece5
 		}
 
 		//  execute
-		if(($records = $this->query($qu)) === false ){
+		$records = $this->query($qu);
+		
+		if( $records === false ){
 			return false;
 		}
 		
@@ -573,7 +580,9 @@ class PDO5 extends OnePiece5
 	
 	function Insert( $conf )
 	{
+		//  Check
 		if(!$this->pdo){
+			$this->StackError("Does not instanced PDO object.");
 			return false;
 		}
 		
@@ -600,7 +609,9 @@ class PDO5 extends OnePiece5
 	
 	function Update($conf)
 	{
+		//  Check
 		if(!$this->pdo){
+			$this->StackError("Does not instanced PDO object.");
 			return false;
 		}
 		
@@ -622,7 +633,9 @@ class PDO5 extends OnePiece5
 	
 	function Delete( $conf )
 	{
+		//  Check
 		if(!$this->pdo){
+			$this->StackError("Does not instanced PDO object.");
 			return false;
 		}
 		
