@@ -86,6 +86,10 @@ if(!function_exists('OnePieceShutdown')){
 					$er = 'E_STRICT';
 					break;
 					
+				case E_USER_NOTICE: // 1024
+					$er = 'E_USER_NOTICE';
+					break;
+					
 				default:
 					$er = $error['type'];
 			}
@@ -139,6 +143,9 @@ if(!function_exists('OnePieceErrorHandler')){
 			case E_STRICT:  // 2048
 				$er = 'E_STRICT';
 				break;
+			case E_USER_NOTICE: // 1024
+				$er = 'E_USER_NOTICE';
+				break;
 			default:
 				$er = 'ERROR: '.$no;
 		}
@@ -146,7 +153,7 @@ if(!function_exists('OnePieceErrorHandler')){
 		//  Output error message.
 		$format = '%s [%s] %s: %s';
 		if(empty($env['cgi'])){
-			$format = '<p>'.$format.'</p>';
+			$format = '<div>'.$format.'</div>';
 		}
 		
 		//  check ini setting
@@ -157,7 +164,7 @@ if(!function_exists('OnePieceErrorHandler')){
 		return true;
 	}
 	
-	$level = $_SERVER['HTTP_HOST'] === 'local.onepiece.com' ? E_ALL | E_STRICT: error_reporting();
+	$level = $_SERVER['HTTP_HOST'] === 'localhost' ? E_ALL | E_STRICT: error_reporting();
 	set_error_handler('OnePieceErrorHandler',$level);
 }
 
