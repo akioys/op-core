@@ -62,6 +62,7 @@ class Model_JapanesePref extends Model_Model
 	function GetName( $index )
 	{
 		$pref = $this->Get();
+		$index = sprintf('%02d',$index);
 		return $pref[$index];
 	}
 	
