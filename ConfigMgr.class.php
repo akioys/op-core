@@ -114,7 +114,7 @@ abstract class ConfigMgr extends OnePiece5
 		return $prefix.$table;;
 	}
 	
-	function database()
+	static function database()
 	{
 		$config = new Config();
 		$config->driver   = 'mysql';
