@@ -39,7 +39,7 @@ if(!function_exists('__autoload')){
 		// check
 		foreach( $dirs as $dir ){
 			$file_path = rtrim($dir,DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $file_name;
-			//print $file_path . '<br/>' . PHP_EOL;
+		//	print $file_path . '<br/>' . PHP_EOL;
 			if( file_exists($file_path) ){
 				include_once($file_path);
 				break;
@@ -84,6 +84,10 @@ if(!function_exists('OnePieceShutdown')){
 					
 				case E_STRICT:  // 2048
 					$er = 'E_STRICT';
+					break;
+					
+				case E_USER_NOTICE: // 1024
+					$er = 'E_USER_NOTICE';
 					break;
 					
 				default:
@@ -139,6 +143,9 @@ if(!function_exists('OnePieceErrorHandler')){
 			case E_STRICT:  // 2048
 				$er = 'E_STRICT';
 				break;
+			case E_USER_NOTICE: // 1024
+				$er = 'E_USER_NOTICE';
+				break;
 			default:
 				$er = 'ERROR: '.$no;
 		}
@@ -146,7 +153,7 @@ if(!function_exists('OnePieceErrorHandler')){
 		//  Output error message.
 		$format = '%s [%s] %s: %s';
 		if(empty($env['cgi'])){
-			$format = '<p>'.$format.'</p>';
+			$format = '<div>'.$format.'</div>';
 		}
 		
 		//  check ini setting
@@ -157,7 +164,7 @@ if(!function_exists('OnePieceErrorHandler')){
 		return true;
 	}
 	
-	$level = $_SERVER['HTTP_HOST'] === 'local.onepiece.com' ? E_ALL | E_STRICT: error_reporting();
+	$level = $_SERVER['HTTP_HOST'] === 'localhost' ? E_ALL | E_STRICT: error_reporting();
 	set_error_handler('OnePieceErrorHandler',$level);
 }
 
@@ -185,11 +192,12 @@ class OnePiece5
 {
 	const OP_UNIQ_ID = 'op-uniq-id';
 	
-	public  $env     = array();
-	public  $laptime = null;
+//	public  $env     = array();
+//	public  $laptime = null;
 	private $errors  = array();
 	private $session = array();
 	private $isInit  = null;
+	private $_env;
 	
 	/**
 	 * 
@@ -263,7 +271,7 @@ class OnePiece5
 			$this->StackError( $message );
 		}
 		
-		$this->PrintTime();
+	//	$this->PrintTime();
 		$this->PrintError();
 	}
 	
@@ -1443,9 +1451,7 @@ __EOL__;
 		return "$elapsed ($lap)";
 	}
 	
-	/**
-	 * 
-	 */
+	/*
 	function PrintTime(){
 		if($this->GetEnv('cli')){ return; }
 		if(!$this->laptime){ return; }
@@ -1453,6 +1459,7 @@ __EOL__;
 			self::d($this->laptime);
 		}
 	}
+	*/
 	
 	/**
 	 * Send mail method
@@ -1575,6 +1582,12 @@ __EOL__;
 	 */
 	function Template( $file, $data=null )
 	{
+		if(!is_string($file)){
+			$this->StackError("Passed arguments is not string. (".gettype($file).")");
+			return false;
+		}
+		
+		//  for developper's debug
 		$this->mark($file,'template');
 		
 		//  access is deny, above current directory
@@ -1649,18 +1662,15 @@ __EOL__;
 			//  create absolute path. 
 			$absolute = $tmp_root . $match[2];
 		}else{
-		//	$absolute = $args;
 			return $args;
 		}
 		
 		//  create relative path from document root.
 		$doc_root = $this->GetEnv('doc-root');
-		//$document_root = str_replace('/', '\\', $_SERVER['DOCUMENT_ROOT'] );
 		
 		//  replace
 		$patt = array(); 
 		$patt[] = '|^' . $doc_root . '|i';
-		//$patt[] = '|^' . $document_root . '|i';
 		$url = preg_replace($patt,'',$absolute);
 		
 		return '/' . ltrim($url,'/');
@@ -1764,7 +1774,11 @@ __EOL__;
 		}
 	}
 	
-	/* @var $pdo PDO5 */
+	/**
+	 * Separate for each instance.
+	 * 
+	 * @var PDO5
+	 */
 	private $pdo;
 	
 	/**
@@ -1795,45 +1809,46 @@ __EOL__;
 		return $this->pdo;
 	}
 	
-	/* @var $mysql MySQL */
+	/**
+	 * @var MySQL
+	 */
 	private $mysql;
 	
 	/**
 	 * Return MySQL Object
 	 * 
-	 * @param  array|string configuration or configuration file path
+	 * @param  array|string configuration-array or configuration-file-path
 	 * @return MySQL $mysql
 	 */
 	function MySQL($args=null)
 	{
-		if( isset($this->mysql) ){
-			// ok
-		}else{
+		if( empty($this->mysql) ){
 			include_once('SQL/MySQL.class.php');
 			$this->mysql = new MySQL( $args, $this );
 		}
 		return $this->mysql;
-	} 
+	}
 	
 	/**
 	 * Abstract Form object.
 	 * 
-	 * @param unknown $args
+	 * @param  string $name Class name
 	 * @return Form5
 	 */
-	function Form($args='Form5')
+	function Form( $name='Form5' )
 	{
-		if(!isset($_SERVER[__CLASS__][strtoupper($args)])){
-			if(!$_SERVER[__CLASS__][strtoupper($args)] = new $args()){
-				return false;
+		//static $obj;
+		
+		$obj = &$_SERVER[__CLASS__][__METHOD__];
+		
+		if( empty($obj) ){
+			if(!$obj = new $name()){
+				$obj = OnePiece5();
 			}
 		}
-		return $_SERVER[__CLASS__][strtoupper($args)];
+		
+		return $obj;
 	}
-	
-	/* @var $form Form5 */
-	private $form = null;
-	
 	
 	/**
 	 *  @var $i18n i18n
@@ -1846,8 +1861,19 @@ __EOL__;
 	 * @param  string $name Object name
 	 * @return i18n
 	 */
-	function i18n($name='i18n')
+	function i18n( $name='i18n' )
 	{
+		static $obj;
+
+		if( empty($obj) ){
+			if(!$obj = new $name()){
+				$obj = OnePiece5();
+			}
+		}
+		
+		return $obj;
+		
+		/*
 		if( empty($this->i18n) ){
 			if(!$this->i18n = new $name()){
 				return $this;
@@ -1855,6 +1881,7 @@ __EOL__;
 		}
 		
 		return $this->i18n;
+		*/
 	}
 	
 	/**
@@ -1877,11 +1904,20 @@ __EOL__;
 	 */
 	private $cache = null;
 	
+	/**
+	 * Cache is presents the [memcache/memcached/other] interface. 
+	 * 
+	 * @param  string $name
+	 * @throws Exception
+	 * @return Cache
+	 */
 	function Cache($name='Cache')
 	{
 		if(!$this->cache){
-			if(!include("$name.class.php") ){
-				throw new Exception("Include is failed. ($name)");
+			if(!class_exists($name)){
+				if(!include("$name.class.php") ){
+					throw new Exception("Include is failed. ($name)");
+				}
 			}
 			if(!$this->cache = new $name() ){
 				throw new Exception("Instance object is failed. ($name)");

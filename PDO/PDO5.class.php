@@ -24,7 +24,7 @@ class PDO5 extends OnePiece5
 					throw new Exception("Include failed.(PDO/DML.class.php)");
 				}
 			}
-				
+			
 			//  Init
 			$this->dml = new DML();
 			$this->dml->SetPDO( $this->pdo, $this->driver );
@@ -162,9 +162,11 @@ class PDO5 extends OnePiece5
 		return $return;
 	}
 	
-	function ConvertCharset( $config )
+	function ConvertCharset( $charset=null )
 	{
-		$charset = isset($config->charset) ? $config->charset: $this->GetEnv('charset');
+		if( empty($charset) ){
+			$charset = $this->GetEnv('charset');
+		} 
 		
 		switch( $charset ){
 			case 'utf8':
@@ -200,18 +202,17 @@ class PDO5 extends OnePiece5
 		}
 		
 		//  init
-		$this->driver   = $config->driver;	 // $conf['driver']   ? $conf['driver']:   null;
-		$this->host     = $config->host;	 // $conf['host']     ? $conf['host']:     null;
-		$this->user     = $config->user;	 // $conf['user']     ? $conf['user']:     null;
-		$password       = $config->password; // $conf['password'] ? $conf['password']: null;
-		$this->database = $config->database; // $conf['database'] ? $conf['database']: null;
-		$this->charset  = $config->charset;	 // $conf['charset']  ? $conf['charset']:  $this->GetEnv('charset');
+		$this->driver   = $config->driver;
+		$this->host     = $config->host;
+		$this->user     = $config->user;
+		$password       = $config->password;
+		$this->database = isset($config->database) ? $config->database: null;
+		$this->charset  = isset($config->charset)  ? $config->charset : null;
 		
-		$dsn = "{$this->driver}:dbname={$this->database};host={$this->host}";
 		$options = array();
 		
 		try {
-			if(!$this->pdo = new PDO( $dsn, $this->user, $password, $options )){
+			if(!$this->pdo = new PDO( "{$this->driver}:host={$this->host}", $this->user, $password, $options )){
 				$this->StackError("Can not connect database. ($key)");
 				return false;
 			}
@@ -220,10 +221,16 @@ class PDO5 extends OnePiece5
 			return false;
 		}
 		
-		//  charset
-		$charset = $this->ConvertCharset($config);
-		if( $this->query("SET NAMES $charset") === false ){
-			return;
+		//  Database select
+		if( $this->database ){
+			$io = $this->Database($this->database);
+			if( $io ){
+				//  Set charset
+				$charset = $this->ConvertCharset($this->charset);
+				if( $this->query("SET NAMES $charset") === false ){
+					return;
+				}
+			}
 		}
 		
 		//  connected flag
@@ -335,6 +342,14 @@ class PDO5 extends OnePiece5
 
 	function Quick( $string, $config=null)
 	{
+		//  TODO:
+		/*
+		$cache_key = md5($string .'; '. serialize($config));
+		if( $value = $this->Cache()->Get($cache_key) ){
+			return $value;
+		}
+		*/
+		
 		//  Get value
 		//list( $left, $value ) = explode('=', trim($string) );
 		if( preg_match('/(.+)[^><=]([=<>]{1,2})(.+)/', $string, $match) ){
@@ -356,21 +371,35 @@ class PDO5 extends OnePiece5
 		}
 		//$this->mark("column=$column, location=$location, ope=$ope, value=$value");
 	
-		//  generate define
+		//  Generate define
 		$locations = array_reverse( explode('.', trim($location) ) );
 		$target   = isset($locations[0]) ? $locations[0]: null;
 		$table    = isset($locations[1]) ? $locations[1]: null;
 		$database = isset($locations[2]) ? $locations[2]: null;
 		$host     = isset($locations[3]) ? $locations[3]: null;
-	
-		//  create columns
+		
+		//  Create columns
 		if( $column ){
 			$columns = explode(',',str_replace(' ', '', $column));
 		}else{
-			$columns = null;
+			$columns = array();
 		}
-	
-		//  create value
+		
+		//  Supports aggregate
+		$agg = array();
+		$remove = array();
+		$recovery = array();
+		if( $columns ){
+			foreach( $columns as $i => $column ){
+				if( preg_match('/^(count|sum|min|max|avg)\(([-_a-z0-9]+)\)$/i', $column, $match) ){
+					$agg[$match[1]] = $match[2];
+					$remove[] = $match[0];
+					$recovery[] = strtoupper($match[1])."({$match[2]})";
+				}
+			}
+		}
+		
+		//  Create value
 		$value = trim($value);
 		$value = trim($value,"'");
 	
@@ -378,33 +407,70 @@ class PDO5 extends OnePiece5
 		$limit  = isset($config->limit)  ? $config->limit:  1;
 		$offset = isset($config->offset) ? $config->offset: null;
 		$order  = isset($config->order)  ? $config->order:  null;
-	
-		//  create config
+		
+		//  Create config
 		$config = new Config();
 		$config->host     = $host;
 		$config->database = $database;
 		$config->table    = $table;
-		$config->column   = $columns;
-		$config->limit    = $limit;
+		$config->column   = array_diff( $columns, $remove );
+		$config->agg      = $agg;
+		$config->limit    = $limit > 0 ? $limit: null;
 		$config->offset   = $offset;
 		$config->order    = $order;
 		$config->where->$target = $ope.$value;
+		$config->cache    = 1;
+	//	$config->d();
 	
-		//  get record
+		//  Fetch record
 		$record = $this->Select($config);
+		
+		//  
+		if( $record ){
+			//  select columns
+			if( $columns = array_merge( $config->column, $recovery ) ){
+				if( $limit === 1 ){
+					$records[0] = $record;
+				}else{
+					$records = $record;
+				}
+				foreach($columns as $column){
+					for( $i=0, $count=count($records); $i<$count; $i++ ){
+						$return[$i][] = $records[$i][$column];
+					}
+				}
+				//  
+				if( $limit === 1 ){ //  limit is 1 (select single record)
+					$return = $return[0];
+					if( count($return) === 1 ){ // column is 1 (select single column)
+						$return = $return[0];
+					}
+				}
+			}else{
+				$return = $record;
+			}
+		}else{
+			$return = array();
+		}
+		
+		return $return;
+		
+		//==============================================//
+		
 		if( $record === false ){
-			//$this->qu('Quick-Select is failed');
-			//$this->d( Toolbox::toArray($config) );
+			$this->mark();
 			return false;
 		}
 		
 		//  return all
 		if( !$column or $limit != 1 ){
+			$this->mark();
 			return $record;
 		}
-	
+		
 		//  return one
 		if( count($columns) === 1 ){
+			$this->d($columns);
 		//	return isset($record[$columns[0]]) ? $record[$columns[0]]: null;
 			return array_shift($record);
 		}
@@ -520,7 +586,14 @@ class PDO5 extends OnePiece5
 	
 	function Select( $conf )
 	{
+		if(!$this->isConnect){
+			$this->StackError("Does not isConnect.");
+			return false;
+		}
+		
+		//  Check
 		if(!$this->pdo){
+			$this->StackError("Does not instanced PDO object.");
 			return false;
 		}
 		
@@ -528,14 +601,26 @@ class PDO5 extends OnePiece5
 		if(!is_array($conf)){
 			$conf = Toolbox::toArray($conf);
 		}
-
+		
+		//  Check cache setting.
+		if(!empty($conf['cache'])){
+			$key = serialize($conf);
+			if( $records = $this->Cache()->Get($key) ){
+				$this->Qu(var_export($conf,true));
+			//	$records['cached'] = date('Y-m-d H:i:s');
+				return $records;
+			}
+		}
+		
 		//  get select query
 		if(!$qu = $this->dml()->GetSelect($conf)){
 			return false;
 		}
 
 		//  execute
-		if(($records = $this->query($qu)) === false ){
+		$records = $this->query($qu);
+		
+		if( $records === false ){
 			return false;
 		}
 		
@@ -546,13 +631,21 @@ class PDO5 extends OnePiece5
 			}
 		}
 		
+		//  Check cache setting.
+		if(!empty($conf['cache'])){
+			$key = serialize($conf);
+			$this->Cache()->Set( $key, $records, (int)$conf['cache'] );
+		}
+		
 		//  return to records.
 		return $records;
 	}
 	
 	function Insert( $conf )
 	{
+		//  Check
 		if(!$this->pdo){
+			$this->StackError("Does not instanced PDO object.");
 			return false;
 		}
 		
@@ -579,7 +672,9 @@ class PDO5 extends OnePiece5
 	
 	function Update($conf)
 	{
+		//  Check
 		if(!$this->pdo){
+			$this->StackError("Does not instanced PDO object.");
 			return false;
 		}
 		
@@ -601,7 +696,9 @@ class PDO5 extends OnePiece5
 	
 	function Delete( $conf )
 	{
+		//  Check
 		if(!$this->pdo){
+			$this->StackError("Does not instanced PDO object.");
 			return false;
 		}
 		

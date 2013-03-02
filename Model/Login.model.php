@@ -41,7 +41,7 @@ class Model_Login extends Model_Model
 	function Logout()
 	{
 		$io = $this->SetSession( self::SESSION_KEY, null );
-		return $io ? true: false;
+		return true;
 	}
 	
 	function isLoggedin()

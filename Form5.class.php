@@ -484,15 +484,21 @@ class Form5 extends OnePiece5
 		return $value;
 	}
 	
-	public function GetInputValueAll( $form_name /*, $force=false */ )
+	public function GetInputValueAll( $form_name )
 	{
+		//  Get form config.
 		if(!$form = $this->GetConfig($form_name)){
 			return false;
 		}
-//		$this->d( Toolbox::toArray($form) );
 		
+		//  Init config.
 		$config = new Config();
+		
+		//  Get saved value.
 		foreach( $form->input as $input_name => $input ){
+			if( $input_name == 'submit' ){
+				continue;
+			}
 			$config->$input_name = $this->GetInputValue( $input_name, $form_name );
 		}
 		

@@ -51,7 +51,14 @@ class Wizard extends OnePiece5
 			$database = Toolbox::Copy( $config->database );
 			$database->user     = $this->form()->GetInputValue('user',$form_name);
 			$database->password = $this->form()->GetInputValue('password',$form_name);
-			$this->pdo()->Connect( $database );
+			
+			//  Remove database name. (only connection, If not exists database.)
+			unset($database->database);
+			
+			//  Connect to administrator account.
+			if(!$io = $this->pdo()->Connect( $database ) ){
+				$database->d();
+			}
 			
 			$this->CreateDatabase($config);
 			$this->CreateTable($config);
@@ -133,8 +140,6 @@ class Wizard extends OnePiece5
 		$config->user->user     = $config->database->user;
 		$config->user->password = $config->database->password;
 		
-	//	$this->d( Toolbox::toArray($config) );
-		
 		$io = $this->pdo()->CreateUser($config->user);
 	}
 
@@ -207,16 +212,15 @@ class WizardHelper extends OnePiece5
 	 */
 	static function GetBase( $user_name, $password, $host_name, $database_name, $table_name, $driver='mysql', $charset='utf8' )
 	{
-		$database  = new Config();
-		
 		//  init
-		$database->driver   = $driver;	 // $conf['driver']   ? $conf['driver']:   null;
-		$database->host     = $host_name;	 // $conf['host']     ? $conf['host']:     null;
-		$database->user     = $user_name;	 // $conf['user']     ? $conf['user']:     null;
-		$database->password = $password; // $conf['password'] ? $conf['password']: null;
-		$database->database = $database_name; // $conf['database'] ? $conf['database']: null;
-		$database->charset  = $charset;	 // $conf['charset']  ? $conf['charset']:  $this->GetEnv('charset');
-		
+		$database->driver   = $driver;
+		$database->host     = $host_name;
+		$database->user     = $user_name;
+		$database->password = $password;
+		$database->database = $database_name;
+		$database->charset  = $charset;
+
+		$database  = new Config();
 		$config->database = $database;
 		
 		return $config;

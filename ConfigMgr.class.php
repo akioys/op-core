@@ -18,14 +18,11 @@ abstract class ConfigMgr extends OnePiece5
 	}
 	
 	function pdo($name=null)
-	{
-	//	static $init; // static value is shared different instanced object. 
+	{ 
 		if(!$this->_init_pdo){
 			$config = $this->database();
 			parent::pdo()->Connect($config);
 			$this->_init_pdo = true;
-		}else{
-		//	$this->mark();
 		}
 		return parent::pdo($name);
 	}
@@ -117,7 +114,7 @@ abstract class ConfigMgr extends OnePiece5
 		return $prefix.$table;;
 	}
 	
-	function database()
+	static function database()
 	{
 		$config = new Config();
 		$config->driver   = 'mysql';
@@ -142,6 +139,7 @@ abstract class ConfigMgr extends OnePiece5
 		$config = new Config();
 		$config->table = $table_name;
 		$config->where->deleted = null;
+		$config->cache = 1;
 		return $config;
 	}
 	
