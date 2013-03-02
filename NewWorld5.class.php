@@ -497,7 +497,7 @@ abstract class NewWorld5 extends OnePiece5
 			$location['referer'] = $_SERVER['REQUEST_URI'];
 			$this->SetSession( 'Location', $location );
 			if($exit){
-				$this->Vivre(false);
+			//	$this->Vivre(false);
 				$this->__destruct();
 				exit(0);
 			}
