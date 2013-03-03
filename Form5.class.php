@@ -366,15 +366,23 @@ class Form5 extends OnePiece5
 		$input = $this->GetConfig( $form_name, $input_name );
 		
 		if( in_array( $input->type, array('select','checkbox','radio') ) ){
+			//  
 			if( isset($input->options->$value) ){
-				$value = $input->options->$value->label;
+				//  Label has been set then. 
+				if( isset($input->options->$value->label) ){
+					$value = $input->options->$value->label;
+				}else{
+					$value = $input->options->$value->value;
+				}
 			}else{
-				foreach( $input->options as $option ){
-					if( $option->value == $value ){
-						$value = $option->label;
-						break;
+				if( !empty($input->options) ){
+					foreach( $input->options as $option ){
+						if( $option->value == $value ){
+							$value = isset($option->label) ? $option->label: $value;
+							break;
+						}
 					}
-				} 
+				}
 			}
 		}
 		
@@ -396,6 +404,14 @@ class Form5 extends OnePiece5
 		return $this->GetInputValue( $input_name, $form_name, $joint );
 	}
 
+	/**
+	 * Return to saved-value 1st. 2nd, default-value.
+	 * 
+	 * @param  string $input_name
+	 * @param  string $form_name
+	 * @param  string $joint
+	 * @return boolean|NULL|string|mixed|Ambigous <string, boolean, multitype:, NULL>
+	 */
     public function GetInputValue( $input_name, $form_name=null, $joint=null )
 	{
 		//  more fast.
