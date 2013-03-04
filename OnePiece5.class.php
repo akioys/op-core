@@ -14,7 +14,7 @@ if(!function_exists('__autoload')){
 			case 'Memcache':
 			case 'Memcached':
 				return;
-			
+				
 			case 'DML':
 			case 'DML5':
 			case 'DDL':
@@ -1701,31 +1701,18 @@ __EOL__;
 		return $path;
 	}
 	
-	function Module($name)
-	{
-		return Toolbox::Module($name);
-	}
-	
 	function Model($name)
 	{
 		try{
 			//  name check
 			if(!$name){
-				$this->StackError('Model name is empty.');
-				return false;
-		//	}else if( strpos( $name, '_') ){
-		//		$this->mark('Underscore(_) is reserved. For the feature functions. (maybe, namespace)');
-			}
-			
-			//  name check
-			if(!$name){
-				$this->StackError('Model name is empty.');
-				return false;
+				$msg = "Model name is empty.";
+				throw new OpModelException($msg);
 			}
 			
 			//  already instanced?
-			if( isset( $_SERVER['test']['model'][$name] ) ){
-				return $_SERVER['test']['model'][$name];
+			if( isset( $_SERVER[__CLASS__]['model'][$name] ) ){
+				return $_SERVER[__CLASS__]['model'][$name];
 			}
 			
 			//  include Model_model
@@ -1733,18 +1720,17 @@ __EOL__;
 				$path = self::ConvertPath('op:/Model/Model.model.php');
 				if(!$io = include_once($path)){
 					$msg = "Failed to include the Model_model. ($path)";
-					$this->StackError($msg);
 					throw new OpException($msg);
 				}
 			}
 			
-			//  master
+			//  op-core
 			$path = self::ConvertPath("op:/Model/{$name}.model.php");
 			if( $io = file_exists($path) ){
 				$io = include_once($path);
 			}
 			
-			//  user
+			//  user-dir
 			if(!$io ){
 				$model_dir = $this->GetEnv('model-dir');
 				$path  = self::ConvertPath("{$model_dir}{$name}.model.php");
@@ -1755,20 +1741,85 @@ __EOL__;
 			
 			//  Could be include?
 			if(!$io){
-				$msg = "Failed to include the $name_model. ($path)";
-				$this->StackError($msg);
+				$msg = "Failed to include the $name. ($path)";
 				throw new OpModelException($msg);
 			}
 			
 			//  instance of model
 			$model_name = 'Model_'.$name;//.'_model';
-			if(!$_SERVER['test']['model'][$name] = new $model_name ){
-				$msg = "Failed to include the Model_Model. ($path)";
-				$this->StackError($msg);
+			if(!$_SERVER[__CLASS__]['model'][$name] = new $model_name ){
+				$msg = "Failed to include the $model_name. ($path)";
 				throw new OpModelException($msg);
 			}
 			
-			return $_SERVER['test']['model'][$name];
+			//  Instance is success.
+			return $_SERVER[__CLASS__]['model'][$name];
+			
+		}catch( Exception $e ){
+			$this->mark( $e->getMessage() );
+			$this->StackError( $e->getMessage() );
+			return new OnePiece5();
+		}
+	}
+
+	function Module($name)
+	{
+		try{
+			//  name check
+			if(!$name){
+				$msg = "Module name is empty.";
+				throw new OpModelException($msg);
+			}
+				
+			//  already instanced?
+			if( isset( $_SERVER[__CLASS__]['module'][$name] ) ){
+				return $_SERVER[__CLASS__]['module'][$name];
+			}
+				
+			//  include Model_model
+			if(!class_exists( 'Model_Model', false ) ){
+				$path = self::ConvertPath('op:/Model/Model.model.php');
+				if(!$io = include_once($path)){
+					$msg = "Failed to include the Model_model. ($path)";
+					throw new OpException($msg);
+				}
+			}
+			
+			//  op-core
+			$path = self::ConvertPath("op:/Module/{$name}/{$name}.module.php");
+			if( $io = file_exists($path) ){
+				$io = include_once($path);
+			}
+				
+			//  user-dir
+			if(!$io ){
+				if( $module_dir = $this->GetEnv('module-dir') ){
+					$path  = self::ConvertPath("{$module_dir}/{$name}/{$name}.module.php");
+					if( $io = file_exists($path) ){						
+						$io = include_once($path);					}
+				}else{
+					$this->d($module_dir);
+				}
+			}
+				
+			//  Could be include?
+			if(!$io){
+				$msg = "Failed to include the $name. ($path)";
+				throw new OpModelException($msg);
+			}
+			
+			//  Create module name.
+			$module_name = 'Module_'.$name;
+
+			//  instance of module
+			if(!$_SERVER[__CLASS__]['module'][$name] = new $module_name() ){
+				$msg = "Failed to include the $module_name. ($path)";
+				throw new OpModelException($msg);
+			}
+			
+			//  Instance is success.
+			return $_SERVER[__CLASS__]['module'][$name];
+				
 		}catch( Exception $e ){
 			$this->mark( $e->getMessage() );
 			$this->StackError( $e->getMessage() );
@@ -1916,12 +1967,12 @@ __EOL__;
 	function Cache($name='Cache')
 	{
 		if(!$this->cache){
-			if(!class_exists($name)){
+			if(!class_exists($name)){				
 				if(!include("$name.class.php") ){
 					throw new Exception("Include is failed. ($name)");
 				}
 			}
-			if(!$this->cache = new $name() ){
+			if(!$this->cache = new $name() ){				
 				throw new Exception("Instance object is failed. ($name)");
 			}
 		}
