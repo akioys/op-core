@@ -59,6 +59,10 @@ if(!function_exists('__autoload')){
 if(!function_exists('OnePieceShutdown')){
 	function OnePieceShutdown()
 	{
+		if(!OnePiece5::Admin()){
+			return;
+		}
+		
 		static $init;
 		if(!is_null($init)){
 			return;
@@ -124,8 +128,6 @@ if(!function_exists('OnePieceShutdown')){
 if(!function_exists('OnePieceErrorHandler')){
 	function OnePieceErrorHandler( $no, $str, $file, $line, $context)
 	{
-//		print '<p>'.__FILE__.': '.__LINE__.'</p>';
-		
 		static $oproot;
 		if(empty($oproot)){
 			$oproot  = dirname(__FILE__) . '/';
