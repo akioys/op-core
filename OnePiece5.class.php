@@ -1664,18 +1664,15 @@ __EOL__;
 			//  create absolute path. 
 			$absolute = $tmp_root . $match[2];
 		}else{
-		//	$absolute = $args;
 			return $args;
 		}
 		
 		//  create relative path from document root.
 		$doc_root = $this->GetEnv('doc-root');
-		//$document_root = str_replace('/', '\\', $_SERVER['DOCUMENT_ROOT'] );
 		
 		//  replace
 		$patt = array(); 
 		$patt[] = '|^' . $doc_root . '|i';
-		//$patt[] = '|^' . $document_root . '|i';
 		$url = preg_replace($patt,'',$absolute);
 		
 		return '/' . ltrim($url,'/');

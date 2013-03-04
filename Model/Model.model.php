@@ -93,7 +93,7 @@ class ModelConfig extends ConfigMgr
 {
 	const TABLE_PREFIX = 'op';
 	
-	function database()
+	static function database()
 	{
 		$config = parent::database();
 		$config->user     = 'op_model';

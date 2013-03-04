@@ -342,6 +342,14 @@ class PDO5 extends OnePiece5
 
 	function Quick( $string, $config=null)
 	{
+		//  TODO:
+		/*
+		$cache_key = md5($string .'; '. serialize($config));
+		if( $value = $this->Cache()->Get($cache_key) ){
+			return $value;
+		}
+		*/
+		
 		//  Get value
 		//list( $left, $value ) = explode('=', trim($string) );
 		if( preg_match('/(.+)[^><=]([=<>]{1,2})(.+)/', $string, $match) ){
@@ -363,21 +371,35 @@ class PDO5 extends OnePiece5
 		}
 		//$this->mark("column=$column, location=$location, ope=$ope, value=$value");
 	
-		//  generate define
+		//  Generate define
 		$locations = array_reverse( explode('.', trim($location) ) );
 		$target   = isset($locations[0]) ? $locations[0]: null;
 		$table    = isset($locations[1]) ? $locations[1]: null;
 		$database = isset($locations[2]) ? $locations[2]: null;
 		$host     = isset($locations[3]) ? $locations[3]: null;
-	
-		//  create columns
+		
+		//  Create columns
 		if( $column ){
 			$columns = explode(',',str_replace(' ', '', $column));
 		}else{
-			$columns = null;
+			$columns = array();
 		}
-	
-		//  create value
+		
+		//  Supports aggregate
+		$agg = array();
+		$remove = array();
+		$recovery = array();
+		if( $columns ){
+			foreach( $columns as $i => $column ){
+				if( preg_match('/^(count|sum|min|max|avg)\(([-_a-z0-9]+)\)$/i', $column, $match) ){
+					$agg[$match[1]] = $match[2];
+					$remove[] = $match[0];
+					$recovery[] = strtoupper($match[1])."({$match[2]})";
+				}
+			}
+		}
+		
+		//  Create value
 		$value = trim($value);
 		$value = trim($value,"'");
 	
@@ -385,31 +407,70 @@ class PDO5 extends OnePiece5
 		$limit  = isset($config->limit)  ? $config->limit:  1;
 		$offset = isset($config->offset) ? $config->offset: null;
 		$order  = isset($config->order)  ? $config->order:  null;
-	
-		//  create config
+		
+		//  Create config
 		$config = new Config();
 		$config->host     = $host;
 		$config->database = $database;
 		$config->table    = $table;
-		$config->column   = $columns;
-		$config->limit    = $limit;
+		$config->column   = array_diff( $columns, $remove );
+		$config->agg      = $agg;
+		$config->limit    = $limit > 0 ? $limit: null;
 		$config->offset   = $offset;
 		$config->order    = $order;
 		$config->where->$target = $ope.$value;
+		$config->cache    = 1;
+	//	$config->d();
 	
-		//  get record
+		//  Fetch record
 		$record = $this->Select($config);
+		
+		//  
+		if( $record ){
+			//  select columns
+			if( $columns = array_merge( $config->column, $recovery ) ){
+				if( $limit === 1 ){
+					$records[0] = $record;
+				}else{
+					$records = $record;
+				}
+				foreach($columns as $column){
+					for( $i=0, $count=count($records); $i<$count; $i++ ){
+						$return[$i][] = $records[$i][$column];
+					}
+				}
+				//  
+				if( $limit === 1 ){ //  limit is 1 (select single record)
+					$return = $return[0];
+					if( count($return) === 1 ){ // column is 1 (select single column)
+						$return = $return[0];
+					}
+				}
+			}else{
+				$return = $record;
+			}
+		}else{
+			$return = array();
+		}
+		
+		return $return;
+		
+		//==============================================//
+		
 		if( $record === false ){
+			$this->mark();
 			return false;
 		}
 		
 		//  return all
 		if( !$column or $limit != 1 ){
+			$this->mark();
 			return $record;
 		}
-	
+		
 		//  return one
 		if( count($columns) === 1 ){
+			$this->d($columns);
 		//	return isset($record[$columns[0]]) ? $record[$columns[0]]: null;
 			return array_shift($record);
 		}
@@ -544,7 +605,9 @@ class PDO5 extends OnePiece5
 		//  Check cache setting.
 		if(!empty($conf['cache'])){
 			$key = serialize($conf);
-			if($records = $this->Cache()->Get($key)){
+			if( $records = $this->Cache()->Get($key) ){
+				$this->Qu(var_export($conf,true));
+			//	$records['cached'] = date('Y-m-d H:i:s');
 				return $records;
 			}
 		}
