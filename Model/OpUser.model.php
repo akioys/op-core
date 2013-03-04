@@ -137,7 +137,7 @@ class Model_OpUser extends Model_Model
 
 class ConfigMgrModelOpUser extends ModelConfig
 {
-	function database()
+	static function database()
 	{
 		$config = parent::database();
 		$config->user     = 'op_model_opuser';
