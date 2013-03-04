@@ -1914,12 +1914,12 @@ __EOL__;
 	function Cache($name='Cache')
 	{
 		if(!$this->cache){
-			if(!class_exists($name)){
+			if(!class_exists($name)){				
 				if(!include("$name.class.php") ){
 					throw new Exception("Include is failed. ($name)");
 				}
 			}
-			if(!$this->cache = new $name() ){
+			if(!$this->cache = new $name() ){				
 				throw new Exception("Instance object is failed. ($name)");
 			}
 		}
