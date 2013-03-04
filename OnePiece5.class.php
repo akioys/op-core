@@ -1794,17 +1794,24 @@ __EOL__;
 			//  user-dir
 			if(!$io ){
 				if( $module_dir = $this->GetEnv('module-dir') ){
+					$module_dir = rtrim( $module_dir, '/' );
 					$path  = self::ConvertPath("{$module_dir}/{$name}/{$name}.module.php");
 					if( $io = file_exists($path) ){						
-						$io = include_once($path);					}
+						$io = include_once($path);
+					}else{
+						$msg = "Does not include $path.";
+						throw new OpModelException($msg);
+					}
 				}else{
-					$this->d($module_dir);
+				//	$this->d($module_dir);
+					$msg = "Does not set module-dir.";
+					throw new OpModelException($msg);
 				}
 			}
 				
 			//  Could be include?
 			if(!$io){
-				$msg = "Failed to include the $name. ($path)";
+				$msg = "$name class does not been included.($path)";
 				throw new OpModelException($msg);
 			}
 			
