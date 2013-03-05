@@ -202,10 +202,10 @@ class PDO5 extends OnePiece5
 		}
 		
 		//  init
-		$this->driver   = $config->driver;
-		$this->host     = $config->host;
-		$this->user     = $config->user;
-		$password       = $config->password;
+		$this->driver   = isset($config->driver)   ? $config->driver  : null;
+		$this->host     = isset($config->host)     ? $config->host    : null;
+		$this->user     = isset($config->user)     ? $config->user    : null;
+		$password       = isset($config->password) ? $config->password: null;
 		$this->database = isset($config->database) ? $config->database: null;
 		$this->charset  = isset($config->charset)  ? $config->charset : null;
 		
