@@ -490,9 +490,10 @@ class PDO5 extends OnePiece5
 		if(!is_array($conf)){
 			$conf = Toolbox::toArray($conf);
 		}
-				
+		
 		//  get select query
 		if(!$qu = $this->ddl()->GetCreateDatabase($conf)){
+			$this->StackError("![ .red .bold [ Failed GetCreateDatabase-method. ]]");
 			return false;
 		}
 		
