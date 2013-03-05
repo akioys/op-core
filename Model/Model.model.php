@@ -44,6 +44,9 @@ abstract class Model_Model extends OnePiece5
 				$config->myname = get_class($this);
 				$config->Caller = $this->GetCallerLine();
 				$this->d($config);
+				if( method_exists( $this, "Selftest") ){
+					$this->Selftest();
+				}
 			//	throw new OpModelException('PDO has failed to connect to the database.');
 			}
 		}

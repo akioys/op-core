@@ -95,10 +95,12 @@ class Wizard extends OnePiece5
 	
 	function CheckDatabase($config)
 	{
+		//  Get Database-name list.
 		if(!$database_list = $this->pdo()->GetDatabaseList($config->database) ){
 			throw new Exception("Failed GetDatabaseList-method.");
 		}
 		
+		//  Check Database exists
 		$i = array_search( $config->database->database, $database_list);
 		if( $i === false ){
 			throw new Exception("Database can not be found. ({$config->database->database})");
@@ -109,12 +111,28 @@ class Wizard extends OnePiece5
 	
 	function CheckTable($config)
 	{
+		//  Get table-name list.
+		if(!$table_list = $this->pdo()->GetTableList($config->table) ){
+			throw new Exception("Failed GetTableList-method.");
+		}
 		
+		foreach( $config->table as $table ){
+			//  Check table exists.
+			$i = array_search( $table->name, $table_list);
+			if( $i === false ){
+				throw new Exception("Table can not be found. ({$table->name})");
+			}
+			
+			$this->CheckColumn($config);
+		}
+		
+		return true;
 	}
 	
 	function CheckColumn($config)
 	{
-		
+		$this->mark();
+		return true;
 	}
 	
 	function CreateDatabase($config)
