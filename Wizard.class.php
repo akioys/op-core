@@ -95,7 +95,7 @@ class Wizard extends OnePiece5
 	
 	function CheckDatabase($config)
 	{
-		
+		$this->mark(__METHOD__);
 	}
 	
 	function CheckTable($config)
@@ -220,7 +220,7 @@ class WizardHelper extends OnePiece5
 		$database->database = $database_name;
 		$database->charset  = $charset;
 
-		$database  = new Config();
+		$config = new Config();
 		$config->database = $database;
 		
 		return $config;
