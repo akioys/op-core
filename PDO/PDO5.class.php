@@ -85,6 +85,7 @@ class PDO5 extends OnePiece5
 		return $this->qus;
 	}
 	
+	/*
 	function GetQuote( $driver )
 	{
 		switch( strtolower($driver) ){
@@ -112,6 +113,7 @@ class PDO5 extends OnePiece5
 		}
 		return $safe;
 	}
+	*/
 	
 	function Query( $qu, $key=null )
 	{
@@ -212,8 +214,9 @@ class PDO5 extends OnePiece5
 		$options = array();
 		
 		try {
-			if(!$this->pdo = new PDO( "{$this->driver}:host={$this->host}", $this->user, $password, $options )){
-				$this->StackError("Can not connect database. ($key)");
+			$dns = "{$this->driver}:host={$this->host}";
+			if(!$this->pdo = new PDO( $dns, $this->user, $password, $options )){
+				$this->StackError("Can not connect database. ( $dns, {$this->user} )");
 				return false;
 			}
 		}catch( PDOException $e){
@@ -357,6 +360,25 @@ class PDO5 extends OnePiece5
 		}
 		
 		return $struct;
+	}
+	
+	function GetUserList()
+	{
+		//  Select database
+		$this->Database('mysql');
+		
+		//  Get users list
+		$select = new Config();
+		$select->table = 'user';
+		$select->column = 'User';
+		$record = $this->select($select);
+		
+		//  
+		for( $i=0, $c=count($record); $i<$c; $i++ ){
+			$result[] = $record[$i]['User'];
+		}
+		
+		return $result;
 	}
 
 	function Quick( $string, $config=null)
@@ -754,4 +776,41 @@ class PDO5 extends OnePiece5
 	{
 		$this->pdo->commit();
 	}
+}
+
+class ConfigSQL extends OnePiece5
+{
+	static function GetQuote( $driver )
+	{
+		if( empty($driver) ){
+			$me = "Empty driver name.";
+			throw new OpException($me);
+			return false;
+		}
+		
+		switch( strtolower($driver) ){
+			case 'mysql':
+				$ql = $qr = '`';
+				break;
+		}
+		return array($ql,$qr);
+	}
+	
+	static function Quote( $var, $driver )
+	{
+		list( $ql, $qr ) = self::GetQuote($driver);
+		
+		if( is_array($var) ){
+			foreach( $var as $tmp ){
+				$safe[] = self::Quote($tmp);
+			}
+		}else if( strpos($var,'.') ){
+			$temp = explode('.',$var);
+			$safe = $ql.trim($temp[0]).$qr.'.'.$ql.trim($temp[1]).$qr;
+		}else{
+			$safe = $ql.trim($var).$qr;
+		}
+		return $safe;
+	}
+		
 }

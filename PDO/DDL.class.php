@@ -24,7 +24,7 @@ class DDL extends OnePiece5
 		$if_not_exist = 'IF NOT EXISTS';
 		
 		//	Database
-		$database = PDO5::Quote($args['database'], $this->driver );
+		$database = ConfigSQL::Quote( $args['database'], $this->driver );
 		
 		//	COLLATE
 		if( isset($args['collate']) ){
@@ -74,7 +74,7 @@ class DDL extends OnePiece5
 		
 		//	Database
 		if( isset($args['database']) ){
-			$database = PDO5::Quote($args['database'], $this->driver );
+			$database = ConfigSQL::Quote($args['database'], $this->driver );
 			$database .= ' . ';
 		}else{
 			$database = null;
@@ -82,7 +82,7 @@ class DDL extends OnePiece5
 		
 		//	Table
 		if( isset($args['table']) ){
-			$table = PDO5::Quote($args['table'], $this->driver );
+			$table = ConfigSQL::Quote($args['table'], $this->driver );
 		}
 		
 		//  Column
@@ -167,7 +167,7 @@ class DDL extends OnePiece5
 			return false;
 		}
 		
-		$database  = PDO5::Quote( $args['database'], $this->driver );
+		$database  = ConfigSQL::Quote( $args['database'], $this->driver );
 		
 		$query = "DROP DATABASE IF EXISTS {$database}";
 		
@@ -186,8 +186,8 @@ class DDL extends OnePiece5
 			return false;
 		}
 
-		$database  = PDO5::Quote( $args['database'], $this->driver );
-		$table     = PDO5::Quote( $args['table'],    $this->driver );
+		$database  = ConfigSQL::Quote( $args['database'], $this->driver );
+		$table     = ConfigSQL::Quote( $args['table'],    $this->driver );
 		$temporary = empty($args['temporary']) ? null: 'TEMPORARY';
 		
 		$query = "DROP {$temporary} TABLE IF EXISTS {$database}.{$table}";
@@ -203,7 +203,7 @@ class DDL extends OnePiece5
 	function ConvertColumn( $args, $ACD='' )
 	{
 		//  Get quote.
-		list( $ql, $qr ) = PDO5::GetQuote($this->driver);
+		list( $ql, $qr ) = ConfigSQL::GetQuote($this->driver);
 		
 		//  loop from many columns
 		foreach($args['column'] as $name => $temp){
