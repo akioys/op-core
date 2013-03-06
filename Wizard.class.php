@@ -111,10 +111,24 @@ class Wizard extends OnePiece5
 	
 	function CheckTable($config)
 	{
+		//  Get table list.
+		$table_list = $this->pdo()->GetTableList($config->database);
+	//	$this->d($table_list);
 		
+		foreach( $config->table as $table_name => $table ){
+			$io = array_search( $table_name, $table_list);
+			if( $io === false ){
+				$me = "Does not find table. ($table_name)";
+				throw new OpException($me);
+			}else{
+				$this->CheckColumn( $config, $table_name );
+			}
+		}
+		
+		return true;
 	}
 	
-	function CheckColumn($config)
+	function CheckColumn( $config, $table_name )
 	{
 		
 	}
