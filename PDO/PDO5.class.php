@@ -260,7 +260,15 @@ class PDO5 extends OnePiece5
 				$this->mark("Does not implements yet. ({$this->driver})");
 		}
 		
-		return $this->query($qu);
+		if( $record = $this->query($qu) ){
+			for( $i=0, $c=count($record); $i<$c; $i++ ){
+				$result[] = $record[$i]['Database'];
+			}
+		}else{
+			$result = array();
+		}
+		
+		return $result;
 	}
 	
 	function GetTableList($config=null)
