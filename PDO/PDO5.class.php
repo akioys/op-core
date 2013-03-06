@@ -324,28 +324,21 @@ class PDO5 extends OnePiece5
 		return $result;
 	}
 	
-	function GetTableStruct($config)
+	function GetTableStruct( $table_name, $db_name=null, $charset=null )
 	{
-		//  init config
-		if(!is_array($config)){
-			$config = Toolbox::toArray($config);
-		}
-		
-		//  database
-		if(isset($config['database'])){
-			$this->Database($config['database']);
-		}
-		
-		//  table
-		if(isset($config['table'])){
-			$table = $config['table'];
-		}else{
+		//  Check table name
+		if( !$table_name ){
 			$this->StackError("Empty table name.");
 			return false;
 		}
 		
+		//  Check database
+		if( $db_name ){
+			$this->Database( $db_name, $charset );
+		}
+		
 		//  create query
-		$qu = "SHOW FULL COLUMNS FROM $table";
+		$qu = "SHOW FULL COLUMNS FROM $table_name";
 		
 		//  get table struct
 		if(!$records = $this->query($qu) ){
