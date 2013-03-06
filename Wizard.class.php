@@ -95,13 +95,15 @@ class Wizard extends OnePiece5
 	
 	function CheckDatabase($config)
 	{
-		if(!$database_list = $this->pdo()->GetDatabaseList($config->database) ){
-			throw new Exception("Failed GetDatabaseList-method.");
-		}
+		//  Get database list.
+		$db_name = $config->database->database;
+		$db_list = $this->pdo()->GetDatabaseList($config->database);
 		
-		$i = array_search( $config->database->database, $database_list);
-		if( $i === false ){
-			throw new Exception("Database can not be found. ({$config->database->database})");
+		//  Check database exists.
+		$io = array_search( $db_name, $db_list);
+		if( $io === false){
+			$me = "Database is does not exists. ($db_name)"; 
+			throw new OpException($me);
 		}
 		
 		return true;

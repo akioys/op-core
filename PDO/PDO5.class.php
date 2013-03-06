@@ -223,14 +223,7 @@ class PDO5 extends OnePiece5
 		
 		//  Database select
 		if( $this->database ){
-			$io = $this->Database($this->database);
-			if( $io ){
-				//  Set charset
-				$charset = $this->ConvertCharset($this->charset);
-				if( $this->query("SET NAMES $charset") === false ){
-					return;
-				}
-			}
+			$this->Database( $this->database, $this->charset );
 		}
 		
 		//  connected flag
@@ -239,9 +232,32 @@ class PDO5 extends OnePiece5
 		return true;
 	}
 	
-	function Database( $name )
+	function Database( $db_name, $charset=null )
 	{
-		return $this->query("USE $name") !== false ? true: false;
+		if(!is_string($db_name)){
+			$type = gettype($db_name);
+			$me = "Database name is not string. ($type)";
+			//throw new OpException($me);
+			$this->StackError($me);
+			return false;
+		}
+		
+		if( $this->query("USE $db_name") === false){
+			$me = "Database select is failed.";
+			//throw new OpException($me);
+			$this->StackError($me);
+			return false;
+		}
+		
+		if( $charset ){
+			//  Set charset
+			$charset = $this->ConvertCharset($charset);
+			if( $this->query("SET NAMES $charset") === false ){
+				return false;
+			}
+		}
+		
+		return true;
 	}
 	
 	function GetDatabaseList($config=null)
@@ -260,15 +276,15 @@ class PDO5 extends OnePiece5
 				$this->mark("Does not implements yet. ({$this->driver})");
 		}
 		
-		//  Get databases list
-		$result = $this->query($qu);
-		
-		//  
-		for($i=0, $count=count($result); $i<$count; $i++){
-			$list[] = $result[$i]['Database'];
+		if( $record = $this->query($qu) ){
+			for( $i=0, $c=count($record); $i<$c; $i++ ){
+				$result[] = $record[$i]['Database'];
+			}
+		}else{
+			$result = array();
 		}
 		
-		return $list;
+		return $result;
 	}
 	
 	function GetTableList($config=null)
@@ -285,8 +301,8 @@ class PDO5 extends OnePiece5
 		$like = isset($config['like']) ? $config['like']: null;
 		
 		//  select database
-		if( isset($config->database) ){
-			if(!$this->Database($config->database)){
+		if( $database ){
+			if(!$this->Database($database)){
 				return false;
 			}
 		}
@@ -295,15 +311,17 @@ class PDO5 extends OnePiece5
 		$qu = "SHOW TABLES FROM `$database` $like ";
 		
 		//  get table list
-		if( $records = $this->query($qu) ){
-			foreach( $records as $i => $temp ){
+		if( $record = $this->query($qu) ){
+			foreach( $record as $i => $temp ){
 				foreach( $temp as $n => $table_name ){
-					$list[] = $table_name;
+					$result[] = $table_name;
 				}
 			}
+		}else{
+			$result = array();
 		}
 		
-		return $list;
+		return $result;
 	}
 	
 	function GetTableStruct($config)
