@@ -26,7 +26,7 @@ class Wizard extends OnePiece5
 		try{
 			$this->CheckDatabase($config);
 			$this->CheckTable($config);
-			$this->CheckColumn($config);
+		//	$this->CheckColumn($config);
 			$io = true;
 		}catch( Exception $e ){
 			$this->p( $e->getMessage() );
@@ -130,7 +130,20 @@ class Wizard extends OnePiece5
 	
 	function CheckColumn( $config, $table_name )
 	{
+		$struct = $this->pdo()->GetTableStruct($table_name);
+	//	$this->d($struct);
+	//	$config->table->$table_name->column->d();
 		
+		$diff = array_diff_key( $struct,Toolbox::toArray($config->table->$table_name->column));
+	//	$this->d($diff);
+		
+		if( count($diff) ){
+			$join = join(', ', array_keys($diff) );
+			$me = "Does not match column. ($join)";
+			throw new OpException($me);
+		}
+		
+		return true;
 	}
 	
 	function CreateDatabase($config)
