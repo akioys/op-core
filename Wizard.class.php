@@ -16,13 +16,13 @@ class Wizard extends OnePiece5
 		return $this->config;
 	}
 	
-	function Selftest( $config )
+	function Selftest( Config $config )
 	{
-		$this->model('Log')->Set("Start selftest.");
+		$this->model('Log')->Set("START: selftest.");
 		
 		if(!$this->pdo()->Connect($config->database) ){
-			$this->DoWizard( $config );
-			return;
+			$io = $this->DoWizard( $config );
+			return $io;
 		}
 		
 		try{
@@ -32,17 +32,19 @@ class Wizard extends OnePiece5
 			$io = true;
 		}catch( Exception $e ){
 			$this->p( $e->getMessage() );
-			$this->DoWizard( $config );
-			$io = false;
+			$io = $this->DoWizard( $config );
 		}
 		
-		$this->d($this->model('Log')->Get());
+		$this->model('Log')->Out();
 		
 		return $io;
 	}
 	
-	function DoWizard( $config )
+	function DoWizard( Config $config )
 	{
+		//  Start
+		$this->model('Log')->Set('START: '.__FUNCTION__);
+		
 		//  Get form name.
 		$form_name = $this->config()->FormName();
 		
@@ -61,23 +63,29 @@ class Wizard extends OnePiece5
 			
 			//  Connect to administrator account.
 			if(!$io = $this->pdo()->Connect( $database ) ){
-				$database->d();
+			//	$database->d();
 			}else{
-				$this->model('Log')->Set("Connect {$database->user} account.");
+				$this->model('Log')->Set("Connect {$database->user} account.",true);
 			}
 			
+			//  Create 
 			$this->CreateDatabase($config);
 			$this->CreateTable($config);
 			$this->CreateColumn($config);
 			$this->CreateUser($config);
 			$this->CreateGrant($config);
-			
 		}else{
+			$this->model('Log')->Set("Wizard-Form is not secure.");
 		//	$this->form()->Debug($form_name);
 		}
 		
 		//  Print form.
 		$this->PrintForm();
+
+		//  Finish
+		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
+		
+		return true;
 	}
 	
 	function PrintForm()
@@ -99,7 +107,7 @@ class Wizard extends OnePiece5
 		$this->form()->Finish($form_name);
 	}
 	
-	function CheckDatabase($config)
+	function CheckDatabase( Config $config )
 	{
 		//  Start
 		$this->model('Log')->Set('START: '.__FUNCTION__);
@@ -120,7 +128,7 @@ class Wizard extends OnePiece5
 		return true;
 	}
 	
-	function CheckTable($config)
+	function CheckTable( Config $config )
 	{
 		//  Start
 		$this->model('Log')->Set('START: '.__FUNCTION__);
@@ -144,7 +152,7 @@ class Wizard extends OnePiece5
 		return true;
 	}
 	
-	function CheckColumn( $config, $table_name )
+	function CheckColumn( Config $config, $table_name )
 	{
 		//  Start
 		$this->model('Log')->Set('START: '.__FUNCTION__);
@@ -169,20 +177,20 @@ class Wizard extends OnePiece5
 		return true;
 	}
 	
-	function CreateDatabase($config)
+	function CreateDatabase( Config $config)
 	{
 		//  Start
 		$this->model('Log')->Set('START: '.__FUNCTION__);
 		
 		//  Create database
 		$io = $this->pdo()->CreateDatabase( $config->database );
-
+		
 		//  Finish
-		$this->model('Log')->Set('FINISH: '.__FUNCTION__." ($io)");
+		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
 		return $io;
 	}
 	
-	function CreateTable($config)
+	function CreateTable( Config $config )
 	{
 		//  Start
 		$this->model('Log')->Set('START: '.__FUNCTION__);
@@ -195,24 +203,39 @@ class Wizard extends OnePiece5
 			if( empty($table->database) ){
 				$table->database = $config->database->database;
 			}
-			$io = $this->pdo()->CreateTable($table);
+			
+			if(!$io = $this->pdo()->CreateTable($table) ){
+				$this->model('Log')->Set("CreateTable is failed. ({$table->table})", false);
+				return false;
+			}
 		}
 		
 		//  Finish
-		$this->model('Log')->Set('FINISH: '.__FUNCTION__." ($io)");
-		return $io;
+		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
+		return true;
 	}
 	
-	function CreateColumn($config)
+	function CreateColumn( Config $config )
 	{
 		//  Start
 		$this->model('Log')->Set('START: '.__FUNCTION__);
 		
-		$this->model('Log')->Set('Does not implements yet.');
+		//  Select database
+		$this->pdo()->Database($config->database->database); 
+		
+		foreach( $config->table as $table_name => $table ){
+			$structs = $this->pdo()->GetTableStruct( $table_name );
+			$diff = array_diff_key( Toolbox::toArray($table->column), $structs );
+			
+			if( count($diff) ){
+				$this->d($diff);
+			}
+			
+		}
 		
 		//  Finish
-		$this->model('Log')->Set('FINISH: '.__FUNCTION__." ($io)");
-		return $io;
+		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
+		return true;
 	}
 	
 	function CreateUser($config)
@@ -228,7 +251,7 @@ class Wizard extends OnePiece5
 		//  Check user exists.
 		$list = $this->pdo()->GetUserList();
 		if( array_search( $config->user->user, $list ) !== false ){
-			$this->model('Log')->Set("New user {$config->user->user} is already exists.");
+			$this->model('Log')->Set("New user {$config->user->user} is already exists.",true);
 			return true;
 		}
 		
@@ -236,7 +259,7 @@ class Wizard extends OnePiece5
 		$io = $this->pdo()->CreateUser($config->user);
 		
 		//  Finish
-		$this->model('Log')->Set('FINISH: '.__FUNCTION__." ($io)");
+		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
 		return $io;
 	}
 
@@ -261,7 +284,7 @@ class Wizard extends OnePiece5
 		}
 		
 		//  Finish
-		$this->model('Log')->Set('FINISH: '.__FUNCTION__." ($io)");
+		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
 		return $io;
 	}
 }

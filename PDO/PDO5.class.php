@@ -131,37 +131,39 @@ class PDO5 extends OnePiece5
 			//  success
 			if( $st instanceof PDOStatement ){
 				switch($key){
+					case 'create':
+						$result = true;
+						break;
+						
 					case 'count':
-						$return = $st->fetch(PDO::FETCH_ASSOC);
-						if( isset($return['COUNT(*)']) ){
-							$return = $return['COUNT(*)'];
-						}else if( isset($return['COUNT()']) ){
-							$return = $return['COUNT()'];
+						$result = $st->fetch(PDO::FETCH_ASSOC);
+						if( isset($result['COUNT(*)']) ){
+							$result = $result['COUNT(*)'];
+						}else if( isset($result['COUNT()']) ){
+							$result = $result['COUNT()'];
 						}else{
-							//$this->mark( $this->Qu() );
-							//$this->d($return);
-							$return = false;
+							$result = false;
 						}
 						break;
 					
 					case 'update':
-						$return = $st->rowCount();
+						$result = $st->rowCount();
 						break;
 						
 					default:
-						$return = $st->fetchAll(PDO::FETCH_ASSOC);
+						$result = $st->fetchAll(PDO::FETCH_ASSOC);
 				}
 			}else{
 				$this->d($st);
 			}
 		}else{			
 			//  failed
-			$return = false;
+			$result = false;
 			$temp = $this->pdo->errorInfo();
 			$this->StackError("{$temp[2]} : {$this->qu}");
 		}
 
-		return $return;
+		return $result;
 	}
 	
 	function ConvertCharset( $charset=null )
@@ -557,9 +559,7 @@ class PDO5 extends OnePiece5
 		}
 		
 		//  execute
-		$io = $this->query($qu);
-		
-		return $io;
+		return $this->query( $qu, 'create' );
 	}
 	
 	function CreateUser( $conf )
@@ -575,9 +575,7 @@ class PDO5 extends OnePiece5
 		}
 		
 		//  execute
-		$io = $this->query($qu);
-		
-		return $io;
+		return $this->query( $qu, 'create' );
 	}
 	
 	function Grant( $conf )
@@ -591,11 +589,24 @@ class PDO5 extends OnePiece5
 		if(!$qu = $this->dcl()->GetGrant($conf)){
 			return false;
 		}
-	
+		
 		//  execute
-		$io = $this->query($qu);
+		return $this->query( $qu, 'create' );
+	}
 	
-		return $io;
+	function Alter( $conf )
+	{
+		//  object to array
+		if(!is_array($conf)){
+			$conf = Toolbox::toArray($conf);
+		}
+		//  get select query
+		if(!$qu = $this->dcl()->GetAlter($conf)){
+			return false;
+		}
+		
+		//  execute
+		return $this->query( $qu, 'create' );
 	}
 	
 	/**

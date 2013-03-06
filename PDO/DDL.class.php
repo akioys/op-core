@@ -65,7 +65,6 @@ class DDL extends OnePiece5
 			return false;
 		}
 		
-		
 		//	TEMPORARY
 		$temporary = isset($args['temporary']) ? 'TEMPORARY': null;
 		
@@ -127,7 +126,7 @@ class DDL extends OnePiece5
 		return $query;
 	}
 	
-	function GetCreateColumn()
+	function GetAlter( $args )
 	{
 		
 	}
