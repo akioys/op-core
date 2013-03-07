@@ -558,7 +558,9 @@ class DML extends OnePiece5
 				if( is_numeric($key) ){
 					$temp[] = ConfigSQL::Quote( $var, $this->driver );
 				}else{
-					$temp[] = ConfigSQL::Quote( $key, $this->driver )." AS ".$this->Quote($var);
+					$temp[] = ConfigSQL::Quote( $key, $this->driver )
+							 ." AS "
+							 .ConfigSQL::Quote( $var, $this->driver );
 				}
 			}
 			$cols = join(', ',$temp);
