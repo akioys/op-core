@@ -18,11 +18,14 @@ class Wizard extends OnePiece5
 	
 	function Selftest( Config $config )
 	{
-		$this->model('Log')->Set("START: selftest.");
+		//  Start
+		$this->model('Log')->Set("START: Selftest.");
 		
 		if(!$this->pdo()->Connect($config->database) ){
-			$io = $this->DoWizard( $config );
-			return $io;
+			$dns = $config->database->user.'@'.$config->database->host;
+			$this->model('Log')->Set("FAILED: Database connect is failed.($dns)",false);
+			$this->DoWizard( $config );
+			return false;
 		}
 		
 		try{
@@ -31,12 +34,16 @@ class Wizard extends OnePiece5
 		//	$this->CheckColumn($config);
 			$io = true;
 		}catch( Exception $e ){
-			$this->p( $e->getMessage() );
-			$io = $this->DoWizard( $config );
+			$io = false;
+			$me = $e->getMessage();
+			$this->p( $me );
+			$this->model('Log')->Set($me,false);
+			$this->DoWizard( $config );
 		}
 		
+		//  Finish
+		$this->model('Log')->Set("FINISH: Selftest.",$io);
 		$this->model('Log')->Out();
-		
 		return $io;
 	}
 	
