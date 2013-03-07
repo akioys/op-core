@@ -164,8 +164,12 @@ class DDL extends OnePiece5
 			$this->StackError("Does not set database name.");
 		}
 		
+		if( !isset($args['driver']) ){
+			$args['driver'] = $this->driver;
+		}
+		
 		//  Escape  
-		$database = ConfigSQL::Quote( $args['database'], $args['driver'] );
+		$database = ConfigSQL::Quote( $args['database'], $args['driver']);
 		$table    = ConfigSQL::Quote( $args['table'],    $args['driver'] );
 		
 		//	Added

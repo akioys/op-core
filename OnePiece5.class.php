@@ -434,13 +434,47 @@ class OnePiece5
 	 * @param string $message is message.
 	 * @param string $class is label use to print.
 	 */
-	function StackError( $args, $class=__CLASS__ )
+	function StackError( $args )
 	{
 		$encoding = mb_internal_encoding();
 		
-		$error['incident'] = $this->GetCallerLine( 1, 1, 'incident');
-		$error['message']  = $this->Escape( $args, $encoding );
-		$error['trace']	   = $this->GetCallerLine( 0, -1, 'trace');
+		//  TODO: To model
+		if( $args instanceof Exception ){
+			$e = $args;
+			$message  = $e->getMessage();
+			$traceArr = $e->getTrace();
+			$traceStr = $e->getTraceAsString();
+			$file     = $e->getFile();
+			$line     = $e->getLine();
+			$prev     = $e->getPrevious();
+			$code     = $e->getCode();
+			$incident = "$file [$line]";
+			
+		//	dump::d($traceArr[0]);
+			
+		//	$trace    = self::GetCallerLine( 0, -1, 'trace');
+			
+			$file = $traceArr[0]['file'];
+			$line = $traceArr[0]['line'];
+			$func = $traceArr[0]['function'];
+			$class= $traceArr[0]['class'];
+			$type = $traceArr[0]['type'];
+			$args = var_export( $traceArr[0]['args'], true);
+			$trace = "$file [$line] {$class}{$type}{$func}($args)";
+			
+		}else{
+			$incident = self::GetCallerLine( 1, 1, 'incident');
+			$message  = self::Escape( $args, $encoding );
+			$trace    = self::GetCallerLine( 0, -1, 'trace');
+		}
+		
+//		self::d($incident);
+//		self::d($trace);
+		
+		$error['incident'] = $incident;
+		$error['message']  = $message;
+		$error['trace']	   = $trace;
+		
 		$_SERVER[__CLASS__]['errors'][] = $error;
 	}
 	
@@ -1952,6 +1986,13 @@ __EOL__;
 	 */
 	static function Wiki2( $string, $options=null )
 	{
+		//  Check
+		if(!is_string($string)){
+		//	self::d($string);
+			self::mark( 'Does not string - '.self::GetCallerLine() );
+			self::StackError("Does not string.");
+		}
+		
 		if( class_exists('Wiki2Engine',true) ){
 			return Wiki2Engine::Wiki2( $string, $options );
 		}else{

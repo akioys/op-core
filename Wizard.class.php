@@ -233,7 +233,7 @@ class Wizard extends OnePiece5
 				$config->database = $config->database->database;
 				$config->table    = $table_name;
 				$config->column   = $diff;
-				$this->pdo()->AlterColumnAdd($config);
+				$this->pdo()->AddColumn($config);
 			}
 		}
 		

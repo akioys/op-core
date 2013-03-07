@@ -304,7 +304,8 @@ abstract class NewWorld5 extends OnePiece5
 			$this->content  = ob_get_contents(); ob_clean();
 			$this->content .= $this->GetTemplate($path);
 		}catch( Exception $e ){
-			$this->StackError($e->getMessage());
+			$this->StackError($e);
+		//	$this->StackError(__METHOD__);
 		}
 		
 		return true;

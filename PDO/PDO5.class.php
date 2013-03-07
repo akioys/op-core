@@ -609,7 +609,7 @@ class PDO5 extends OnePiece5
 		return $this->query( $qu, 'create' );
 	}
 	
-	function AlterColumnAdd( $conf )
+	function AddColumn( $conf )
 	{
 		//  object to array
 		if(!is_array($conf)){
@@ -630,7 +630,7 @@ class PDO5 extends OnePiece5
 		}
 		
 		//  get select query
-		if(!$qu = $this->dcl()->GetAlterTable($conf)){
+		if(!$qu = $this->ddl()->GetAlterTable($conf)){
 			return false;
 		}
 		
