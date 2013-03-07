@@ -718,7 +718,7 @@ __EOL__;
 	 * @param string $key
 	 * @param string|array $var
 	 */
-	static private function Env( $key, $var=null, $ope )
+	static private function _Env( $key, $var=null, $ope )
 	{
 		// convert key name
 		//switch( strcasecmp($key) ){
@@ -771,12 +771,6 @@ __EOL__;
 				$var = $_SERVER[strtoupper($key)];
 				break;
 				
-			case 'url':
-				$schema = 'http://';
-				$var = $schema . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-				$var = self::Escape($var);
-				break;
-			
 			default:
 				if( $ope == 'set' ){
 					
@@ -875,7 +869,7 @@ __EOL__;
 	 */
 	static function SetEnv( $key, $var )
 	{
-		self::Env( $key, $var, 'set' );
+		self::_Env( $key, $var, 'set' );
 	}
 
 	/**
@@ -885,7 +879,20 @@ __EOL__;
 	 */
 	static function GetEnv( $key )
 	{
-		return self::Env( $key, null, 'get' );
+		switch(strtolower($key)){
+			case 'url':
+				$scheme = $_SERVER['SERVER_PORT'] !== '443' ? 'http://': 'https://';
+				$domain = $_SERVER['HTTP_HOST'];
+				$path   = $_SERVER['REQUEST_URI'];
+				$query  = $_SERVER['QUERY_STRING'] ? '?'.$_SERVER['QUERY_STRING']: null;
+				$result = $scheme.$domain.$path.$query;
+				break;
+				
+			default:
+				$result = self::_Env( $key, null, 'get' );
+		}
+		
+		return self::Escape($result);
 	}
 
 	function InitSession()
@@ -1683,6 +1690,10 @@ __EOL__;
 	{
 		if( preg_match('|^([a-z][a-z0-9]+):/(.*)|i',$args,$match) ){
 			switch($match[1]){
+				case 'http':
+				case 'https':
+					return $args;
+					
 				case 'dot':
 					$tmp_root = getcwd() . '/';
 					break;
