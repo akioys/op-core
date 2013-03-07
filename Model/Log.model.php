@@ -26,13 +26,18 @@ class Model_Log extends Model_Model
 		$result = '<div class="table small">';
 		foreach( $this->log as $i => $stack ){
 			//  init
-			$class = null;
 			$io  = $stack['io'];
 			$log = $stack['log'];
 			
 			//  class
-			if(!is_null($io)){
-				$class = $io ? 'blue': 'red'; 
+			if( is_null($io) ){
+				$class = 'gray';
+			}else if( is_bool($io) ){
+				$class = $io ? 'blue': 'red';
+			}else if( is_string($io)){
+				$class = $io;
+			}else{
+				$class = null;
 			}
 			
 			//  table
