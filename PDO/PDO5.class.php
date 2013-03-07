@@ -837,7 +837,7 @@ class ConfigSQL extends OnePiece5
 	}
 	
 	static function Quote( $var, $driver )
-	{
+	{	
 		list( $ql, $qr ) = self::GetQuote($driver);
 		
 		if( is_array($var) ){
@@ -850,6 +850,13 @@ class ConfigSQL extends OnePiece5
 		}else{
 			$safe = $ql.trim($var).$qr;
 		}
+		
+		if( empty($safe) ){
+			var_dump($var);
+			var_dump($driver);
+			$this->StackError("Empty args.");
+		}
+		
 		return $safe;
 	}
 		
