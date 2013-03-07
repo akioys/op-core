@@ -169,9 +169,21 @@ class Wizard extends OnePiece5
 		
 		//  Check detail
 		foreach( $columns as $column_name => $column ){
-			$this->d($column);
+			//$this->d($column);
+			if( !isset($config->table->$table_name->column->$column_name->type) ){
+				continue;
+			}
+			
+			//  Get type from config.
+			$type =$config->table->$table_name->column->$column_name->type;
+			
+			//  Check type
+			if( $column['type'] !=  $type){
+				$me = "Does not match column type. ($column_name is $type, not {$column['type']}.)";
+				throw new OpException($me);
+			}
 		}
-
+		
 		//  Finish
 		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
 		return true;
