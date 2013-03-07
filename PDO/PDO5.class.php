@@ -594,14 +594,43 @@ class PDO5 extends OnePiece5
 		return $this->query( $qu, 'create' );
 	}
 	
-	function Alter( $conf )
+	function AlterTable( $conf )
 	{
 		//  object to array
 		if(!is_array($conf)){
 			$conf = Toolbox::toArray($conf);
 		}
 		//  get select query
-		if(!$qu = $this->dcl()->GetAlter($conf)){
+		if(!$qu = $this->dcl()->GetAlterTable($conf)){
+			return false;
+		}
+		
+		//  execute
+		return $this->query( $qu, 'create' );
+	}
+	
+	function AlterColumnAdd( $conf )
+	{
+		//  object to array
+		if(!is_array($conf)){
+			$conf = Toolbox::toArray($conf);
+		}
+		
+		//  Check
+		if( isset($conf['add']['column']) ){
+			//  OK
+		}else{
+			if( isset($conf['column']) ){
+				$conf['add']['column'] = $conf['column'];
+				unset($conf['column']);
+			}else{
+				$this->StackError('Does not set column.');
+				return false;
+			}
+		}
+		
+		//  get select query
+		if(!$qu = $this->dcl()->GetAlterTable($conf)){
 			return false;
 		}
 		

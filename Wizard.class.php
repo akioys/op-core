@@ -229,8 +229,12 @@ class Wizard extends OnePiece5
 			
 			if( count($diff) ){
 				$this->d($diff);
+				$config = new Config();
+				$config->database = $config->database->database;
+				$config->table    = $table_name;
+				$config->column   = $diff;
+				$this->pdo()->AlterColumnAdd($config);
 			}
-			
 		}
 		
 		//  Finish
@@ -256,11 +260,14 @@ class Wizard extends OnePiece5
 		}
 		
 		//  Create user
-		$io = $this->pdo()->CreateUser($config->user);
+		if(!$this->pdo()->CreateUser($config->user)){
+			$me = "Create user is failed. ({$config->user->user})";
+			throw new OpException($me);
+		}
 		
 		//  Finish
 		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
-		return $io;
+		return true;
 	}
 
 	function CreateGrant($config)
@@ -277,7 +284,7 @@ class Wizard extends OnePiece5
 		//  Create grant
 		foreach( $config->table as $table_name => $table ){
 			$config->grant->table = $table_name;
-			if( $io = $this->pdo()->Grant($config->grant) ){
+			if(!$this->pdo()->Grant($config->grant) ){
 				$me = "Grant is failed. ($table_name)";
 				throw new OpException($me);
 			}
@@ -285,7 +292,7 @@ class Wizard extends OnePiece5
 		
 		//  Finish
 		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
-		return $io;
+		return true;
 	}
 }
 

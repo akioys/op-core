@@ -12,6 +12,34 @@ class DDL extends OnePiece5
 		$this->driver = $driver;
 	}
 	
+	function GetCreateUser( $args )
+	{
+		$user = isset($args['name']) ? $args['name']: null;
+		$user = isset($args['user']) ? $args['user']: $user;
+		$host = $args['host'];
+		$password = $args['password'];
+	
+		if(!$host){
+			$this->StackError("Empty host name.");
+			return false;
+		}
+	
+		if(!$user){
+			$this->StackError("Empty user name.");
+			return false;
+		}
+	
+		if(!$password){
+			$this->StackError("Empty password name.");
+			return false;
+		}
+	
+		//	CREATE USER 'user-name'@'host-name' IDENTIFIED BY '***';
+		$query = "CREATE USER '{$user}'@'{$host}' IDENTIFIED BY '{$password}'";
+	
+		return $query;
+	}
+	
 	function GetCreateDatabase( $args )
 	{
 		//  Check 
@@ -126,36 +154,44 @@ class DDL extends OnePiece5
 		return $query;
 	}
 	
-	function GetAlter( $args )
+	function GetAlterTable( $args )
 	{
+		if( !isset($args['database']) ){
+			$this->StackError("Does not set database name.");
+		}
 		
-	}
+		if( !isset($args['table']) ){
+			$this->StackError("Does not set database name.");
+		}
+		
+		//  Escape  
+		$database = ConfigSQL::Quote( $args['database'], $args['driver'] );
+		$table    = ConfigSQL::Quote( $args['table'],    $args['driver'] );
+		
+		//	Added
+		if( isset($args['add']) ){
+			if(!$add = $this->ConvertColumn( $args['add'], 'ADD' )){
+				return false;
+			}
+		}else{ $add = null; }
 	
-	function GetCreateUser( $args )
-	{
-		$user = isset($args['name']) ? $args['name']: null;
-		$user = isset($args['user']) ? $args['user']: $user;
-		$host = $args['host'];
-		$password = $args['password'];
-		
-		if(!$host){
-			$this->StackError("Empty host name.");
-			return false;
-		}
-
-		if(!$user){
-			$this->StackError("Empty user name.");
-			return false;
-		}
-
-		if(!$password){
-			$this->StackError("Empty password name.");
-			return false;
-		}
-		
-		//	CREATE USER 'user-name'@'host-name' IDENTIFIED BY '***';
-		$query = "CREATE USER '{$user}'@'{$host}' IDENTIFIED BY '{$password}'";
-		
+		//	Change
+		if( isset($args['change']) ){
+			if(!$change = $this->ConvertColumn( $args['change'], 'CHANGE' )){
+				return false;
+			}
+		}else{ $change = null; }
+	
+		//	 Remove
+		if( isset($args['drop']) ){
+			if(!$drop = $this->ConvertColumn( $args['drop'], 'DROP' )){
+				return false;
+			}
+		}else{ $drop = null; }
+	
+		//	Create SQL
+		$query = "ALTER TABLE {$database}{$table} {$add} {$change} {$drop}";
+	
 		return $query;
 	}
 	
