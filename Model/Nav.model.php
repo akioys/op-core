@@ -2,26 +2,21 @@
 
 class Model_Nav extends Model_Model
 {
-	private $format;
+	private $_format;
+	private $_stack;
 	
 	function Init()
 	{
+		parent::Init();
 		self::SetFormat();
 	}
 	
-	function Add()
+	function Add( $href, $label=null )
 	{
+		$stack['href']  = $href;
+		$stack['label'] = $label;
 		
-	}
-	
-	function Set()
-	{
-		
-	}
-	
-	function Get()
-	{
-		
+		$this->_stack[] = $stack;
 	}
 	
 	function Out($format=null)
@@ -30,13 +25,17 @@ class Model_Nav extends Model_Model
 			$format = self::GetFormat();
 		}
 		
-		$nav = self::Get();
+		foreach( $this->_stack as $stack ){
+			$href  = $stack['href'];
+			$label = $stack['label'];
+			$join[] = sprintf('<a href="%s">%s</a>',$href,$label);
+		}
 		
 	}
 	
 	function SetFormat( Config $format=null )
 	{
-		if(!$foramt ){
+		if(!$format ){
 			//  Init
 			$format = new Config();
 			$format->join = ' &lt; ';
