@@ -1752,8 +1752,8 @@ class Form5 extends OnePiece5
 			
 			foreach($this->status->$form_name->error->$input_name as $key => $value){
 				
-				$key   = $this->i18n()->get($key);
-				$value = $this->i18n()->get($value);
+			//	$key   = $this->i18n()->get($key);
+			//	$value = $this->i18n()->get($value);
 				
 				if( isset($input->error->$key) ){
 					$format = '![ $html ['.$input->error->$key.']]';
