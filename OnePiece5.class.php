@@ -1617,11 +1617,34 @@ __EOL__;
 		
 		return $io;
 	}
+
+	/**
+	 * Get template
+	 * 
+	 * @param  string $file file name or path.(current-dir or template-dir)
+	 * @param  array|Config $args  
+	 * @return string
+	 */
+	function GetTemplate( $file, $args=null )
+	{
+		// ob_start is stackable
+		if( ob_start() ){
+			$this->template( $file, $args );
+			$temp = ob_get_contents();
+			$io   = ob_end_clean();
+		}else{
+			$this->StackError("ob_start failed.");
+		}
+	
+		return $temp;
+	}
 	
 	/**
+	 * Pirnt tempalte
 	 * 
-	 * @param unknown_type $file
-	 * @param unknown_type $data
+	 * @param  string $file file name or path.(current-dir or template-dir)
+	 * @param  array|Config $args
+	 * @return string|boolean Success is empty string return.
 	 */
 	function Template( $file, $data=null )
 	{
