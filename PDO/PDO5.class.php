@@ -85,6 +85,7 @@ class PDO5 extends OnePiece5
 		return $this->qus;
 	}
 	
+	/*
 	function GetQuote( $driver )
 	{
 		switch( strtolower($driver) ){
@@ -112,6 +113,7 @@ class PDO5 extends OnePiece5
 		}
 		return $safe;
 	}
+	*/
 	
 	function Query( $qu, $key=null )
 	{
@@ -129,37 +131,39 @@ class PDO5 extends OnePiece5
 			//  success
 			if( $st instanceof PDOStatement ){
 				switch($key){
+					case 'create':
+						$result = true;
+						break;
+						
 					case 'count':
-						$return = $st->fetch(PDO::FETCH_ASSOC);
-						if( isset($return['COUNT(*)']) ){
-							$return = $return['COUNT(*)'];
-						}else if( isset($return['COUNT()']) ){
-							$return = $return['COUNT()'];
+						$result = $st->fetch(PDO::FETCH_ASSOC);
+						if( isset($result['COUNT(*)']) ){
+							$result = $result['COUNT(*)'];
+						}else if( isset($result['COUNT()']) ){
+							$result = $result['COUNT()'];
 						}else{
-							//$this->mark( $this->Qu() );
-							//$this->d($return);
-							$return = false;
+							$result = false;
 						}
 						break;
 					
 					case 'update':
-						$return = $st->rowCount();
+						$result = $st->rowCount();
 						break;
 						
 					default:
-						$return = $st->fetchAll(PDO::FETCH_ASSOC);
+						$result = $st->fetchAll(PDO::FETCH_ASSOC);
 				}
 			}else{
 				$this->d($st);
 			}
 		}else{			
 			//  failed
-			$return = false;
+			$result = false;
 			$temp = $this->pdo->errorInfo();
 			$this->StackError("{$temp[2]} : {$this->qu}");
 		}
 
-		return $return;
+		return $result;
 	}
 	
 	function ConvertCharset( $charset=null )
@@ -202,18 +206,19 @@ class PDO5 extends OnePiece5
 		}
 		
 		//  init
-		$this->driver   = $config->driver;
-		$this->host     = $config->host;
-		$this->user     = $config->user;
-		$password       = $config->password;
+		$this->driver   = isset($config->driver)   ? $config->driver  : null;
+		$this->host     = isset($config->host)     ? $config->host    : null;
+		$this->user     = isset($config->user)     ? $config->user    : null;
+		$password       = isset($config->password) ? $config->password: null;
 		$this->database = isset($config->database) ? $config->database: null;
 		$this->charset  = isset($config->charset)  ? $config->charset : null;
 		
 		$options = array();
 		
 		try {
-			if(!$this->pdo = new PDO( "{$this->driver}:host={$this->host}", $this->user, $password, $options )){
-				$this->StackError("Can not connect database. ($key)");
+			$dns = "{$this->driver}:host={$this->host}";
+			if(!$this->pdo = new PDO( $dns, $this->user, $password, $options )){
+				$this->StackError("Can not connect database. ( $dns, {$this->user} )");
 				return false;
 			}
 		}catch( PDOException $e){
@@ -223,14 +228,7 @@ class PDO5 extends OnePiece5
 		
 		//  Database select
 		if( $this->database ){
-			$io = $this->Database($this->database);
-			if( $io ){
-				//  Set charset
-				$charset = $this->ConvertCharset($this->charset);
-				if( $this->query("SET NAMES $charset") === false ){
-					return;
-				}
-			}
+			$this->Database( $this->database, $this->charset );
 		}
 		
 		//  connected flag
@@ -239,9 +237,32 @@ class PDO5 extends OnePiece5
 		return true;
 	}
 	
-	function Database( $name )
+	function Database( $db_name, $charset=null )
 	{
-		return $this->query("USE $name") !== false ? true: false;
+		if(!is_string($db_name)){
+			$type = gettype($db_name);
+			$me = "Database name is not string. ($type)";
+			//throw new OpException($me);
+			$this->StackError($me);
+			return false;
+		}
+		
+		if( $this->query("USE $db_name") === false){
+			$me = "Database select is failed.";
+			//throw new OpException($me);
+			$this->StackError($me);
+			return false;
+		}
+		
+		if( $charset ){
+			//  Set charset
+			$charset = $this->ConvertCharset($charset);
+			if( $this->query("SET NAMES $charset") === false ){
+				return false;
+			}
+		}
+		
+		return true;
 	}
 	
 	function GetDatabaseList($config=null)
@@ -285,8 +306,8 @@ class PDO5 extends OnePiece5
 		$like = isset($config['like']) ? $config['like']: null;
 		
 		//  select database
-		if( isset($config->database) ){
-			if(!$this->Database($config->database)){
+		if( $database ){
+			if(!$this->Database($database)){
 				return false;
 			}
 		}
@@ -295,39 +316,34 @@ class PDO5 extends OnePiece5
 		$qu = "SHOW TABLES FROM `$database` $like ";
 		
 		//  get table list
-		if( $records = $this->query($qu) ){
-			foreach( $records as $i => $temp ){
+		if( $record = $this->query($qu) ){
+			foreach( $record as $i => $temp ){
 				foreach( $temp as $n => $table_name ){
-					$list[] = $table_name;
+					$result[] = $table_name;
 				}
 			}
+		}else{
+			$result = array();
 		}
 		
-		return $list;
+		return $result;
 	}
 	
-	function GetTableStruct($config)
+	function GetTableStruct( $table_name, $db_name=null, $charset=null )
 	{
-		//  init config
-		if(!is_array($config)){
-			$config = Toolbox::toArray($config);
-		}
-		
-		//  database
-		if(isset($config['database'])){
-			$this->Database($config['database']);
-		}
-		
-		//  table
-		if(isset($config['table'])){
-			$table = $config['table'];
-		}else{
+		//  Check table name
+		if( !$table_name ){
 			$this->StackError("Empty table name.");
 			return false;
 		}
 		
+		//  Check database
+		if( $db_name ){
+			$this->Database( $db_name, $charset );
+		}
+		
 		//  create query
-		$qu = "SHOW FULL COLUMNS FROM $table";
+		$qu = "SHOW FULL COLUMNS FROM $table_name";
 		
 		//  get table struct
 		if(!$records = $this->query($qu) ){
@@ -346,6 +362,25 @@ class PDO5 extends OnePiece5
 		}
 		
 		return $struct;
+	}
+	
+	function GetUserList()
+	{
+		//  Select database
+		$this->Database('mysql');
+		
+		//  Get users list
+		$select = new Config();
+		$select->table = 'user';
+		$select->column = 'User';
+		$record = $this->select($select);
+		
+		//  
+		for( $i=0, $c=count($record); $i<$c; $i++ ){
+			$result[] = $record[$i]['User'];
+		}
+		
+		return $result;
 	}
 
 	function Quick( $string, $config=null)
@@ -498,9 +533,10 @@ class PDO5 extends OnePiece5
 		if(!is_array($conf)){
 			$conf = Toolbox::toArray($conf);
 		}
-				
+		
 		//  get select query
 		if(!$qu = $this->ddl()->GetCreateDatabase($conf)){
+			$this->StackError("![ .red .bold [ Failed GetCreateDatabase-method. ]]");
 			return false;
 		}
 		
@@ -523,9 +559,7 @@ class PDO5 extends OnePiece5
 		}
 		
 		//  execute
-		$io = $this->query($qu);
-		
-		return $io;
+		return $this->query( $qu, 'create' );
 	}
 	
 	function CreateUser( $conf )
@@ -541,9 +575,7 @@ class PDO5 extends OnePiece5
 		}
 		
 		//  execute
-		$io = $this->query($qu);
-		
-		return $io;
+		return $this->query( $qu, 'create' );
 	}
 	
 	function Grant( $conf )
@@ -557,11 +589,53 @@ class PDO5 extends OnePiece5
 		if(!$qu = $this->dcl()->GetGrant($conf)){
 			return false;
 		}
-	
+		
 		//  execute
-		$io = $this->query($qu);
+		return $this->query( $qu, 'create' );
+	}
 	
-		return $io;
+	function AlterTable( $conf )
+	{
+		//  object to array
+		if(!is_array($conf)){
+			$conf = Toolbox::toArray($conf);
+		}
+		//  get select query
+		if(!$qu = $this->dcl()->GetAlterTable($conf)){
+			return false;
+		}
+		
+		//  execute
+		return $this->query( $qu, 'create' );
+	}
+	
+	function AddColumn( $conf )
+	{
+		//  object to array
+		if(!is_array($conf)){
+			$conf = Toolbox::toArray($conf);
+		}
+		
+		//  Check
+		if( isset($conf['add']['column']) ){
+			//  OK
+		}else{
+			if( isset($conf['column']) ){
+				$conf['add']['column'] = $conf['column'];
+				unset($conf['column']);
+			}else{
+				$this->StackError('Does not set column.');
+				return false;
+			}
+		}
+		
+		//  get select query
+		if(!$qu = $this->ddl()->GetAlterTable($conf)){
+			return false;
+		}
+		
+		//  execute
+		return $this->query( $qu, 'create' );
 	}
 	
 	/**
@@ -742,4 +816,48 @@ class PDO5 extends OnePiece5
 	{
 		$this->pdo->commit();
 	}
+}
+
+class ConfigSQL extends OnePiece5
+{
+	static function GetQuote( $driver )
+	{
+		if( empty($driver) ){
+			$me = "Empty driver name.";
+			throw new OpException($me);
+			return false;
+		}
+		
+		switch( strtolower($driver) ){
+			case 'mysql':
+				$ql = $qr = '`';
+				break;
+		}
+		return array($ql,$qr);
+	}
+	
+	static function Quote( $var, $driver )
+	{	
+		list( $ql, $qr ) = self::GetQuote($driver);
+		
+		if( is_array($var) ){
+			foreach( $var as $tmp ){
+				$safe[] = self::Quote($tmp);
+			}
+		}else if( strpos($var,'.') ){
+			$temp = explode('.',$var);
+			$safe = $ql.trim($temp[0]).$qr.'.'.$ql.trim($temp[1]).$qr;
+		}else{
+			$safe = $ql.trim($var).$qr;
+		}
+		
+		if( empty($safe) ){
+			var_dump($var);
+			var_dump($driver);
+			$this->StackError("Empty args.");
+		}
+		
+		return $safe;
+	}
+		
 }
