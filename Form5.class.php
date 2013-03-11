@@ -366,17 +366,23 @@ class Form5 extends OnePiece5
 		$input = $this->GetConfig( $form_name, $input_name );
 		
 		if( in_array( $input->type, array('select','checkbox','radio') ) ){
+			//  
 			if( isset($input->options->$value) ){
-		//	if( array_key_exists($value, $input->options) ){
-				$value = $input->options->$value->label;
+				//  Label has been set then. 
+				if( isset($input->options->$value->label) ){
+					$value = $input->options->$value->label;
+				}else{
+					$value = $input->options->$value->value;
+				}
 			}else{
-			//	$this->d( Toolbox::toArray($input->options) );
-				foreach( $input->options as $option ){
-					if( $option->value == $value ){
-						$value = $option->label;
-						break;
+				if( !empty($input->options) ){
+					foreach( $input->options as $option ){
+						if( $option->value == $value ){
+							$value = isset($option->label) ? $option->label: $value;
+							break;
+						}
 					}
-				} 
+				}
 			}
 		}
 		
@@ -398,6 +404,14 @@ class Form5 extends OnePiece5
 		return $this->GetInputValue( $input_name, $form_name, $joint );
 	}
 
+	/**
+	 * Return to saved-value 1st. 2nd, default-value.
+	 * 
+	 * @param  string $input_name
+	 * @param  string $form_name
+	 * @param  string $joint
+	 * @return boolean|NULL|string|mixed|Ambigous <string, boolean, multitype:, NULL>
+	 */
     public function GetInputValue( $input_name, $form_name=null, $joint=null )
 	{
 		//  more fast.
@@ -407,7 +421,6 @@ class Form5 extends OnePiece5
 		}
 		
 		$value = $this->GetInputValueRaw( $input_name, $form_name, $joint );
-		//$this->mark($value);
 		
 		switch( $type = strtolower(gettype($value)) ){
 			case 'null':
@@ -487,15 +500,21 @@ class Form5 extends OnePiece5
 		return $value;
 	}
 	
-	public function GetInputValueAll( $form_name /*, $force=false */ )
+	public function GetInputValueAll( $form_name )
 	{
+		//  Get form config.
 		if(!$form = $this->GetConfig($form_name)){
 			return false;
 		}
-//		$this->d( Toolbox::toArray($form) );
 		
+		//  Init config.
 		$config = new Config();
+		
+		//  Get saved value.
 		foreach( $form->input as $input_name => $input ){
+			if( $input_name == 'submit' ){
+				continue;
+			}
 			$config->$input_name = $this->GetInputValue( $input_name, $form_name );
 		}
 		
@@ -706,7 +725,6 @@ class Form5 extends OnePiece5
 	private function SaveFile( $input, $form_name )
 	{
 		$input_name = $input->name;
-		
 		$save_value = $this->GetInputValueRaw($input->name,$form_name);
 		$post_value = $this->GetRequest($input->name, $form_name);
 		
@@ -730,7 +748,7 @@ class Form5 extends OnePiece5
 					
 					return false;
 				}
-				
+			
 				//  Reset form config. 
 				$this->SetInputValue( null, $input_name, $form_name );
 			
@@ -1208,18 +1226,27 @@ class Form5 extends OnePiece5
 	
 	public function Start( $form_name=null, $action=null )
 	{
+		//  Check
 		if(!$form_name){
 			$this->StackError('form_name is empty. please set form_name.');
 			return false;
 		}
-		
+
+		//  Check
 		if(!$this->CheckConfig($form_name)){
 			return false;
 		}
 		
+		//  Check
 		if( $temp_name = $this->GetCurrentFormName() ){
 			$this->StackError("Form is not finishing. (Open form is $temp_name)");
 			return sprintf('<fail class="%s, %s, %s, %s"  />', 'OnePiece', get_class($this), __FUNCTION__, __LINE__);
+		}
+
+		//  Check
+		if( $action and !is_string($action) ){
+			$this->mark('$action is not string');
+			$action = null;
 		}
 		
 		// re-generate token key
@@ -1247,7 +1274,6 @@ class Form5 extends OnePiece5
 		
 		//  print form tag.
 		printf('<form name="%s" action="%s" method="%s" %s Accept-Charset="%s" %s %s>'.$nl, $form_name, $action, $method, $enctype, $charset, $class, $style);
-		//printf('<input type="hidden" name="form_name" value="%s" />'.$nl, $form_name);
 		printf('<input type="hidden" name="%s" value="%s" />'.$nl, $token_key_name, $token_key);
 		
 		$this->SetCurrentFormName($form_name);
@@ -1501,9 +1527,6 @@ class Form5 extends OnePiece5
 			case 'file':
 				//  remove checkbox
 				$value = $this->GetInputValue($input_name);
-				
-			//	$this->mark(gettype($value).': '. $value);
-				
 				if( is_string($value) and $value ){
 					if( method_exists( $this, 'GetInputConfigRemover')){
 						//  If you can method over ride.
@@ -1518,9 +1541,10 @@ class Form5 extends OnePiece5
 						$remover->label   = $value;
 						$remover->checked = true;
 					}
-					// create remover
+					//  Create remover
 					$tag = $this->CreateInputTag($remover, $form_name);
 				}else{
+					//  Create file tag
 					$tag = sprintf('<input type="%s" name="%s" value="%s" %s />'.$tail, $type, $input_name, $value, $attr);
 				}
 				break;
@@ -1569,14 +1593,18 @@ class Form5 extends OnePiece5
 					}else{
 						$label = '';
 					}
+					
 					//  tail
 					if(isset($tail)){
 						$label .= $tail;
 					}
+					
 					//  checked
 					if( isset($checked) and $checked ){
 						$attr .= ' checked="checked"';
 					}
+					
+					//  create tag
 					$tag .= sprintf('<nobr><input type="%s" name="%s" value="%s" id="%s" %s />%s</nobr>', $type, $name, $value, $id, $attr, $label);
 				}
 				break;
@@ -1667,10 +1695,10 @@ class Form5 extends OnePiece5
 	
 	/*******************************************************************************/
 	
-	function Debug( $form_name=null, $label=null )
+	function Debug( $form_name=null )
 	{
 		if(!$this->admin() ){
-			$this->mark('Not admin.');
+			$this->mark('Does not view debug info. because you are not admin.');
 			return false;
 		}
 		
@@ -1687,8 +1715,9 @@ class Form5 extends OnePiece5
 		$temp['Errors']	 = $this->status->$form_name->stack;
 		$temp['session'] = $this->GetSession('form');
 		
-		$this->mark( __METHOD__, $label );
-		$this->d( $temp, $label);
+		$call = $this->GetCallerLine();
+		$this->p("Form debugging[ ![.small[ $call ]] ]");
+		Dump::d($temp);
 	}
 	
 	function Error( $input_name, $html='span 0xff0000', $form_name=null )
@@ -1723,8 +1752,8 @@ class Form5 extends OnePiece5
 			
 			foreach($this->status->$form_name->error->$input_name as $key => $value){
 				
-				$key   = $this->i18n()->get($key);
-				$value = $this->i18n()->get($value);
+			//	$key   = $this->i18n()->get($key);
+			//	$value = $this->i18n()->get($value);
 				
 				if( isset($input->error->$key) ){
 					$format = '![ $html ['.$input->error->$key.']]';
@@ -1772,6 +1801,9 @@ class Form5 extends OnePiece5
 	/*******************************************************************************/
 	
 	/**
+	 * Pass to CheckValidate method.
+	 * 
+	 * Is this necessary?
 	 * 
 	 * @param  Config $input
 	 * @param  string $form_name
@@ -1804,10 +1836,16 @@ class Form5 extends OnePiece5
 		return true;
 	}
 	
+	/**
+	 * Convert value.
+	 * 
+	 * @param  string $value
+	 * @param  string $option
+	 * @param  string $charset
+	 * @return string
+	 */
 	function CheckConvert( $value, $option, $charset )
 	{
-        //$this->mark(__METHOD__ . ", $value, $option");
-
 		switch( strtolower($option) ){
 			case 'hankaku':
             case 'zen-han':

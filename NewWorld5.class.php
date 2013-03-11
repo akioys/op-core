@@ -254,11 +254,11 @@ abstract class NewWorld5 extends OnePiece5
 		$this->doSetting($route);
 		
 		// controller root
-		$app_root = $this->GetEnv('AppRoot');
+		$app_root = rtrim( $this->GetEnv('AppRoot'), '/');
 		$ctrl = isset($route['ctrl']) ? $route['ctrl']: $route['path'];
-		$ctrl_root = rtrim($app_root . $ctrl, '/');
+		$ctrl_root = rtrim($app_root . $ctrl, '/') . '/';
 		$this->SetEnv('Ctrl-Root',$ctrl_root);
-		
+				
 		// change dir
 		$chdir = rtrim($app_root,'/') .'/'. trim($route['path'],'/');
 		
@@ -304,7 +304,8 @@ abstract class NewWorld5 extends OnePiece5
 			$this->content  = ob_get_contents(); ob_clean();
 			$this->content .= $this->GetTemplate($path);
 		}catch( Exception $e ){
-			$this->StackError($e->getMessage());
+			$this->StackError($e);
+		//	$this->StackError(__METHOD__);
 		}
 		
 		return true;
@@ -497,7 +498,7 @@ abstract class NewWorld5 extends OnePiece5
 			$location['referer'] = $_SERVER['REQUEST_URI'];
 			$this->SetSession( 'Location', $location );
 			if($exit){
-				$this->Vivre(false);
+			//	$this->Vivre(false);
 				$this->__destruct();
 				exit(0);
 			}

@@ -93,11 +93,11 @@ class ModelConfig extends ConfigMgr
 {
 	const TABLE_PREFIX = 'op';
 	
-	function database()
+	static function database()
 	{
 		$config = parent::database();
 		$config->user     = 'op_model';
-		$config->password = md5($this->GetEnv('admin-mail') . get_class($this));
+		$config->password = md5( OnePiece5::GetEnv('admin-mail') . get_class($this) );
 		return $config;
 	}
 }

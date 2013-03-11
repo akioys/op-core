@@ -234,10 +234,15 @@ class Toolbox
 		return new $module_name($args);
 	}
 	
-	static function Copy($args)
+	static function Copy($object)
 	{
-		$return = new stdClass();
-		foreach( $args as $key => $var ){
+		if( !$object ){
+			return new OnePiece5();
+		}
+		
+		$class_name = get_class($object);
+		$return = new $class_name();
+		foreach( $object as $key => $var ){
 			// value
 			switch( gettype($var) ){
 				case 'array':
@@ -250,7 +255,7 @@ class Toolbox
 					$copy = $var;
 			}
 			// key
-			switch( gettype($args) ){
+			switch( gettype($object) ){
 				case 'array':
 					$return[$key] = $copy;
 					break;

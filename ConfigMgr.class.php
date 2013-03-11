@@ -3,6 +3,7 @@
 abstract class ConfigMgr extends OnePiece5
 {
 	protected $config;
+	protected $_init_pdo;
 	
 	function config()
 	{
@@ -17,12 +18,11 @@ abstract class ConfigMgr extends OnePiece5
 	}
 	
 	function pdo($name=null)
-	{
-		static $init;
-		if(!$init){
+	{ 
+		if(!$this->_init_pdo){
 			$config = $this->database();
 			parent::pdo()->Connect($config);
-			$init = true;
+			$this->_init_pdo = true;
 		}
 		return parent::pdo($name);
 	}
@@ -114,7 +114,7 @@ abstract class ConfigMgr extends OnePiece5
 		return $prefix.$table;;
 	}
 	
-	function database()
+	static function database()
 	{
 		$config = new Config();
 		$config->driver   = 'mysql';
@@ -139,6 +139,7 @@ abstract class ConfigMgr extends OnePiece5
 		$config = new Config();
 		$config->table = $table_name;
 		$config->where->deleted = null;
+		$config->cache = 1;
 		return $config;
 	}
 	

@@ -1,5 +1,9 @@
 <?php
-
+/**
+ * 
+ * @author Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
+ *
+ */
 class DML extends OnePiece5
 {
 	//  OLD
@@ -30,6 +34,7 @@ class DML extends OnePiece5
 		}
 	}
 	
+	/*
 	function Quote( $var )
 	{
 		if( is_array($var) ){
@@ -45,6 +50,7 @@ class DML extends OnePiece5
 		}
 		return $safe;
 	}
+	*/
 	
 	function GetSelect( $conf )
 	{
@@ -490,7 +496,7 @@ class DML extends OnePiece5
 	protected function ConvertSet( $conf )
 	{
 		foreach( $conf['set'] as $key => $var ){
-			if(!is_string($var)){
+			if(!(is_string($var) or is_numeric($var)) ){
 				$this->StackError("Set is only string. ($key)");
 				continue;
 			}
@@ -550,9 +556,11 @@ class DML extends OnePiece5
 			$temp = array();
 			foreach( $cols as $key => $var ){
 				if( is_numeric($key) ){
-					$temp[] = $this->Quote($var);
+					$temp[] = ConfigSQL::Quote( $var, $this->driver );
 				}else{
-					$temp[] = $this->Quote($key)." AS ".$this->Quote($var);
+					$temp[] = ConfigSQL::Quote( $key, $this->driver )
+							 ." AS "
+							 .ConfigSQL::Quote( $var, $this->driver );
 				}
 			}
 			$cols = join(', ',$temp);
@@ -582,7 +590,7 @@ class DML extends OnePiece5
 		}
 		
 		//  init
-		$return = null;
+	//	$return = null;
 		
 		//  select columns
 		if( $cols ){
@@ -608,7 +616,16 @@ class DML extends OnePiece5
 			}
 		}
 		
-		return $return ? $return: '*';
+		//  Added astrisk
+		/*
+		if( isset($conf['column']['all']) and $conf['column']['all'] ){
+			//  No touch
+		}else{
+			$return = $return ? '*, '.$return: '*';
+		}
+		*/
+		
+		return $return;
 	}
 	
 	protected function ConvertAlias( $conf, &$join )

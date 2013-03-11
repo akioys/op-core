@@ -1,6 +1,6 @@
 <?php
 /**
- * TODO: I (will|should) support to spl_autoload_register
+ * TODO: We (will|should) support to spl_autoload_register
  * @see http://www.php.net/manual/ja/function.spl-autoload-register.php
  */
 if(!function_exists('__autoload')){
@@ -14,7 +14,7 @@ if(!function_exists('__autoload')){
 			case 'Memcache':
 			case 'Memcached':
 				return;
-			
+				
 			case 'DML':
 			case 'DML5':
 			case 'DDL':
@@ -59,6 +59,10 @@ if(!function_exists('__autoload')){
 if(!function_exists('OnePieceShutdown')){
 	function OnePieceShutdown()
 	{
+		if(!OnePiece5::Admin()){
+			return;
+		}
+		
 		static $init;
 		if(!is_null($init)){
 			return;
@@ -72,8 +76,7 @@ if(!function_exists('OnePieceShutdown')){
 		$status  = connection_status();
 
 		/* @see http://www.php.net/manual/ja/errorfunc.constants.php */
-		if( function_exists('error_get_last') and $error = error_get_last()){
-			
+		if($error = error_get_last()){
 			switch($error['type']){
 				case E_WARNING: // 2
 					$er = 'E_WARNING';
@@ -85,6 +88,10 @@ if(!function_exists('OnePieceShutdown')){
 					
 				case E_STRICT:  // 2048
 					$er = 'E_STRICT';
+					break;
+					
+				case E_USER_NOTICE: // 1024
+					$er = 'E_USER_NOTICE';
 					break;
 					
 				default:
@@ -121,8 +128,6 @@ if(!function_exists('OnePieceShutdown')){
 if(!function_exists('OnePieceErrorHandler')){
 	function OnePieceErrorHandler( $no, $str, $file, $line, $context)
 	{
-//		print '<p>'.__FILE__.': '.__LINE__.'</p>';
-		
 		static $oproot;
 		if(empty($oproot)){
 			$oproot  = dirname(__FILE__) . '/';
@@ -140,6 +145,9 @@ if(!function_exists('OnePieceErrorHandler')){
 			case E_STRICT:  // 2048
 				$er = 'E_STRICT';
 				break;
+			case E_USER_NOTICE: // 1024
+				$er = 'E_USER_NOTICE';
+				break;
 			default:
 				$er = 'ERROR: '.$no;
 		}
@@ -147,7 +155,7 @@ if(!function_exists('OnePieceErrorHandler')){
 		//  Output error message.
 		$format = '%s [%s] %s: %s';
 		if(empty($env['cgi'])){
-			$format = '<p>'.$format.'</p>';
+			$format = '<div>'.$format.'</div>';
 		}
 		
 		//  check ini setting
@@ -158,14 +166,17 @@ if(!function_exists('OnePieceErrorHandler')){
 		return true;
 	}
 	
-	$level = $_SERVER['HTTP_HOST'] === 'local.onepiece.com' ? E_ALL | E_STRICT: error_reporting();
+	$level = $_SERVER['HTTP_HOST'] === 'localhost' ? E_ALL | E_STRICT: error_reporting();
 	set_error_handler('OnePieceErrorHandler',$level);
 }
 
 if(!function_exists('OnePieceExceptionHandler')){
 	function OnePieceExceptionHandler($e)
 	{
-		print "<h1>Please implement the e-mail alert.</h1>";
+		//  TODO: 
+		//print "<h1>Please implement the e-mail alert.</h1>";
+		$op = new OnePiece5();
+		$op->StackError( $e->getMessage() );
 		printf('<div><p>[%s] %s</p><p>%s : %s</p></div>', get_class($e), $e->GetMessage(), $e->GetFile(), $e->GetLine() );
 		dump::d(Toolbox::toArray($e));
 	}
@@ -183,11 +194,12 @@ class OnePiece5
 {
 	const OP_UNIQ_ID = 'op-uniq-id';
 	
-	public  $env     = array();
-	public  $laptime = null;
+//	public  $env     = array();
+//	public  $laptime = null;
 	private $errors  = array();
 	private $session = array();
 	private $isInit  = null;
+	private $_env;
 	
 	/**
 	 * 
@@ -261,7 +273,7 @@ class OnePiece5
 			$this->StackError( $message );
 		}
 		
-		$this->PrintTime();
+	//	$this->PrintTime();
 		$this->PrintError();
 	}
 	
@@ -422,13 +434,47 @@ class OnePiece5
 	 * @param string $message is message.
 	 * @param string $class is label use to print.
 	 */
-	function StackError( $args, $class=__CLASS__ )
+	function StackError( $args )
 	{
 		$encoding = mb_internal_encoding();
 		
-		$error['incident'] = $this->GetCallerLine( 1, 1, 'incident');
-		$error['message']  = $this->Escape( $args, $encoding );
-		$error['trace']	   = $this->GetCallerLine( 0, -1, 'trace');
+		//  TODO: To model
+		if( $args instanceof Exception ){
+			$e = $args;
+			$message  = $e->getMessage();
+			$traceArr = $e->getTrace();
+			$traceStr = $e->getTraceAsString();
+			$file     = $e->getFile();
+			$line     = $e->getLine();
+			$prev     = $e->getPrevious();
+			$code     = $e->getCode();
+			$incident = "$file [$line]";
+			
+		//	dump::d($traceArr[0]);
+			
+		//	$trace    = self::GetCallerLine( 0, -1, 'trace');
+			
+			$file = $traceArr[0]['file'];
+			$line = $traceArr[0]['line'];
+			$func = $traceArr[0]['function'];
+			$class= $traceArr[0]['class'];
+			$type = $traceArr[0]['type'];
+			$args = var_export( $traceArr[0]['args'], true);
+			$trace = "$file [$line] {$class}{$type}{$func}($args)";
+			
+		}else{
+			$incident = self::GetCallerLine( 1, 1, 'incident');
+			$message  = self::Escape( $args, $encoding );
+			$trace    = self::GetCallerLine( 0, -1, 'trace');
+		}
+		
+//		self::d($incident);
+//		self::d($trace);
+		
+		$error['incident'] = $incident;
+		$error['message']  = $message;
+		$error['trace']	   = $trace;
+		
 		$_SERVER[__CLASS__]['errors'][] = $error;
 	}
 	
@@ -672,7 +718,7 @@ __EOL__;
 	 * @param string $key
 	 * @param string|array $var
 	 */
-	static private function Env( $key, $var=null, $ope )
+	static private function _Env( $key, $var=null, $ope )
 	{
 		// convert key name
 		//switch( strcasecmp($key) ){
@@ -721,16 +767,10 @@ __EOL__;
 		
 		// get key's value
 		switch($key){
-			case isset($_SERVER[strtolower($key)]):
-				$var = $_SERVER[strtolower($key)];
+			case isset($_SERVER[strtoupper($key)]):
+				$var = $_SERVER[strtoupper($key)];
 				break;
 				
-			case 'url':
-				$schema = 'http://';
-				$var = $schema . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-				$var = self::Escape($var);
-				break;
-			
 			default:
 				if( $ope == 'set' ){
 					
@@ -829,7 +869,7 @@ __EOL__;
 	 */
 	static function SetEnv( $key, $var )
 	{
-		self::Env( $key, $var, 'set' );
+		self::_Env( $key, $var, 'set' );
 	}
 
 	/**
@@ -839,7 +879,20 @@ __EOL__;
 	 */
 	static function GetEnv( $key )
 	{
-		return self::Env( $key, null, 'get' );
+		switch(strtolower($key)){
+			case 'url':
+				$scheme = $_SERVER['SERVER_PORT'] !== '443' ? 'http://': 'https://';
+				$domain = $_SERVER['HTTP_HOST'];
+				$path   = $_SERVER['REQUEST_URI'];
+				$query  = $_SERVER['QUERY_STRING'] ? '?'.$_SERVER['QUERY_STRING']: null;
+				$result = $scheme.$domain.$path.$query;
+				break;
+				
+			default:
+				$result = self::_Env( $key, null, 'get' );
+		}
+		
+		return self::Escape($result);
 	}
 
 	function InitSession()
@@ -955,7 +1008,7 @@ __EOL__;
 	 * @param integer $num
 	 * @param string  $format
 	 */
-	function GetCallerLine( $depth=0, $num=1, $format=null )
+	static function GetCallerLine( $depth=0, $num=1, $format=null )
 	{
 		// TODO: file system encoding
 		$encode_file_system = PHP_OS == 'WINNT' ? 'sjis': 'utf-8';
@@ -963,9 +1016,9 @@ __EOL__;
 		// init
 		$call_line = '';
 		$depth++;
+		
 		$nl = self::GetEnv('nl');
 		
-		//  Get backtrace
 		if( version_compare(PHP_VERSION, '5.2.5') >= 0 ){
 			$back = debug_backtrace(false);
 		}else{
@@ -1023,7 +1076,7 @@ __EOL__;
 				foreach($args as $var){
 					switch(gettype($var)){
 						case 'string':
-							$vars[] = $this->Escape($var);
+							$vars[] = self::Escape($var);
 							break;
 						case 'array':
 							$str = var_export($var,true);
@@ -1031,7 +1084,7 @@ __EOL__;
 							$str = str_replace("\\'", "'", $str);
 							$str = str_replace(",)", ") ", $str);
 							$str = str_replace(",  )", ") ", $str);
-							$vars[] = $this->Escape($str);
+							$vars[] = self::Escape($str);
 							break;
 						case 'object':
 							$vars[] = get_class($var);
@@ -1083,7 +1136,7 @@ __EOL__;
 	 * @param  string $file_path
 	 * @return string $file_path
 	 */
-	function CompressPath( $path )
+	static function CompressPath( $path )
 	{
 		// TODO: file system encoding. (Does not support multi language, yet)
 		$encode_file_system = PHP_OS == 'WINNT' ? 'sjis': 'utf-8';
@@ -1176,7 +1229,7 @@ __EOL__;
 	 * @param array  $attr
 	 * @return string
 	 */
-	function Html($str, $tag='span', $attr=null)
+	static function Html($str, $tag='span', $attr=null)
 	{
 		$nl    = self::GetEnv('newline');
 		$str   = self::Escape($str);
@@ -1211,7 +1264,7 @@ __EOL__;
 	 * @param string $tag
 	 * @param array $attr
 	 */
-	function P( $str='OnePiece!', $tag='p', $attr=null)
+	static function P( $str='OnePiece!', $tag='p', $attr=null)
 	{
 		print self::Html( $str, $tag, $attr );
 	}
@@ -1441,9 +1494,7 @@ __EOL__;
 		return "$elapsed ($lap)";
 	}
 	
-	/**
-	 * 
-	 */
+	/*
 	function PrintTime(){
 		if($this->GetEnv('cli')){ return; }
 		if(!$this->laptime){ return; }
@@ -1451,9 +1502,10 @@ __EOL__;
 			self::d($this->laptime);
 		}
 	}
+	*/
 	
 	/**
-	 * Send Email
+	 * Send mail method
 	 * 
 	 * @param  array|Config $config
 	 * @return boolean
@@ -1461,14 +1513,16 @@ __EOL__;
 	function Mail( $args )
 	{
 		// optimize
-		$lang = $this->GetEnv('lang');
+	//	$lang = $this->GetEnv('lang');
+		$lang = 'uni'; // Unicode only
 		$char = $this->GetEnv('charset');
+		
 		if( $lang and $char ){
-			// save
+			// Save original.
 			$save_lang = mb_language();
 			$save_char = mb_internal_encoding();
 			
-			// set
+			// Set language use mail function.
 			mb_language($lang);
 			mb_internal_encoding($char);
 		}
@@ -1488,8 +1542,8 @@ __EOL__;
 		$message = isset($args['message']) ? $args['message'] : $body;
 		
 		//  Sender name
-		$from_name = isset($args['from-name']) ? $args['from-name'] : null;
-		$to_name   = isset($args['to-name'])   ? $args['to-name']   : null;
+		$from_name = isset($args['from_name']) ? $args['from_name'] : null;
+		$to_name   = isset($args['to_name'])   ? $args['to_name']   : null;
 
 		//  Check
 		if( empty($from) or empty($to) or empty($message) ){
@@ -1500,10 +1554,22 @@ __EOL__;
 		//  Subject
 		$subject = mb_encode_mimeheader($subject);
 		
-		// From
-		if( is_string($from) ){
-			$headers[]  = "From: " . $from;
+		//  To
+		if( $to_name ){
+			$to_name = mb_encode_mimeheader($from_name);
+			$headers[]  = "To: $to_name <$to>";
 		}
+		
+		//  From
+	//	if( is_string($from) ){
+			if( $from_name ){
+				$from_name = mb_encode_mimeheader($from_name);
+				$headers[]  = "From: $from_name <$from>";
+			}else{
+				$headers[]  = "From: $from";
+			}
+	//	}
+		
 		// Cc
 		if( isset($args['cc']) ){
 			if( is_string($args['cc']) ){
@@ -1512,6 +1578,7 @@ __EOL__;
 				$this->mark('Does not implements yet.');
 			}
 		}
+		
 		// Bcc
 		if( isset($args['bcc']) ){
 			if( is_string($args['bcc']) ){
@@ -1520,6 +1587,7 @@ __EOL__;
 				$this->mark('Does not implements yet.');
 			}
 		}
+		
 		// X-Mailer
 		if( $this->admin() ){
 			$headers[] = "X-Mailer: OnePiece-Framework";
@@ -1557,6 +1625,12 @@ __EOL__;
 	 */
 	function Template( $file, $data=null )
 	{
+		if(!is_string($file)){
+			$this->StackError("Passed arguments is not string. (".gettype($file).")");
+			return false;
+		}
+		
+		//  for developper's debug
 		$this->mark($file,'template');
 		
 		//  access is deny, above current directory
@@ -1616,6 +1690,10 @@ __EOL__;
 	{
 		if( preg_match('|^([a-z][a-z0-9]+):/(.*)|i',$args,$match) ){
 			switch($match[1]){
+				case 'http':
+				case 'https':
+					return $args;
+					
 				case 'dot':
 					$tmp_root = getcwd() . '/';
 					break;
@@ -1631,18 +1709,15 @@ __EOL__;
 			//  create absolute path. 
 			$absolute = $tmp_root . $match[2];
 		}else{
-		//	$absolute = $args;
 			return $args;
 		}
 		
 		//  create relative path from document root.
 		$doc_root = $this->GetEnv('doc-root');
-		//$document_root = str_replace('/', '\\', $_SERVER['DOCUMENT_ROOT'] );
 		
 		//  replace
 		$patt = array(); 
 		$patt[] = '|^' . $doc_root . '|i';
-		//$patt[] = '|^' . $document_root . '|i';
 		$url = preg_replace($patt,'',$absolute);
 		
 		return '/' . ltrim($url,'/');
@@ -1671,27 +1746,18 @@ __EOL__;
 		return $path;
 	}
 	
-	function Module($name)
-	{
-		return Toolbox::Module($name);
-	}
-	
 	function Model($name)
 	{
 		try{
-			if( $name == 'Account' ){
-				$this->mark();
-			}
-			
 			//  name check
 			if(!$name){
-				$this->StackError('Model name is empty.');
-				return false;
+				$msg = "Model name is empty.";
+				throw new OpModelException($msg);
 			}
 			
 			//  already instanced?
-			if( isset( $_SERVER['test']['model'][$name] ) ){
-				return $_SERVER['test']['model'][$name];
+			if( isset( $_SERVER[__CLASS__]['model'][$name] ) ){
+				return $_SERVER[__CLASS__]['model'][$name];
 			}
 			
 			//  include Model_model
@@ -1699,18 +1765,17 @@ __EOL__;
 				$path = self::ConvertPath('op:/Model/Model.model.php');
 				if(!$io = include_once($path)){
 					$msg = "Failed to include the Model_model. ($path)";
-					$this->StackError($msg);
 					throw new OpException($msg);
 				}
 			}
 			
-			//  master
+			//  op-core
 			$path = self::ConvertPath("op:/Model/{$name}.model.php");
 			if( $io = file_exists($path) ){
 				$io = include_once($path);
 			}
 			
-			//  user
+			//  user-dir
 			if(!$io ){
 				$model_dir = $this->GetEnv('model-dir');
 				$path  = self::ConvertPath("{$model_dir}{$name}.model.php");
@@ -1721,20 +1786,92 @@ __EOL__;
 			
 			//  Could be include?
 			if(!$io){
-				$msg = "Failed to include the $name_model. ($path)";
-				$this->StackError($msg);
+				$msg = "Failed to include the $name. ($path)";
 				throw new OpModelException($msg);
 			}
 			
 			//  instance of model
 			$model_name = 'Model_'.$name;//.'_model';
-			if(!$_SERVER['test']['model'][$name] = new $model_name ){
-				$msg = "Failed to include the Model_Model. ($path)";
-				$this->StackError($msg);
+			if(!$_SERVER[__CLASS__]['model'][$name] = new $model_name ){
+				$msg = "Failed to include the $model_name. ($path)";
 				throw new OpModelException($msg);
 			}
 			
-			return $_SERVER['test']['model'][$name];
+			//  Instance is success.
+			return $_SERVER[__CLASS__]['model'][$name];
+			
+		}catch( Exception $e ){
+			$this->mark( $e->getMessage() );
+			$this->StackError( $e->getMessage() );
+			return new OnePiece5();
+		}
+	}
+
+	function Module($name)
+	{
+		try{
+			//  name check
+			if(!$name){
+				$msg = "Module name is empty.";
+				throw new OpModelException($msg);
+			}
+				
+			//  already instanced?
+			if( isset( $_SERVER[__CLASS__]['module'][$name] ) ){
+				return $_SERVER[__CLASS__]['module'][$name];
+			}
+				
+			//  include Model_model
+			if(!class_exists( 'Model_Model', false ) ){
+				$path = self::ConvertPath('op:/Model/Model.model.php');
+				if(!$io = include_once($path)){
+					$msg = "Failed to include the Model_model. ($path)";
+					throw new OpException($msg);
+				}
+			}
+			
+			//  op-core
+			$path = self::ConvertPath("op:/Module/{$name}/{$name}.module.php");
+			if( $io = file_exists($path) ){
+				$io = include_once($path);
+			}
+				
+			//  user-dir
+			if(!$io ){
+				if( $module_dir = $this->GetEnv('module-dir') ){
+					$module_dir = rtrim( $module_dir, '/' );
+					$path  = self::ConvertPath("{$module_dir}/{$name}/{$name}.module.php");
+					if( $io = file_exists($path) ){						
+						$io = include_once($path);
+					}else{
+						$msg = "Does not include $path.";
+						throw new OpModelException($msg);
+					}
+				}else{
+				//	$this->d($module_dir);
+					$msg = "Does not set module-dir.";
+					throw new OpModelException($msg);
+				}
+			}
+				
+			//  Could be include?
+			if(!$io){
+				$msg = "$name class does not been included.($path)";
+				throw new OpModelException($msg);
+			}
+			
+			//  Create module name.
+			$module_name = 'Module_'.$name;
+
+			//  instance of module
+			if(!$_SERVER[__CLASS__]['module'][$name] = new $module_name() ){
+				$msg = "Failed to include the $module_name. ($path)";
+				throw new OpModelException($msg);
+			}
+			
+			//  Instance is success.
+			return $_SERVER[__CLASS__]['module'][$name];
+				
 		}catch( Exception $e ){
 			$this->mark( $e->getMessage() );
 			$this->StackError( $e->getMessage() );
@@ -1742,7 +1879,11 @@ __EOL__;
 		}
 	}
 	
-	/* @var $pdo PDO5 */
+	/**
+	 * Separate for each instance.
+	 * 
+	 * @var PDO5
+	 */
 	private $pdo;
 	
 	/**
@@ -1773,45 +1914,46 @@ __EOL__;
 		return $this->pdo;
 	}
 	
-	/* @var $mysql MySQL */
+	/**
+	 * @var MySQL
+	 */
 	private $mysql;
 	
 	/**
 	 * Return MySQL Object
 	 * 
-	 * @param  array|string configuration or configuration file path
+	 * @param  array|string configuration-array or configuration-file-path
 	 * @return MySQL $mysql
 	 */
 	function MySQL($args=null)
 	{
-		if( isset($this->mysql) ){
-			// ok
-		}else{
+		if( empty($this->mysql) ){
 			include_once('SQL/MySQL.class.php');
 			$this->mysql = new MySQL( $args, $this );
 		}
 		return $this->mysql;
-	} 
+	}
 	
 	/**
 	 * Abstract Form object.
 	 * 
-	 * @param unknown $args
+	 * @param  string $name Class name
 	 * @return Form5
 	 */
-	function Form($args='Form5')
+	function Form( $name='Form5' )
 	{
-		if(!isset($_SERVER[__CLASS__][strtoupper($args)])){
-			if(!$_SERVER[__CLASS__][strtoupper($args)] = new $args()){
-				return false;
+		//static $obj;
+		
+		$obj = &$_SERVER[__CLASS__][__METHOD__];
+		
+		if( empty($obj) ){
+			if(!$obj = new $name()){
+				$obj = OnePiece5();
 			}
 		}
-		return $_SERVER[__CLASS__][strtoupper($args)];
+		
+		return $obj;
 	}
-	
-	/* @var $form Form5 */
-	private $form = null;
-	
 	
 	/**
 	 *  @var $i18n i18n
@@ -1824,8 +1966,19 @@ __EOL__;
 	 * @param  string $name Object name
 	 * @return i18n
 	 */
-	function i18n($name='i18n')
+	function i18n( $name='i18n' )
 	{
+		static $obj;
+
+		if( empty($obj) ){
+			if(!$obj = new $name()){
+				$obj = OnePiece5();
+			}
+		}
+		
+		return $obj;
+		
+		/*
 		if( empty($this->i18n) ){
 			if(!$this->i18n = new $name()){
 				return $this;
@@ -1833,6 +1986,7 @@ __EOL__;
 		}
 		
 		return $this->i18n;
+		*/
 	}
 	
 	/**
@@ -1843,6 +1997,13 @@ __EOL__;
 	 */
 	static function Wiki2( $string, $options=null )
 	{
+		//  Check
+		if(!is_string($string)){
+		//	self::d($string);
+			self::mark( 'Does not string - '.self::GetCallerLine() );
+			self::StackError("Does not string.");
+		}
+		
 		if( class_exists('Wiki2Engine',true) ){
 			return Wiki2Engine::Wiki2( $string, $options );
 		}else{
@@ -1855,13 +2016,22 @@ __EOL__;
 	 */
 	private $cache = null;
 	
+	/**
+	 * Cache is presents the [memcache/memcached/other] interface. 
+	 * 
+	 * @param  string $name
+	 * @throws Exception
+	 * @return Cache
+	 */
 	function Cache($name='Cache')
 	{
 		if(!$this->cache){
-			if(!include("$name.class.php") ){
-				throw new Exception("Include is failed. ($name)");
+			if(!class_exists($name)){				
+				if(!include("$name.class.php") ){
+					throw new Exception("Include is failed. ($name)");
+				}
 			}
-			if(!$this->cache = new $name() ){
+			if(!$this->cache = new $name() ){				
 				throw new Exception("Instance object is failed. ($name)");
 			}
 		}
