@@ -434,13 +434,47 @@ class OnePiece5
 	 * @param string $message is message.
 	 * @param string $class is label use to print.
 	 */
-	function StackError( $args, $class=__CLASS__ )
+	function StackError( $args )
 	{
 		$encoding = mb_internal_encoding();
 		
-		$error['incident'] = $this->GetCallerLine( 1, 1, 'incident');
-		$error['message']  = $this->Escape( $args, $encoding );
-		$error['trace']	   = $this->GetCallerLine( 0, -1, 'trace');
+		//  TODO: To model
+		if( $args instanceof Exception ){
+			$e = $args;
+			$message  = $e->getMessage();
+			$traceArr = $e->getTrace();
+			$traceStr = $e->getTraceAsString();
+			$file     = $e->getFile();
+			$line     = $e->getLine();
+			$prev     = $e->getPrevious();
+			$code     = $e->getCode();
+			$incident = "$file [$line]";
+			
+		//	dump::d($traceArr[0]);
+			
+		//	$trace    = self::GetCallerLine( 0, -1, 'trace');
+			
+			$file = $traceArr[0]['file'];
+			$line = $traceArr[0]['line'];
+			$func = $traceArr[0]['function'];
+			$class= $traceArr[0]['class'];
+			$type = $traceArr[0]['type'];
+			$args = var_export( $traceArr[0]['args'], true);
+			$trace = "$file [$line] {$class}{$type}{$func}($args)";
+			
+		}else{
+			$incident = self::GetCallerLine( 1, 1, 'incident');
+			$message  = self::Escape( $args, $encoding );
+			$trace    = self::GetCallerLine( 0, -1, 'trace');
+		}
+		
+//		self::d($incident);
+//		self::d($trace);
+		
+		$error['incident'] = $incident;
+		$error['message']  = $message;
+		$error['trace']	   = $trace;
+		
 		$_SERVER[__CLASS__]['errors'][] = $error;
 	}
 	
@@ -684,7 +718,7 @@ __EOL__;
 	 * @param string $key
 	 * @param string|array $var
 	 */
-	static private function Env( $key, $var=null, $ope )
+	static private function _Env( $key, $var=null, $ope )
 	{
 		// convert key name
 		//switch( strcasecmp($key) ){
@@ -737,12 +771,6 @@ __EOL__;
 				$var = $_SERVER[strtoupper($key)];
 				break;
 				
-			case 'url':
-				$schema = 'http://';
-				$var = $schema . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-				$var = self::Escape($var);
-				break;
-			
 			default:
 				if( $ope == 'set' ){
 					
@@ -841,7 +869,7 @@ __EOL__;
 	 */
 	static function SetEnv( $key, $var )
 	{
-		self::Env( $key, $var, 'set' );
+		self::_Env( $key, $var, 'set' );
 	}
 
 	/**
@@ -851,7 +879,20 @@ __EOL__;
 	 */
 	static function GetEnv( $key )
 	{
-		return self::Env( $key, null, 'get' );
+		switch(strtolower($key)){
+			case 'url':
+				$scheme = $_SERVER['SERVER_PORT'] !== '443' ? 'http://': 'https://';
+				$domain = $_SERVER['HTTP_HOST'];
+				$path   = $_SERVER['REQUEST_URI'];
+				$query  = $_SERVER['QUERY_STRING'] ? '?'.$_SERVER['QUERY_STRING']: null;
+				$result = $scheme.$domain.$path.$query;
+				break;
+				
+			default:
+				$result = self::_Env( $key, null, 'get' );
+		}
+		
+		return self::Escape($result);
 	}
 
 	function InitSession()
@@ -1576,11 +1617,34 @@ __EOL__;
 		
 		return $io;
 	}
+
+	/**
+	 * Get template
+	 * 
+	 * @param  string $file file name or path.(current-dir or template-dir)
+	 * @param  array|Config $args  
+	 * @return string
+	 */
+	function GetTemplate( $file, $args=null )
+	{
+		// ob_start is stackable
+		if( ob_start() ){
+			$this->template( $file, $args );
+			$temp = ob_get_contents();
+			$io   = ob_end_clean();
+		}else{
+			$this->StackError("ob_start failed.");
+		}
+	
+		return $temp;
+	}
 	
 	/**
+	 * Pirnt tempalte
 	 * 
-	 * @param unknown_type $file
-	 * @param unknown_type $data
+	 * @param  string $file file name or path.(current-dir or template-dir)
+	 * @param  array|Config $args
+	 * @return string|boolean Success is empty string return.
 	 */
 	function Template( $file, $data=null )
 	{
@@ -1649,6 +1713,10 @@ __EOL__;
 	{
 		if( preg_match('|^([a-z][a-z0-9]+):/(.*)|i',$args,$match) ){
 			switch($match[1]){
+				case 'http':
+				case 'https':
+					return $args;
+					
 				case 'dot':
 					$tmp_root = getcwd() . '/';
 					break;
@@ -1952,6 +2020,13 @@ __EOL__;
 	 */
 	static function Wiki2( $string, $options=null )
 	{
+		//  Check
+		if(!is_string($string)){
+		//	self::d($string);
+			self::mark( 'Does not string - '.self::GetCallerLine() );
+			self::StackError("Does not string.");
+		}
+		
 		if( class_exists('Wiki2Engine',true) ){
 			return Wiki2Engine::Wiki2( $string, $options );
 		}else{

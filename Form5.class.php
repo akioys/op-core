@@ -328,7 +328,7 @@ class Form5 extends OnePiece5
 			if( $this->GetTokenKeyName($form_name) === $input_name ){
 				return false;
 			}
-			$this->mark("![.red[Does not exists this input_name in form. ($input_name, $form_name)]]");
+			$this->mark("![.red[Does not exists this input-name into form-config. ($input_name, $form_name)]]");
 			return false;
 		}
 		
@@ -1752,8 +1752,8 @@ class Form5 extends OnePiece5
 			
 			foreach($this->status->$form_name->error->$input_name as $key => $value){
 				
-				$key   = $this->i18n()->get($key);
-				$value = $this->i18n()->get($value);
+			//	$key   = $this->i18n()->get($key);
+			//	$value = $this->i18n()->get($value);
 				
 				if( isset($input->error->$key) ){
 					$format = '![ $html ['.$input->error->$key.']]';

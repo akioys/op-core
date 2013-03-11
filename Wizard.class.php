@@ -16,29 +16,42 @@ class Wizard extends OnePiece5
 		return $this->config;
 	}
 	
-	function Selftest( $config )
+	function Selftest( Config $config )
 	{
+		//  Start
+		$this->model('Log')->Set("START: Selftest.");
+		
 		if(!$this->pdo()->Connect($config->database) ){
+			$dns = $config->database->user.'@'.$config->database->host;
+			$this->model('Log')->Set("FAILED: Database connect is failed.($dns)",false);
 			$this->DoWizard( $config );
-			return;
+			return false;
 		}
 		
 		try{
 			$this->CheckDatabase($config);
 			$this->CheckTable($config);
-			$this->CheckColumn($config);
+		//	$this->CheckColumn($config);
 			$io = true;
 		}catch( Exception $e ){
-			$this->p( $e->getMessage() );
-			$this->DoWizard( $config );
 			$io = false;
+			$me = $e->getMessage();
+			$this->p( $me );
+			$this->model('Log')->Set($me,false);
+			$this->DoWizard( $config );
 		}
 		
+		//  Finish
+		$this->model('Log')->Set("FINISH: Selftest.",$io);
+		$this->model('Log')->Out();
 		return $io;
 	}
 	
-	function DoWizard( $config )
+	function DoWizard( Config $config )
 	{
+		//  Start
+		$this->model('Log')->Set('START: '.__FUNCTION__);
+		
 		//  Get form name.
 		$form_name = $this->config()->FormName();
 		
@@ -57,21 +70,29 @@ class Wizard extends OnePiece5
 			
 			//  Connect to administrator account.
 			if(!$io = $this->pdo()->Connect( $database ) ){
-				$database->d();
+			//	$database->d();
+			}else{
+				$this->model('Log')->Set("Connect {$database->user} account.",true);
 			}
 			
+			//  Create 
 			$this->CreateDatabase($config);
 			$this->CreateTable($config);
 			$this->CreateColumn($config);
 			$this->CreateUser($config);
 			$this->CreateGrant($config);
-			
 		}else{
+			$this->model('Log')->Set("Wizard-Form is not secure.");
 		//	$this->form()->Debug($form_name);
 		}
 		
 		//  Print form.
 		$this->PrintForm();
+
+		//  Finish
+		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
+		
+		return true;
 	}
 	
 	function PrintForm()
@@ -93,56 +114,105 @@ class Wizard extends OnePiece5
 		$this->form()->Finish($form_name);
 	}
 	
-	function CheckDatabase($config)
+	function CheckDatabase( Config $config )
 	{
-		//  Get Database-name list.
-		if(!$database_list = $this->pdo()->GetDatabaseList($config->database) ){
-			throw new Exception("Failed GetDatabaseList-method.");
-		}
+		//  Start
+		$this->model('Log')->Set('START: '.__FUNCTION__);
 		
-		//  Check Database exists
-		$i = array_search( $config->database->database, $database_list);
-		if( $i === false ){
-			throw new Exception("Database can not be found. ({$config->database->database})");
-		}
+		//  Get database list.
+		$db_name = $config->database->database;
+		$db_list = $this->pdo()->GetDatabaseList($config->database);
 		
+		//  Check database exists.
+		$io = array_search( $db_name, $db_list);
+		if( $io === false){
+			throw new OpException("Database can not be found. ($db_name)");
+		}
+
+		//  Finish
+		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
 		return true;
 	}
 	
-	function CheckTable($config)
+	function CheckTable( Config $config )
 	{
+		//  Start
+		$this->model('Log')->Set('START: '.__FUNCTION__);
+		
 		//  Get table-name list.
-		if(!$table_list = $this->pdo()->GetTableList($config->table) ){
+		if(!$table_list = $this->pdo()->GetTableList($config->database) ){
 			throw new Exception("Failed GetTableList-method.");
 		}
 		
+		
 		foreach( $config->table as $table ){
-			//  Check table exists.
-			$i = array_search( $table->name, $table_list);
-			if( $i === false ){
+			$io = array_search( $table->name, $table_list);
+			if( $io === false ){
 				throw new Exception("Table can not be found. ({$table->name})");
 			}
-			
-			$this->CheckColumn($config);
+			$this->CheckColumn( $config, $table_name );
 		}
 		
+		//  Finish
+		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
 		return true;
 	}
 	
-	function CheckColumn($config)
+	function CheckColumn( Config $config, $table_name )
 	{
-		$this->mark();
+		//  Start
+		$this->model('Log')->Set('START: '.__FUNCTION__);
+		
+		$columns = Toolbox::toArray($config->table->$table_name->column);
+		$structs = $this->pdo()->GetTableStruct( $table_name );
+		$diff = array_diff_key( $columns, $structs );
+		
+		if( count($diff) ){
+			$join = join(', ', array_keys($diff) );
+			$me = "Does not match column. ($join)";
+			throw new OpException($me);
+		}
+		
+		//  Check detail
+		foreach( $columns as $column_name => $column ){
+			//$this->d($column);
+			if( !isset($config->table->$table_name->column->$column_name->type) ){
+				continue;
+			}
+			
+			//  Get type from config.
+			$type =$config->table->$table_name->column->$column_name->type;
+			
+			//  Check type
+			if( $column['type'] !=  $type){
+				$me = "Does not match column type. ($column_name is $type, not {$column['type']}.)";
+				throw new OpException($me);
+			}
+		}
+		
+		//  Finish
+		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
 		return true;
 	}
 	
-	function CreateDatabase($config)
+	function CreateDatabase( Config $config)
 	{
+		//  Start
+		$this->model('Log')->Set('START: '.__FUNCTION__);
+		
+		//  Create database
 		$io = $this->pdo()->CreateDatabase( $config->database );
+		
+		//  Finish
+		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
 		return $io;
 	}
 	
-	function CreateTable($config)
+	function CreateTable( Config $config )
 	{
+		//  Start
+		$this->model('Log')->Set('START: '.__FUNCTION__);
+		
 		if(empty($config->table)){
 			return true;
 		}
@@ -151,38 +221,96 @@ class Wizard extends OnePiece5
 			if( empty($table->database) ){
 				$table->database = $config->database->database;
 			}
-			$io = $this->pdo()->CreateTable($table);
+			
+			if(!$io = $this->pdo()->CreateTable($table) ){
+				$this->model('Log')->Set("CreateTable is failed. ({$table->table})", false);
+				return false;
+			}
 		}
-		return $io;
+		
+		//  Finish
+		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
+		return true;
 	}
 	
-	function CreateColumn($config)
+	function CreateColumn( Config $config )
 	{
-	//	$this->mark(__METHOD__);
+		//  Start
+		$this->model('Log')->Set('START: '.__FUNCTION__);
+		
+		//  Select database
+		$this->pdo()->Database($config->database->database); 
+		
+		foreach( $config->table as $table_name => $table ){
+			$structs = $this->pdo()->GetTableStruct( $table_name );
+			$diff = array_diff_key( Toolbox::toArray($table->column), $structs );
+			
+			if( count($diff) ){
+				$this->d($diff);
+				$config = new Config();
+				$config->database = $config->database->database;
+				$config->table    = $table_name;
+				$config->column   = $diff;
+				$this->pdo()->AddColumn($config);
+			}
+		}
+		
+		//  Finish
+		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
+		return true;
 	}
 	
 	function CreateUser($config)
 	{
+		//  Start
+		$this->model('Log')->Set('START: '.__FUNCTION__);
+		
+		//  Inist
 		$config->user->host     = $config->database->host;
 		$config->user->user     = $config->database->user;
 		$config->user->password = $config->database->password;
 		
-		$io = $this->pdo()->CreateUser($config->user);
+		//  Check user exists.
+		$list = $this->pdo()->GetUserList();
+		if( array_search( $config->user->user, $list ) !== false ){
+			$this->model('Log')->Set("New user {$config->user->user} is already exists.",true);
+			return true;
+		}
+		
+		//  Create user
+		if(!$this->pdo()->CreateUser($config->user)){
+			$me = "Create user is failed. ({$config->user->user})";
+			throw new OpException($me);
+		}
+		
+		//  Finish
+		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
+		return true;
 	}
 
 	function CreateGrant($config)
 	{
-		$this->d( Toolbox::toArray($config) );
+		//  Start
+		$this->model('Log')->Set('START: '.__FUNCTION__);
+		
+		//  Init
+		//$this->d( Toolbox::toArray($config) );
 		$config->grant->host     = $config->database->host;
 		$config->grant->database = $config->database->database;
 		$config->grant->user     = $config->database->user;
 		
+		//  Create grant
 		foreach( $config->table as $table_name => $table ){
 			$config->grant->table = $table_name;
-			if($io = $this->pdo()->Grant($config->grant)){
-				return false;
+			if(!$this->pdo()->Grant($config->grant) ){
+				$me = "Grant is failed. ($table_name)";
+				throw new OpException($me);
 			}
 		}
+		
+		//  Finish
+		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
+		return true;
 	}
 }
 

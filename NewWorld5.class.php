@@ -304,7 +304,8 @@ abstract class NewWorld5 extends OnePiece5
 			$this->content  = ob_get_contents(); ob_clean();
 			$this->content .= $this->GetTemplate($path);
 		}catch( Exception $e ){
-			$this->StackError($e->getMessage());
+			$this->StackError($e);
+		//	$this->StackError(__METHOD__);
 		}
 		
 		return true;
@@ -439,20 +440,6 @@ abstract class NewWorld5 extends OnePiece5
 	{
 		$this->SetEnv('cli',true);
 		exit(0);
-	}
-	
-	function GetTemplate( $file, $args=null )
-	{
-		// ob_start is stackable
-		if( ob_start() ){
-			$this->template( $file, $args );
-			$temp = ob_get_contents();
-			$io   = ob_end_clean();
-		}else{
-			$this->StackError("ob_start failed.");
-		}
-		
-		return $temp;
 	}
 	
 	function Header( $str, $replace=null, $code=null ){
