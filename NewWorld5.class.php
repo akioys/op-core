@@ -442,20 +442,6 @@ abstract class NewWorld5 extends OnePiece5
 		exit(0);
 	}
 	
-	function GetTemplate( $file, $args=null )
-	{
-		// ob_start is stackable
-		if( ob_start() ){
-			$this->template( $file, $args );
-			$temp = ob_get_contents();
-			$io   = ob_end_clean();
-		}else{
-			$this->StackError("ob_start failed.");
-		}
-		
-		return $temp;
-	}
-	
 	function Header( $str, $replace=null, $code=null ){
 	
 		if( null === $replace ){
