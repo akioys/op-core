@@ -89,17 +89,22 @@ abstract class Model_Model extends OnePiece5
 	}
 }
 
-class ModelConfig extends ConfigMgr
+class ConfigModel extends ConfigMgr
 {
 	const TABLE_PREFIX = 'op';
 	
 	static function database()
 	{
+		
+		$password  = OnePiece5::GetEnv('admin-mail');
+		$password .= isset($this) ? get_class($this): null;
+		
 		$config = parent::database();
 		$config->user     = 'op_model';
-		$config->password = md5( OnePiece5::GetEnv('admin-mail') . get_class($this) );
+		$config->password = md5( $password );
 		return $config;
 	}
+	
 }
 
 class OpModelException extends Exception
