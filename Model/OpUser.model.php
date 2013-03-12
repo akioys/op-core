@@ -13,16 +13,24 @@ class Model_OpUser extends Model_Model
 	function Init($config=null)
 	{
 		parent::Init($config);
-		self::InitOpUserId();
-		self::InitOpUserInfo();
-		self::InitOpUserAgent();
+		$this->Selftest();
+		$this->InitOpUserId();
+		$this->InitOpUserInfo();
+		$this->InitOpUserAgent();
 	}
 	
-	function Config($name='ConfigMgrModelOpUser')
+	function Config($name='ConfigOpUser')
 	{
 		return parent::Config($name);
 	}
-		
+	
+	function Selftest()
+	{
+		$config = ConfigOpUser::Selftest();
+		$wz = new Wizard();
+		$wz->selftest($config);
+	}
+	
 	function InitOpUserId()
 	{
 		if( $this->GetSession('op_user_id') ){
@@ -135,7 +143,7 @@ class Model_OpUser extends Model_Model
 	}
 }
 
-class ConfigMgrModelOpUser extends ModelConfig
+class ConfigOpUser extends ConfigModel
 {
 	static function database()
 	{
@@ -144,4 +152,67 @@ class ConfigMgrModelOpUser extends ModelConfig
 		return $config;
 	}
 	
+	static function Selftest()
+	{
+		//  Get config
+		$config = new Config();
+		$config->database = self::database();
+		
+		//  Tables (op_user)
+		$table_name = 'op_user';
+		$config->table->{$table_name}->table   = $table_name;
+		$config->table->{$table_name}->comment = 'This is wizard test.';
+			
+			//  Columns
+			$column_name = 'user_id';
+			$config->table->{$table_name}->column->{$column_name}->name = $column_name;
+			$config->table->{$table_name}->column->{$column_name}->ai   = true;
+			
+			$column_name = 'op_uniq_id';
+			$config->table->{$table_name}->column->{$column_name}->name = $column_name;
+			$config->table->{$table_name}->column->{$column_name}->type = 'text';
+			
+			//  created, updated, deleted
+			$config->table->{$table_name}->column->merge(parent::Column());
+
+			
+		//  Tables (op_user_info)
+		$table_name = 'op_user_info';
+		$config->table->{$table_name}->table   = $table_name;
+		$config->table->{$table_name}->comment = 'This is wizard test.';
+				
+			//  Columns
+			$column_name = 'user_id';
+			$config->table->{$table_name}->column->{$column_name}->name = $column_name;
+			$config->table->{$table_name}->column->{$column_name}->ai   = true;
+				
+			$column_name = 'visits';
+			$config->table->{$table_name}->column->{$column_name}->name = $column_name;
+			$config->table->{$table_name}->column->{$column_name}->type = 'int';
+				
+			//  created, updated, deleted
+			$config->table->{$table_name}->column->merge(parent::Column());
+			
+
+		//  Tables (op_user_agent)
+		$table_name = 'op_user_agent';
+		$config->table->{$table_name}->table   = $table_name;
+		$config->table->{$table_name}->comment = 'This is wizard test.';
+			
+			//  Columns
+			$column_name = 'user_id';
+			$config->table->{$table_name}->column->{$column_name}->name = $column_name;
+			$config->table->{$table_name}->column->{$column_name}->ai   = true;
+			
+			$column_name = 'user_agent';
+			$config->table->{$table_name}->column->{$column_name}->name = $column_name;
+			$config->table->{$table_name}->column->{$column_name}->type = 'text';
+			
+			//  created, updated, deleted
+			$config->table->{$table_name}->column->merge(parent::Column());
+				
+		$config->d();
+		
+		return $config;
+	}
 }
