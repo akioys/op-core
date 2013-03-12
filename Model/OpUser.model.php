@@ -210,9 +210,7 @@ class ConfigOpUser extends ConfigModel
 			
 			//  created, updated, deleted
 			$config->table->{$table_name}->column->merge(parent::Column());
-				
-		$config->d();
-		
+			
 		return $config;
 	}
 }
