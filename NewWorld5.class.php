@@ -430,6 +430,7 @@ abstract class NewWorld5 extends OnePiece5
 		
 		//  Change cli mode.
 		$this->SetEnv('cli',true);
+		$this->SetEnv('css',true);
 		
 		//  Execute.
 		$this->template( $path );
