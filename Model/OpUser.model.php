@@ -2,7 +2,7 @@
 
 class Model_OpUser extends Model_Model
 {
-	private $table_name = 'op_user';
+	private $table_name          = 'op_user';
 	const TABLE_OP_USER			 = 'op_user';
 	const TABLE_OP_USER_INFO	 = 'op_user_info';
 	const TABLE_OP_USER_AGENT	 = 'op_user_agent';
@@ -13,16 +13,24 @@ class Model_OpUser extends Model_Model
 	function Init($config=null)
 	{
 		parent::Init($config);
-		self::InitOpUserId();
-		self::InitOpUserInfo();
-		self::InitOpUserAgent();
+		$this->Selftest();
+		$this->InitOpUserId();
+		$this->InitOpUserInfo();
+		$this->InitOpUserAgent();
 	}
 	
-	function Config($name='ConfigMgrModelOpUser')
+	function Config($name='ConfigOpUser')
 	{
 		return parent::Config($name);
 	}
-		
+	
+	function Selftest()
+	{
+		$config = ConfigOpUser::Selftest();
+		$wz = new Wizard();
+		$wz->selftest($config);
+	}
+	
 	function InitOpUserId()
 	{
 		if( $this->GetSession('op_user_id') ){
@@ -88,24 +96,43 @@ class Model_OpUser extends Model_Model
 	{
 		$key = 'op_ua_id';
 		
+		//  Check session.
 		if( $op_ua_id = $this->GetSession($key) ){
 			return;
 		}
 		
+		//  Check cookie.
 		if( $op_ua_id = $this->GetCookie($key) ){
 			$this->SetSession($key,$op_ua_id);
 			return;
 		}
 		
-		$ua = $_SERVER['HTTP_USER_AGENT'];
+		//  Get user agent.
+		$ua  = $_SERVER['HTTP_USER_AGENT'];
+		$md5 = md5($ua);
 		
+		//  Save to user agent.
 		$insert = $this->config()->insert( self::TABLE_OP_USER_AGENT );
-		$insert->set->user_agent = $ua;
-		$id = $this->pdo()->insert($insert);
+		$insert->set->user_agent     = $ua;
+		$insert->set->user_agent_md5 = $md5;
+		$io = $this->pdo()->insert($insert);
 		
-		if( $id ){
-			$this->SetSession($key,$id);
-			$this->SetCookie($key,$id);
+		//  Get user agent id
+		$select->where->user_agent_md5 = md5($ua);
+		$query = "id <- {self::TABLE_OP_USER_AGENT}.user_agent_md5 = '$md5'";
+		$ua_id = $this->pdo()->quick($query);
+		
+		//  Set user agent
+		$update = $this->config()->select(self::TABLE_OP_USER_AGENT);
+		$update->set->user_agent_id = $ua_id;
+		$update->where->op_user_id  = $this->GetSession('op_user_id');
+		$update->limit = 1;
+		$this->pdo()->update($update);
+		
+		//  Save user agent to session and cookie.
+		if( $ua_id ){
+			$this->SetSession($key,$ua_id);
+			$this->SetCookie($key,$ua_id);
 		}
 	}
 	
@@ -135,7 +162,7 @@ class Model_OpUser extends Model_Model
 	}
 }
 
-class ConfigMgrModelOpUser extends ModelConfig
+class ConfigOpUser extends ConfigModel
 {
 	static function database()
 	{
@@ -144,4 +171,65 @@ class ConfigMgrModelOpUser extends ModelConfig
 		return $config;
 	}
 	
+	static function Selftest()
+	{
+		//  Get config
+		$config = new Config();
+		$config->database = self::database();
+		
+		//  Tables (op_user)
+		$table_name = 'op_user';
+		$config->table->{$table_name}->table   = $table_name;
+		$config->table->{$table_name}->comment = 'This is wizard test.';
+			
+			//  Columns
+			$column_name = 'user_id';
+			$config->table->{$table_name}->column->{$column_name}->name = $column_name;
+			$config->table->{$table_name}->column->{$column_name}->ai   = true;
+			
+			$column_name = 'op_uniq_id';
+			$config->table->{$table_name}->column->{$column_name}->name = $column_name;
+			$config->table->{$table_name}->column->{$column_name}->type = 'text';
+			
+			//  created, updated, deleted
+			$config->table->{$table_name}->column->merge(parent::Column());
+
+			
+		//  Tables (op_user_info)
+		$table_name = 'op_user_info';
+		$config->table->{$table_name}->table   = $table_name;
+		$config->table->{$table_name}->comment = 'This is wizard test.';
+				
+			//  Columns
+			$column_name = 'user_id';
+			$config->table->{$table_name}->column->{$column_name}->name = $column_name;
+			$config->table->{$table_name}->column->{$column_name}->ai   = true;
+				
+			$column_name = 'visits';
+			$config->table->{$table_name}->column->{$column_name}->name = $column_name;
+			$config->table->{$table_name}->column->{$column_name}->type = 'int';
+				
+			//  created, updated, deleted
+			$config->table->{$table_name}->column->merge(parent::Column());
+			
+
+		//  Tables (op_user_agent)
+		$table_name = 'op_user_agent';
+		$config->table->{$table_name}->table   = $table_name;
+		$config->table->{$table_name}->comment = 'This is wizard test.';
+			
+			//  Columns
+			$column_name = 'user_id';
+			$config->table->{$table_name}->column->{$column_name}->name = $column_name;
+			$config->table->{$table_name}->column->{$column_name}->ai   = true;
+			
+			$column_name = 'user_agent';
+			$config->table->{$table_name}->column->{$column_name}->name = $column_name;
+			$config->table->{$table_name}->column->{$column_name}->type = 'text';
+			
+			//  created, updated, deleted
+			$config->table->{$table_name}->column->merge(parent::Column());
+			
+		return $config;
+	}
 }
