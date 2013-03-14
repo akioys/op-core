@@ -12,6 +12,19 @@ class DDL extends OnePiece5
 		$this->driver = $driver;
 	}
 	
+	function GetPassword( $args )
+	{
+		$user = isset($args['name']) ? $args['name']: null;
+		$user = isset($args['user']) ? $args['user']: $user;
+		$host = $args['host'];
+		$password = $args['password'];
+		
+		//  SET PASSWORD FOR 'op_model_opuser'@'localhost' = PASSWORD( '***' )
+		$query = "SET PASSWORD FOR '{$user}'@'{$host}' = PASSWORD('{$password}')";
+		
+		return $query;
+	}
+	
 	function GetCreateUser( $args )
 	{
 		$user = isset($args['name']) ? $args['name']: null;
