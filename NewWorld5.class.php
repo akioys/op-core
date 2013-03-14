@@ -1,7 +1,4 @@
 <?php
-
-include_once('OnePiece5.class.php');
-
 /**
  * The NewWorld is the new world.
  * 
@@ -61,7 +58,6 @@ abstract class NewWorld5 extends OnePiece5
 	
 	function Init()
 	{
-		//$this->isInit = true;
 		parent::Init();
 		
 		$this->GetEnv('doctype','html');
