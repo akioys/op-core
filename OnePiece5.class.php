@@ -119,7 +119,7 @@ if(!function_exists('OnePieceShutdown')){
 			// Toolbox
 			Toolbox::PrintStyleSheet();
 			Toolbox::PrintGetFlagList();
-			print '<OnePiece/>' . PHP_EOL;
+			print PHP_EOL.'<OnePiece/>'.PHP_EOL;
 		}
 	}
 	register_shutdown_function('OnePieceShutdown');
@@ -194,8 +194,6 @@ class OnePiece5
 {
 	const OP_UNIQ_ID = 'op-uniq-id';
 	
-//	public  $env     = array();
-//	public  $laptime = null;
 	private $errors  = array();
 	private $session = array();
 	private $isInit  = null;
@@ -273,7 +271,6 @@ class OnePiece5
 			$this->StackError( $message );
 		}
 		
-	//	$this->PrintTime();
 		$this->PrintError();
 	}
 	
