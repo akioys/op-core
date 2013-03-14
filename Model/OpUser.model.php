@@ -160,6 +160,20 @@ class Model_OpUser extends Model_Model
 	{
 		return 'guest';
 	}
+	
+	/**
+	 * All in one.
+	 * 
+	 * @return Config
+	 */
+	function Get()
+	{
+		$data = new Config();
+		$data->op_user_id = $this->GetOpUserId();
+		$data->nickname   = $this->GetNickName();
+		$data->message    = $this->GetMessage();
+		return $data;
+	}
 }
 
 class ConfigOpUser extends ConfigModel
