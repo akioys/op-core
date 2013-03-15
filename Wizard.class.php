@@ -132,8 +132,7 @@ class Wizard extends OnePiece5
 		//  Check database exists.
 		$io = array_search( $db_name, $db_list);
 		if( $io === false){
-			$me = "Database is does not exists. ($db_name)"; 
-			throw new OpException($me);
+			throw new OpException("Database can not be found. ($db_name)");
 		}
 
 		//  Finish
@@ -146,20 +145,21 @@ class Wizard extends OnePiece5
 		//  Start
 		$this->model('Log')->Set('START: '.__FUNCTION__);
 		
-		//  Get table list.
-		$table_list = $this->pdo()->GetTableList($config->database);
-	//	$this->d($table_list);
-		
-		foreach( $config->table as $table_name => $table ){
-			$io = array_search( $table_name, $table_list);
-			if( $io === false ){
-				$me = "Does not find table. ($table_name)";
-				throw new OpException($me);
-			}else{
-				$this->CheckColumn( $config, $table_name );
-			}
+		//  Get table-name list.
+		if(!$table_list = $this->pdo()->GetTableList($config->database) ){
+			throw new Exception("Failed GetTableList-method.");
 		}
-
+		
+		//  Loop
+		foreach( $config->table as $table_name => $table ){
+			//  Check table exists.
+			if( array_search( $table_name, $table_list) === false ){
+				throw new OpException("Does not find table. ($table_name)");
+			}
+			//  Check column.
+			$this->CheckColumn( $config, $table_name );
+		}
+		
 		//  Finish
 		$this->model('Log')->Set('FINISH: '.__FUNCTION__);
 		return true;
