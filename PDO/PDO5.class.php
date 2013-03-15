@@ -578,6 +578,22 @@ class PDO5 extends OnePiece5
 		return $this->query( $qu, 'create' );
 	}
 	
+	function Password( $conf )
+	{
+		//  object to array
+		if(!is_array($conf)){
+			$conf = Toolbox::toArray($conf);
+		}
+		
+		//  get select query
+		if(!$qu = $this->ddl()->GetPassword($conf)){
+			return false;
+		}
+		
+		//  execute
+		return $this->query( $qu, 'create' );
+	}
+	
 	function Grant( $conf )
 	{
 		//  object to array

@@ -18,14 +18,20 @@ class Wizard extends OnePiece5
 	
 	function Selftest( Config $config )
 	{
+		$this->mark( $this->GetCallerLine() );
+		
 		//  Start
 		$this->model('Log')->Set("START: Selftest.");
 		
 		if(!$this->pdo()->Connect($config->database) ){
 			$dns = $config->database->user.'@'.$config->database->host;
 			$this->model('Log')->Set("FAILED: Database connect is failed.($dns)",false);
-			$this->DoWizard( $config );
-			return false;
+			$io = $this->DoWizard( $config );
+
+			$this->model('Log')->Set("FINISH: Selftest.",$io);
+			$this->model('Log')->Out();
+			
+			return $io;
 		}
 		
 		try{
@@ -39,7 +45,7 @@ class Wizard extends OnePiece5
 			$this->p( $me );
 			$this->model('Log')->Set($me,false);
 			$this->DoWizard( $config );
-		}
+		}	
 		
 		//  Finish
 		$this->model('Log')->Set("FINISH: Selftest.",$io);
@@ -273,13 +279,27 @@ class Wizard extends OnePiece5
 		
 		//  Check user exists.
 		$list = $this->pdo()->GetUserList();
-		if( array_search( $config->user->user, $list ) !== false ){
+		
+		//  Log
+		$this->model('Log')->Set( $this->pdo()->qu(), 'green');
+		
+		//  Check user exists.
+		$io = array_search( $config->user->user, $list ) !== false ? true: false;
+		if( $io ){
 			$this->model('Log')->Set("New user {$config->user->user} is already exists.",true);
-			return true;
+			
+			//  Change password
+			$io = $this->pdo()->Password($config->user);
+			
+		}else{
+			//  Create user
+			$io = $this->pdo()->CreateUser($config->user);
 		}
 		
-		//  Create user
-		if(!$this->pdo()->CreateUser($config->user)){
+		//  Log
+		$this->model('Log')->Set( $this->pdo()->qu(), 'green');
+		
+		if(!$io){
 			$me = "Create user is failed. ({$config->user->user})";
 			throw new OpException($me);
 		}

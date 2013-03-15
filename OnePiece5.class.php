@@ -119,7 +119,7 @@ if(!function_exists('OnePieceShutdown')){
 			// Toolbox
 			Toolbox::PrintStyleSheet();
 			Toolbox::PrintGetFlagList();
-			print '<OnePiece/>' . PHP_EOL;
+			print PHP_EOL.'<OnePiece/>'.PHP_EOL;
 		}
 	}
 	register_shutdown_function('OnePieceShutdown');
@@ -194,8 +194,6 @@ class OnePiece5
 {
 	const OP_UNIQ_ID = 'op-uniq-id';
 	
-//	public  $env     = array();
-//	public  $laptime = null;
 	private $errors  = array();
 	private $session = array();
 	private $isInit  = null;
@@ -273,7 +271,6 @@ class OnePiece5
 			$this->StackError( $message );
 		}
 		
-	//	$this->PrintTime();
 		$this->PrintError();
 	}
 	
@@ -1183,7 +1180,6 @@ __EOL__;
 		
 		// displayed is Admin-ip and flag.
 		if( $mark_labels ){
-		//	if(!Toolbox::UseGetFlag($mark_labels)){ return; }
 			foreach( explode(',',$mark_labels) as $mark_label ){
 				Toolbox::SetMarkLabel( $mark_label );
 			}
@@ -1217,6 +1213,9 @@ __EOL__;
 		$string = self::Html("$nl\t$call_line - $str $memory$nl",'div',$attr);
 		if( self::GetEnv('cli') ){
 			$string = strip_tags($string);
+			if( self::GetEnv('css') ){
+				$string = "/* ". trim($string) ." */".PHP_EOL;
+			}
 		}
 		
 		print $string;
@@ -1965,8 +1964,6 @@ __EOL__;
 	 */
 	function Form( $name='Form5' )
 	{
-		//static $obj;
-		
 		$obj = &$_SERVER[__CLASS__][__METHOD__];
 		
 		if( empty($obj) ){

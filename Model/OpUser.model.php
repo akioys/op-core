@@ -2,7 +2,7 @@
 
 class Model_OpUser extends Model_Model
 {
-	private $table_name = 'op_user';
+	private $table_name          = 'op_user';
 	const TABLE_OP_USER			 = 'op_user';
 	const TABLE_OP_USER_INFO	 = 'op_user_info';
 	const TABLE_OP_USER_AGENT	 = 'op_user_agent';
@@ -96,24 +96,43 @@ class Model_OpUser extends Model_Model
 	{
 		$key = 'op_ua_id';
 		
+		//  Check session.
 		if( $op_ua_id = $this->GetSession($key) ){
 			return;
 		}
 		
+		//  Check cookie.
 		if( $op_ua_id = $this->GetCookie($key) ){
 			$this->SetSession($key,$op_ua_id);
 			return;
 		}
 		
-		$ua = $_SERVER['HTTP_USER_AGENT'];
+		//  Get user agent.
+		$ua  = $_SERVER['HTTP_USER_AGENT'];
+		$md5 = md5($ua);
 		
+		//  Save to user agent.
 		$insert = $this->config()->insert( self::TABLE_OP_USER_AGENT );
-		$insert->set->user_agent = $ua;
-		$id = $this->pdo()->insert($insert);
+		$insert->set->user_agent     = $ua;
+		$insert->set->user_agent_md5 = $md5;
+		$io = $this->pdo()->insert($insert);
 		
-		if( $id ){
-			$this->SetSession($key,$id);
-			$this->SetCookie($key,$id);
+		//  Get user agent id
+		$select->where->user_agent_md5 = md5($ua);
+		$query = "id <- {self::TABLE_OP_USER_AGENT}.user_agent_md5 = '$md5'";
+		$ua_id = $this->pdo()->quick($query);
+		
+		//  Set user agent
+		$update = $this->config()->select(self::TABLE_OP_USER_AGENT);
+		$update->set->user_agent_id = $ua_id;
+		$update->where->op_user_id  = $this->GetSession('op_user_id');
+		$update->limit = 1;
+		$this->pdo()->update($update);
+		
+		//  Save user agent to session and cookie.
+		if( $ua_id ){
+			$this->SetSession($key,$ua_id);
+			$this->SetCookie($key,$ua_id);
 		}
 	}
 	
@@ -140,6 +159,20 @@ class Model_OpUser extends Model_Model
 	function GetNickName()
 	{
 		return 'guest';
+	}
+	
+	/**
+	 * All in one.
+	 * 
+	 * @return Config
+	 */
+	function Get()
+	{
+		$data = new Config();
+		$data->op_user_id = $this->GetOpUserId();
+		$data->nickname   = $this->GetNickName();
+		$data->message    = $this->GetMessage();
+		return $data;
 	}
 }
 

@@ -109,4 +109,5 @@ class ConfigModel extends ConfigMgr
 
 class OpModelException extends Exception
 {
+	
 }
