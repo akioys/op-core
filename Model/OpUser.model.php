@@ -10,6 +10,11 @@ class Model_OpUser extends Model_Model
 	private $isFirstVisit = false;
 	private $isReVisit    = false;
 	
+	function Selftest()
+	{
+		$this->mark();
+	}
+	
 	function Init($config=null)
 	{
 		parent::Init($config);
@@ -47,7 +52,6 @@ class Model_OpUser extends Model_Model
 		//  get record
 		$record = $this->pdo()->select($select);
 		if( isset($record['user_id']) ){
-
 			//  Re-visit
 			$this->isReVisit = true;
 			
@@ -60,7 +64,7 @@ class Model_OpUser extends Model_Model
 			if(!$user_id = $this->pdo()->insert($insert)){
 				return false;
 			}
-
+			
 			//  first-visit
 			$this->isFirstVisit = true;
 		}
