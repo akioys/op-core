@@ -21,6 +21,7 @@ class Cache extends OnePiece5
 		parent::Init();
 		
 		//  Get value
+		$redis     = $this->GetEnv('redis');
 		$memcache  = $this->GetEnv('memcache');
 		$memcached = $this->GetEnv('memcached');
 		
