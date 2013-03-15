@@ -13,7 +13,6 @@ class Model_OpUser extends Model_Model
 	function Init($config=null)
 	{
 		parent::Init($config);
-		$this->Selftest();
 		$this->InitOpUserId();
 		$this->InitOpUserInfo();
 		$this->InitOpUserAgent();
