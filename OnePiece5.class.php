@@ -192,7 +192,8 @@ if(!function_exists('OnePieceExceptionHandler')){
  */
 class OnePiece5
 {
-	const OP_UNIQ_ID = 'op-uniq-id';
+//	const OP_UNIQ_ID = 'op-uniq-id';
+	const KEY_COOKIE_UNIQ_ID = 'op-uniq-id';
 	
 	private $errors  = array();
 	private $session = array();
@@ -233,8 +234,8 @@ class OnePiece5
 		ini_set('include_path',$include_path);
 		
 		//  unique id
-		if(!$this->GetCookie( self::OP_UNIQ_ID )){
-			$this->SetCookie( self::OP_UNIQ_ID, md5(microtime() + $_SERVER['REMOTE_ADDR']));
+		if(!$this->GetCookie( self::KEY_COOKIE_UNIQ_ID )){
+			$this->SetCookie( self::KEY_COOKIE_UNIQ_ID, md5(microtime() + $_SERVER['REMOTE_ADDR']));
 		}
 		
 		//  init
@@ -934,8 +935,8 @@ __EOL__;
 	 * @param string $key
 	 */
 	function GetSession( $key )
-	{		
-		if(isset($this->session[$key])){
+	{
+		if( isset( $this->session[$key] ) ){
 			return $this->session[$key];
 		}else{
 			return null;
