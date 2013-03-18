@@ -7,9 +7,19 @@
  */
 class Model_File extends Model_Model
 {
-	function Get( $path='./' )
+	function Get( $path=null )
 	{
+		if(!$path){
+			$path = './';
+		}
+		
 		$path = rtrim( $path, '/' ) . '/';
+		
+		if(!file_exists($path)){
+			$this->mark("$path is not exists.");
+			return array();
+		}
+		
 		$dir = opendir($path);
 		while( $name = readdir($dir) ){
 			
