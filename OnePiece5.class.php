@@ -1,6 +1,6 @@
 <?php
 /**
- * TODO: I (will|should) support to spl_autoload_register
+ * TODO: We (will|should) support to spl_autoload_register
  * @see http://www.php.net/manual/ja/function.spl-autoload-register.php
  */
 if(!function_exists('__autoload')){
@@ -14,9 +14,6 @@ if(!function_exists('__autoload')){
 			case 'Memcache':
 			case 'Memcached':
 				return;
-				
-			case 'App':
-				$class_name = 'NewWorld5';
 			
 			case 'DML':
 			case 'DML5':
@@ -42,7 +39,7 @@ if(!function_exists('__autoload')){
 		// check
 		foreach( $dirs as $dir ){
 			$file_path = rtrim($dir,DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $file_name;
-			//print $file_path . '<br/>' . PHP_EOL;
+		//	print $file_path . '<br/>' . PHP_EOL;
 			if( file_exists($file_path) ){
 				include_once($file_path);
 				break;
@@ -87,6 +84,10 @@ if(!function_exists('OnePieceShutdown')){
 					
 				case E_STRICT:  // 2048
 					$er = 'E_STRICT';
+					break;
+					
+				case E_USER_NOTICE: // 1024
+					$er = 'E_USER_NOTICE';
 					break;
 					
 				default:
@@ -142,6 +143,9 @@ if(!function_exists('OnePieceErrorHandler')){
 			case E_STRICT:  // 2048
 				$er = 'E_STRICT';
 				break;
+			case E_USER_NOTICE: // 1024
+				$er = 'E_USER_NOTICE';
+				break;
 			default:
 				$er = 'ERROR: '.$no;
 		}
@@ -149,7 +153,7 @@ if(!function_exists('OnePieceErrorHandler')){
 		//  Output error message.
 		$format = '%s [%s] %s: %s';
 		if(empty($env['cgi'])){
-			$format = '<p>'.$format.'</p>';
+			$format = '<div>'.$format.'</div>';
 		}
 		
 		//  check ini setting
@@ -160,14 +164,17 @@ if(!function_exists('OnePieceErrorHandler')){
 		return true;
 	}
 	
-	$level = $_SERVER['HTTP_HOST'] === 'local.onepiece.com' ? E_ALL | E_STRICT: error_reporting();
+	$level = $_SERVER['HTTP_HOST'] === 'localhost' ? E_ALL | E_STRICT: error_reporting();
 	set_error_handler('OnePieceErrorHandler',$level);
 }
 
 if(!function_exists('OnePieceExceptionHandler')){
 	function OnePieceExceptionHandler($e)
 	{
-		print "<h1>Please implement the e-mail alert.</h1>";
+		//  TODO: 
+		//print "<h1>Please implement the e-mail alert.</h1>";
+		$op = new OnePiece5();
+		$op->StackError( $e->getMessage() );
 		printf('<div><p>[%s] %s</p><p>%s : %s</p></div>', get_class($e), $e->GetMessage(), $e->GetFile(), $e->GetLine() );
 		dump::d(Toolbox::toArray($e));
 	}
@@ -175,19 +182,20 @@ if(!function_exists('OnePieceExceptionHandler')){
 }
 
 /**
+ * OnePiece is OnePiece-Framework's core.
  * 
- * @author Tomoaki Nagahara
- *
+ * @version   1.0
+ * @author    Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
+ * @copyright 2009 (C) Tomoaki Nagahara All right reserved.
  */
 class OnePiece5
 {
 	const OP_UNIQ_ID = 'op-uniq-id';
 	
-	public  $env     = array();
-	public  $laptime = null;
 	private $errors  = array();
 	private $session = array();
 	private $isInit  = null;
+	private $_env;
 	
 	/**
 	 * 
@@ -261,7 +269,6 @@ class OnePiece5
 			$this->StackError( $message );
 		}
 		
-		$this->PrintTime();
 		$this->PrintError();
 	}
 	
@@ -704,7 +711,7 @@ __EOL__;
 				break;
 			
 			case 'origin':
-				$this->mark($key);
+				self::mark($key);
 				break;
 				
 			default:
@@ -721,8 +728,8 @@ __EOL__;
 		
 		// get key's value
 		switch($key){
-			case isset($_SERVER[strtolower($key)]):
-				$var = $_SERVER[strtolower($key)];
+			case isset($_SERVER[strtoupper($key)]):
+				$var = $_SERVER[strtoupper($key)];
 				break;
 				
 			case 'url':
@@ -955,16 +962,21 @@ __EOL__;
 	 * @param integer $num
 	 * @param string  $format
 	 */
-	function GetCallerLine( $depth=0, $num=1, $format=null )
+	static function GetCallerLine( $depth=0, $num=1, $format=null )
 	{
 		// TODO: file system encoding
 		$encode_file_system = PHP_OS == 'WINNT' ? 'sjis': 'utf-8';
 		
-		// init
+		//  init
 		$call_line = '';
 		$depth++;
-		$nl = $this->GetEnv('nl');
-		$back = debug_backtrace( false );
+		$nl = self::GetEnv('nl');
+		//  debug_backtrace
+		if( version_compare(PHP_VERSION, '5.2.5') >= 0 ){
+			$back = debug_backtrace(false);
+		}else{
+			$back = debug_backtrace();
+		}
 		
 		// num
 		if( $num >= count($back) or $num <= 0 ){
@@ -1009,7 +1021,7 @@ __EOL__;
 					$str = str_replace("\\'", "'", $str);
 					$str = str_replace(",)", ") ", $str);
 					$str = str_replace(",  )", ") ", $str);
-					$str = $this->Escape($str);
+					$str = self::Escape($str);
 					$args = $str;
 				}
 			}else{
@@ -1017,7 +1029,7 @@ __EOL__;
 				foreach($args as $var){
 					switch(gettype($var)){
 						case 'string':
-							$vars[] = $this->Escape($var);
+							$vars[] = self::Escape($var);
 							break;
 						case 'array':
 							$str = var_export($var,true);
@@ -1025,7 +1037,7 @@ __EOL__;
 							$str = str_replace("\\'", "'", $str);
 							$str = str_replace(",)", ") ", $str);
 							$str = str_replace(",  )", ") ", $str);
-							$vars[] = $this->Escape($str);
+							$vars[] = self::Escape($str);
 							break;
 						case 'object':
 							$vars[] = get_class($var);
@@ -1077,7 +1089,7 @@ __EOL__;
 	 * @param  string $file_path
 	 * @return string $file_path
 	 */
-	function CompressPath( $path )
+	static function CompressPath( $path )
 	{
 		// TODO: file system encoding. (Does not support multi language, yet)
 		$encode_file_system = PHP_OS == 'WINNT' ? 'sjis': 'utf-8';
@@ -1156,7 +1168,7 @@ __EOL__;
 		$attr['class'] = array('OnePiece','mark');
 		$attr['style'] = array('font-size'=>'9pt','background-color'=>'white');
 		$string = self::Html("$nl\t$call_line - $str $memory$nl",'div',$attr);
-		if( $this->GetEnv('cli') ){
+		if( self::GetEnv('cli') ){
 			$string = strip_tags($string);
 		}
 		
@@ -1170,9 +1182,9 @@ __EOL__;
 	 * @param array  $attr
 	 * @return string
 	 */
-	function Html($str, $tag='span', $attr=null)
+	static function Html($str, $tag='span', $attr=null)
 	{
-		$nl    = $this->GetEnv('newline');
+		$nl    = self::GetEnv('newline');
 		$str   = self::Escape($str);
 		$tag   = self::Escape($tag);
 		$attr  = self::Escape($attr);
@@ -1205,7 +1217,7 @@ __EOL__;
 	 * @param string $tag
 	 * @param array $attr
 	 */
-	function P( $str='OnePiece!', $tag='p', $attr=null)
+	static function P( $str='OnePiece!', $tag='p', $attr=null)
 	{
 		print self::Html( $str, $tag, $attr );
 	}
@@ -1245,17 +1257,32 @@ __EOL__;
 	
 	static function Decode( $args, $charset=null)
 	{
+		//  Accelerate
+		static $charset = null;
 		if(!$charset){
 			$charset = self::GetEnv('charset');
 		}
-
+		
 		switch($type = gettype($args)){
 			
 			case 'array':
 				foreach( $args as $key => $var ){
-				//	$key  = self::Decode( $key, $charset );
+					$key  = self::Decode( $key, $charset );
 					$var  = self::Decode( $var, $charset );
 					$temp[$key] = $var;
+				}
+				$args = $temp;
+				break;
+				
+			case 'object':
+				foreach( $args as $key => $var ){
+					$key  = self::Decode( $key, $charset );
+					$var  = self::Decode( $var, $charset );
+					if( $type === 'array' ){
+						$temp[$key] = $var;
+					}else if( $type === 'object' ){
+						$temp->$key = $var;
+					}
 				}
 				$args = $temp;
 				break;
@@ -1430,9 +1457,7 @@ __EOL__;
 		return "$elapsed ($lap)";
 	}
 	
-	/**
-	 * 
-	 */
+	/*
 	function PrintTime(){
 		if($this->GetEnv('cli')){ return; }
 		if(!$this->laptime){ return; }
@@ -1440,97 +1465,120 @@ __EOL__;
 			self::d($this->laptime);
 		}
 	}
+	*/
 	
 	/**
+	 * Send mail method
 	 * 
-	 * @param array $args
+	 * @param  array|Config $config
+	 * @return boolean
 	 */
-	function Mail($args)
+	function Mail( $args )
 	{
-		if( false and class_exists('_Mail',true) ){
-			$this->mark('start Mail','memory');
-			$mail = new Mail();
-			$mail->Send($args);
-			$this->mark('finish Mail','memory');
-		}else{
-			// optimize
-			$lang = $this->GetEnv('lang');
-			$char = $this->GetEnv('charset');
-			if( $lang and $char ){
-				// save
-				$save_lang = mb_language();
-				$save_char = mb_internal_encoding();
-				
-				// set
-				mb_language($lang);
-				mb_internal_encoding($char);
-			}
-			
-			if( is_object($args) ){
-				$args = Toolbox::toArray($args);
-			}
-			
-			//  init
-			$from	 = isset($args['from'])    ? $args['from']    : self::GetEnv('admin-mail');
-			$to      = isset($args['to'])      ? $args['to']      : null;
-			$title   = isset($args['title'])   ? $args['title']   : '';
-			$subject = isset($args['subject']) ? $args['subject'] : $title;
-			$body    = isset($args['body'])    ? $args['body']    : '';
-			$message = isset($args['message']) ? $args['message'] : $body;
-			$headers = array();
-			
-			//  subject
-			$subject = mb_encode_mimeheader($subject);
-			
-			// From
-			if( is_string($from) ){
-				$headers[]  = "From: " . $from;
-			}
-			// Cc
-			if( isset($args['cc']) ){
-				if( is_string($args['cc']) ){
-					$headers[] = "Cc: " . $args['cc'];
-				}else if(is_array($args['cc'])){
-					$this->mark('Does not implements yet.');
-				}
-			}
-			// Bcc
-			if( isset($args['bcc']) ){
-				if( is_string($args['bcc']) ){
-					$headers[]  = "Bcc: " . $args['bcc'];
-				}else if( is_array($args['bcc']) ){
-					$this->mark('Does not implements yet.');
-				}
-			}
-			// X-Mailer
-			if( $this->admin() ){
-				$headers[] = "X-Mailer: OnePiece-Framework";
-			}
-			
-			//	encording format
-			if( $char ){
-				$headers[] = "Content-Type: text/plain; charset=$char";
-			}else{
-				//	$headers[] = "Content-Transfer-Encoding: base64";
-			}
-			
-			$add_header = implode("\n", $headers);
-			$add_params = null;
-			
-			// SMTP server response: 503 5.0.0 Need RCPT (recipient) 
-			$add_params = '-f '.$from;
+		// optimize
+	//	$lang = $this->GetEnv('lang');
+		$lang = 'uni'; // Unicode only
+		$char = $this->GetEnv('charset');
 		
-			// @todo: I should support multi-byte-language
-			$io = mail($to, $subject, $message, $add_header, $add_params );
+		if( $lang and $char ){
+			// Save original.
+			$save_lang = mb_language();
+			$save_char = mb_internal_encoding();
 			
-			// recovery
-			if( $save_lang and $save_char ){
-				mb_language($save_lang);
-				mb_internal_encoding($save_char);
-			}
-			
-			return $io;
+			// Set language use mail function.
+			mb_language($lang);
+			mb_internal_encoding($char);
 		}
+		
+		//  Convert object to array.
+		if( is_object($args) ){
+			$args = Toolbox::toArray($args);
+		}
+		
+		//  init
+		$headers = array();
+		$from	 = isset($args['from'])    ? $args['from']    : self::GetEnv('admin-mail');
+		$to      = isset($args['to'])      ? $args['to']      : null;
+		$title   = isset($args['title'])   ? $args['title']   : 'No subject';
+		$subject = isset($args['subject']) ? $args['subject'] : $title;
+		$body    = isset($args['body'])    ? $args['body']    : null;
+		$message = isset($args['message']) ? $args['message'] : $body;
+		
+		//  Sender name
+		$from_name = isset($args['from_name']) ? $args['from_name'] : null;
+		$to_name   = isset($args['to_name'])   ? $args['to_name']   : null;
+
+		//  Check
+		if( empty($from) or empty($to) or empty($message) ){
+			$this->StackError("Empty! from=$from, to=$to, message=$message");
+			return false;
+		}
+		
+		//  Subject
+		$subject = mb_encode_mimeheader($subject);
+		
+		//  To
+		if( $to_name ){
+			$to_name = mb_encode_mimeheader($from_name);
+			$headers[]  = "To: $to_name <$to>";
+		}
+		
+		//  From
+	//	if( is_string($from) ){
+			if( $from_name ){
+				$from_name = mb_encode_mimeheader($from_name);
+				$headers[]  = "From: $from_name <$from>";
+			}else{
+				$headers[]  = "From: $from";
+			}
+	//	}
+		
+		// Cc
+		if( isset($args['cc']) ){
+			if( is_string($args['cc']) ){
+				$headers[] = "Cc: " . $args['cc'];
+			}else if(is_array($args['cc'])){
+				$this->mark('Does not implements yet.');
+			}
+		}
+		
+		// Bcc
+		if( isset($args['bcc']) ){
+			if( is_string($args['bcc']) ){
+				$headers[]  = "Bcc: " . $args['bcc'];
+			}else if( is_array($args['bcc']) ){
+				$this->mark('Does not implements yet.');
+			}
+		}
+		
+		// X-Mailer
+		if( $this->admin() ){
+			$headers[] = "X-Mailer: OnePiece-Framework";
+		}
+		
+		//	encording format
+		if( $char ){
+			$headers[] = "Content-Type: text/plain; charset=$char";
+		}else{
+			//	$headers[] = "Content-Transfer-Encoding: base64";
+		}
+		
+		$add_header = implode("\n", $headers);
+		$add_params = null;
+		
+		// SMTP server response: 503 5.0.0 Need RCPT (recipient) 
+		$add_params = '-f '.$from;
+	
+		// @todo: I should support multi-byte-language
+		$io = mail($to, $subject, $message, $add_header, $add_params );
+		
+		// recovery
+		if( $save_lang and $save_char ){
+			mb_language($save_lang);
+			mb_internal_encoding($save_char);
+		}
+		
+		return $io;
 	}
 	
 	/**
@@ -1540,6 +1588,12 @@ __EOL__;
 	 */
 	function Template( $file, $data=null )
 	{
+		if(!is_string($file)){
+			$this->StackError("Passed arguments is not string. (".gettype($file).")");
+			return false;
+		}
+		
+		//  for developper's debug
 		$this->mark($file,'template');
 		
 		//  access is deny, above current directory
@@ -1614,18 +1668,15 @@ __EOL__;
 			//  create absolute path. 
 			$absolute = $tmp_root . $match[2];
 		}else{
-		//	$absolute = $args;
 			return $args;
 		}
 		
 		//  create relative path from document root.
 		$doc_root = $this->GetEnv('doc-root');
-		//$document_root = str_replace('/', '\\', $_SERVER['DOCUMENT_ROOT'] );
 		
 		//  replace
 		$patt = array(); 
 		$patt[] = '|^' . $doc_root . '|i';
-		//$patt[] = '|^' . $document_root . '|i';
 		$url = preg_replace($patt,'',$absolute);
 		
 		return '/' . ltrim($url,'/');
@@ -1661,65 +1712,74 @@ __EOL__;
 	
 	function Model($name)
 	{
-		if( $name == 'Account' ){
-			$this->mark();
-		}
-		
-		//  name check
-		if(!$name){
-			$this->StackError('Model name is empty.');
-			return false;
-		}
-		
-		//  already instanced?
-		if( isset( $_SERVER['test']['model'][$name] ) ){
-			return $_SERVER['test']['model'][$name];
-		}
-		
-		//  include Model_model
-		if(!class_exists( 'Model_Model', false ) ){
-			$path = self::ConvertPath('op:/Model/Model.model.php');
-			if(!$io = include_once($path)){
-				$msg = "Failed to include the Model_model. ($path)";
-				$this->StackError($msg);
-				throw new OpException($msg);
+		try{
+			//  name check
+			if(!$name){
+				$this->StackError('Model name is empty.');
+				return new OnePiece5();
+			}else if( strpos( $name, '_') ){
+				$this->mark('Underscore(_) is reserved. For the feature functions. (maybe, namespace)');
 			}
-		}
-		
-		//  master
-		$path = self::ConvertPath("op:/Model/{$name}.model.php");
-		if( $io = file_exists($path) ){
-			$io = include_once($path);
-		}
-		
-		//  user
-		if(!$io ){
-			$model_dir = $this->GetEnv('model-dir');
-			$path  = self::ConvertPath("{$model_dir}{$name}.model.php");
+			
+			//  already instanced?
+			if( isset( $_SERVER[__CLASS__]['model'][$name] ) ){
+				return $_SERVER[__CLASS__]['model'][$name];
+			}
+			
+			//  include Model_model
+			if(!class_exists( 'Model_Model', false ) ){
+				$path = self::ConvertPath('op:/Model/Model.model.php');
+				if(!$io = include_once($path)){
+					$msg = "Failed to include the Model_model. ($path)";
+					$this->StackError($msg);
+					throw new OpException($msg);
+				}
+			}
+			
+			//  include from master dir
+			$path = self::ConvertPath("op:/Model/{$name}.model.php");
 			if( $io = file_exists($path) ){
 				$io = include_once($path);
 			}
+			
+			//  include from user dir
+			if(!$io ){
+				$model_dir = $this->GetEnv('model-dir');
+				$path  = self::ConvertPath("{$model_dir}{$name}.model.php");
+				if( $io = file_exists($path) ){
+					$io = include_once($path);
+				}
+			}
+			
+			//  include check 
+			if(!$io){
+				$msg = "Failed to include the $name_model. ($path)";
+				$this->StackError($msg);
+				throw new OpModelException($msg);
+			}
+			
+			//  instance of model
+			$model_name = 'Model_'.$name;//.'_model';
+			if(!$_SERVER['test']['model'][$name] = new $model_name ){
+				$msg = "Failed to include the Model_Model. ($path)";
+				$this->StackError($msg);
+				throw new OpModelException($msg);
+			}
+			
+		}catch( Exception $e ){
+			$this->mark( $e->getMessage() );
+			$this->StackError( $e->getMessage() );
+			return new OnePiece5();
 		}
 		
-		//  Could be include?
-		if(!$io){
-			$msg = "Failed to include the $name_model. ($path)";
-			$this->StackError($msg);
-			throw new OpModelException($msg);
-		}
-		
-		//  instance of model
-		$model_name = 'Model_'.$name;//.'_model';
-		if(!$_SERVER['test']['model'][$name] = new $model_name ){
-			$msg = "Failed to include the Model_Model. ($path)";
-			$this->StackError($msg);
-			throw new OpModelException($msg);
-		}
-		
-		return $_SERVER['test']['model'][$name];
+		return $_SERVER[__CLASS__]['model'][$name];
 	}
 	
-	/* @var $pdo PDO5 */
+	/**
+	 * Separate for each instance.
+	 * 
+	 * @var PDO5
+	 */
 	private $pdo;
 	
 	/**
@@ -1750,50 +1810,46 @@ __EOL__;
 		return $this->pdo;
 	}
 	
-	/* @var $mysql MySQL */
+	/**
+	 * @var MySQL
+	 */
 	private $mysql;
 	
 	/**
 	 * Return MySQL Object
 	 * 
-	 * @param  array|string configuration or configuration file path
+	 * @param  array|string configuration-array or configuration-file-path
 	 * @return MySQL $mysql
 	 */
 	function MySQL($args=null)
 	{
-		if( isset($this->mysql) ){
-			// ok
-		}else{
+		if( empty($this->mysql) ){
 			include_once('SQL/MySQL.class.php');
 			$this->mysql = new MySQL( $args, $this );
 		}
 		return $this->mysql;
-	} 
+	}
 	
 	/**
 	 * Abstract Form object.
 	 * 
-	 * @param unknown $args
+	 * @param  string $name Class name
 	 * @return Form5
 	 */
-	function Form($args='Form5')
+	function Form( $name='Form5' )
 	{
-		if(!isset($_SERVER[__CLASS__][strtoupper($args)])){
-			if(!$_SERVER[__CLASS__][strtoupper($args)] = new $args()){
-				return false;
+		//static $obj;
+		
+		$obj = &$_SERVER[__CLASS__][__METHOD__];
+		
+		if( empty($obj) ){
+			if(!$obj = new $name()){
+				$obj = OnePiece5();
 			}
 		}
-		return $_SERVER[__CLASS__][strtoupper($args)];
+		
+		return $obj;
 	}
-	
-	/* @var $form Form5 */
-	private $form = null;
-	
-	
-	/**
-	 *  @var $i18n i18n
-	 */
-	private $i18n = null;
 	
 	/**
 	 * i18n is translate object.
@@ -1801,15 +1857,17 @@ __EOL__;
 	 * @param  string $name Object name
 	 * @return i18n
 	 */
-	function i18n($name='i18n')
+	function i18n( $name='i18n' )
 	{
-		if( empty($this->i18n) ){
-			if(!$this->i18n = new $name()){
-				return $this;
+		static $obj;
+
+		if( empty($obj) ){
+			if(!$obj = new $name()){
+				$obj = OnePiece5();
 			}
 		}
 		
-		return $this->i18n;
+		return $obj;
 	}
 	
 	/**
@@ -1832,14 +1890,23 @@ __EOL__;
 	 */
 	private $cache = null;
 	
+	/**
+	 * Cache is presents the [memcache/memcached/other] interface. 
+	 * 
+	 * @param  string $name
+	 * @throws Exception
+	 * @return Cache
+	 */
 	function Cache($name='Cache')
 	{
 		if(!$this->cache){
-			if(!include("$name.class.php") ){
-				throw new Exception("Include is failed. ($name)");
+			if(!class_exists($name)){
+				if(!include("$name.class.php") ){
+					throw new OpException("Include is failed. ($name)");
+				}
 			}
 			if(!$this->cache = new $name() ){
-				throw new Exception("Instance object is failed. ($name)");
+				throw new OpException("Instance object is failed. ($name)");
 			}
 		}
 		return $this->cache;
@@ -1851,7 +1918,7 @@ __EOL__;
 	 * @param boolen $args
 	 */
 	function Vivre( $register )
-	{		
+	{
 		if( $register ){
 			// 　register
 			if($this->GetEnv('vivre')){

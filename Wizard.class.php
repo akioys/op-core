@@ -1,5 +1,9 @@
 <?php
-
+/**
+ * 
+ * @author Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
+ * 
+ */
 class Wizard extends OnePiece5
 {
 	private $config = null;
@@ -47,7 +51,14 @@ class Wizard extends OnePiece5
 			$database = Toolbox::Copy( $config->database );
 			$database->user     = $this->form()->GetInputValue('user',$form_name);
 			$database->password = $this->form()->GetInputValue('password',$form_name);
-			$this->pdo()->Connect( $database );
+			
+			//  Remove database name. (only connection, If not exists database.)
+			unset($database->database);
+			
+			//  Connect to administrator account.
+			if(!$io = $this->pdo()->Connect( $database ) ){
+				$database->d();
+			}
 			
 			$this->CreateDatabase($config);
 			$this->CreateTable($config);
@@ -56,7 +67,7 @@ class Wizard extends OnePiece5
 			$this->CreateGrant($config);
 			
 		}else{
-			$this->form()->Debug($form_name);
+		//	$this->form()->Debug($form_name);
 		}
 		
 		//  Print form.
@@ -105,6 +116,10 @@ class Wizard extends OnePiece5
 	
 	function CreateTable($config)
 	{
+		if(empty($config->table)){
+			return true;
+		}
+		
 		foreach( $config->table as $table ){
 			if( empty($table->database) ){
 				$table->database = $config->database->database;
@@ -124,8 +139,6 @@ class Wizard extends OnePiece5
 		$config->user->host     = $config->database->host;
 		$config->user->user     = $config->database->user;
 		$config->user->password = $config->database->password;
-		
-	//	$this->d( Toolbox::toArray($config) );
 		
 		$io = $this->pdo()->CreateUser($config->user);
 	}
@@ -179,6 +192,36 @@ class WizardConfig extends ConfigMgr
 		$config->input->$input_name->name  = $input_name;
 		$config->input->$input_name->type  = 'submit';
 		$config->input->$input_name->value = 'Submit';
+		
+		return $config;
+	}
+}
+
+class WizardHelper extends OnePiece5
+{
+	/**
+	 * Create base config
+	 * 
+	 * @param string $user_name
+	 * @param string $password
+	 * @param string $host_name
+	 * @param string $database_name
+	 * @param string $table_name
+	 * @param string $driver
+	 * @param string $charset
+	 */
+	static function GetBase( $user_name, $password, $host_name, $database_name, $table_name, $driver='mysql', $charset='utf8' )
+	{
+		//  init
+		$database->driver   = $driver;
+		$database->host     = $host_name;
+		$database->user     = $user_name;
+		$database->password = $password;
+		$database->database = $database_name;
+		$database->charset  = $charset;
+
+		$database  = new Config();
+		$config->database = $database;
 		
 		return $config;
 	}
