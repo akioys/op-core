@@ -95,7 +95,6 @@ class ConfigModel extends ConfigMgr
 	
 	static function database()
 	{
-		
 		$password  = OnePiece5::GetEnv('admin-mail');
 		$password .= isset($this) ? get_class($this): null;
 		
@@ -104,7 +103,6 @@ class ConfigModel extends ConfigMgr
 		$config->password = md5( $password );
 		return $config;
 	}
-	
 }
 
 class OpModelException extends Exception
