@@ -870,7 +870,7 @@ class ConfigSQL extends OnePiece5
 		if( empty($safe) ){
 			var_dump($var);
 			var_dump($driver);
-			$this->StackError("Empty args.");
+			OnePiece5::StackError("Empty args.");
 		}
 		
 		return $safe;
