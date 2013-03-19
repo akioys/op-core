@@ -2,9 +2,6 @@
 
 class Model_JapanesePref extends Model_Model
 {
-<<<<<<< HEAD
-	function Get($type='iso')
-=======
 	function Get( $value=null )
 	{
 		if( is_numeric($value) ){
@@ -34,7 +31,6 @@ class Model_JapanesePref extends Model_Model
 	}
 	
 	function GetList($type='iso')
->>>>>>> 02b87aa654b62bd639dea189cee8dbc2fffe7c74
 	{
 		$pref = array(
 				'01' => '北海道', '02' => '青森県', '03' => '岩手県', '04' => '宮城県', '05' => '秋田県',
@@ -51,9 +47,6 @@ class Model_JapanesePref extends Model_Model
 		
 		return $pref;
 	}
-<<<<<<< HEAD
-
-=======
 	
 	function GetNo( $str )
 	{
@@ -73,7 +66,6 @@ class Model_JapanesePref extends Model_Model
 		return $pref[$index];
 	}
 	
->>>>>>> 02b87aa654b62bd639dea189cee8dbc2fffe7c74
 	function UsedToForm( $args=null )
 	{
 		return self::UsedToForms( $args );
@@ -96,11 +88,6 @@ class Model_JapanesePref extends Model_Model
 				$options[$value]['label'] = $label;
 			}
 		}
-<<<<<<< HEAD
-		
-=======
->>>>>>> 02b87aa654b62bd639dea189cee8dbc2fffe7c74
 		return $options;
 	}
-	
 }

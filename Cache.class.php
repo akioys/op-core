@@ -21,6 +21,7 @@ class Cache extends OnePiece5
 		parent::Init();
 		
 		//  Get value
+		$redis     = $this->GetEnv('redis');
 		$memcache  = $this->GetEnv('memcache');
 		$memcached = $this->GetEnv('memcached');
 		
@@ -82,6 +83,20 @@ class Cache extends OnePiece5
 	
 	function Set( $key, $value, $expire=0 )
 	{
+		//  Does not installed memcache module.
+		static $skip;
+		
+		//	
+		if( $skip ){
+			return null;
+		}
+		
+		//	Check
+		if( empty($this->cache) ){
+			$skip = true;
+			return null;
+		}
+		
 		switch( $name = get_class($this->cache) ){
 			case 'Memcache':
 				$compress = $this->compress ? MEMCACHE_COMPRESSED: null;
@@ -90,13 +105,12 @@ class Cache extends OnePiece5
 				break;
 		}
 		
-		//  TODO: Supports compress
+		//  TODO: compress option
 		$this->cache->Set( $key, $value, $compress, $expire );
 	}
 	
 	function Get( $key )
 	{
-		//	What is this?
 		static $skip;
 		if( $skip ){
 			return null;
@@ -108,7 +122,7 @@ class Cache extends OnePiece5
 			return null;
 		}
 		
-		//	TODO:
+		//	TODO: compress option
 		$value = $this->cache->Get( $key /* ,MEMCACHE_COMPRESSED */ );
 		
 		return $value;

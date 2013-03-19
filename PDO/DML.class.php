@@ -1,13 +1,9 @@
 <?php
-<<<<<<< HEAD:PDO/DML.class.php
-
-=======
 /**
  * 
  * @author Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
  *
  */
->>>>>>> 02b87aa654b62bd639dea189cee8dbc2fffe7c74:PDO/DML.class.php
 class DML extends OnePiece5
 {
 	//  OLD
@@ -38,6 +34,7 @@ class DML extends OnePiece5
 		}
 	}
 	
+	/*
 	function Quote( $var )
 	{
 		if( is_array($var) ){
@@ -53,6 +50,7 @@ class DML extends OnePiece5
 		}
 		return $safe;
 	}
+	*/
 	
 	function GetSelect( $conf )
 	{
@@ -558,9 +556,11 @@ class DML extends OnePiece5
 			$temp = array();
 			foreach( $cols as $key => $var ){
 				if( is_numeric($key) ){
-					$temp[] = $this->Quote($var);
+					$temp[] = ConfigSQL::Quote( $var, $this->driver );
 				}else{
-					$temp[] = $this->Quote($key)." AS ".$this->Quote($var);
+					$temp[] = ConfigSQL::Quote( $key, $this->driver )
+							 ." AS "
+							 .ConfigSQL::Quote( $var, $this->driver );
 				}
 			}
 			$cols = join(', ',$temp);
