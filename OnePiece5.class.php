@@ -431,7 +431,7 @@ class OnePiece5
 	 * @param string $message is message.
 	 * @param string $class is label use to print.
 	 */
-	function StackError( $args )
+	static function StackError( $args )
 	{
 		$encoding = mb_internal_encoding();
 		
