@@ -2,10 +2,8 @@
 
 class Model_OpUser extends Model_Model
 {
-	private $table_name          = 'op_user';
-	const TABLE_OP_USER			 = 'op_user';
-	const TABLE_OP_USER_INFO	 = 'op_user_info';
-	const TABLE_OP_USER_AGENT	 = 'op_user_agent';
+	const KEY_SESSION_USER_ID = 'op_user_id';
+	const KEY_COOKIE_UA_ID    = 'op_ua_id';
 	
 	private $isFirstVisit = false;
 	private $isReVisit    = false;
@@ -13,10 +11,9 @@ class Model_OpUser extends Model_Model
 	function Init($config=null)
 	{
 		parent::Init($config);
-		$this->Selftest();
-		$this->InitOpUserId();
-		$this->InitOpUserInfo();
-		$this->InitOpUserAgent();
+		$this->InitOpUser();
+	//	$this->InitOpUserInfo();
+	//	$this->InitOpUserAgent();
 	}
 	
 	function Config($name='ConfigOpUser')
@@ -31,134 +28,100 @@ class Model_OpUser extends Model_Model
 		$wz->selftest($config);
 	}
 	
-	function InitOpUserId()
+	function InitOpUser()
 	{
-		if( $this->GetSession('op_user_id') ){
+		//  Already init.
+		if( $user_id = $this->GetSession( self::KEY_SESSION_USER_ID ) ){
 			return true;
 		}
 		
-		//  onepiece uniq id
-		$op_uniq_id = $this->GetCookie('op-uniq-id');
-		
-		//  get config
-		$select = $this->config()->select($this->table_name);
-		$select->where->op_uniq_id = $op_uniq_id;
-		$select->limit = 1;
-		
-		//  get record
+		//  Select op_user record.
+		$select = $this->config()->select_user();
 		$record = $this->pdo()->select($select);
+		
 		if( isset($record['user_id']) ){
-
 			//  Re-visit
 			$this->isReVisit = true;
 			
-			//  have already registration
+			//  Already registration
 			$user_id = $record['user_id'];
 		}else{
-			//  First Registration
-			$insert = $this->config()->insert($this->table_name);
-			$insert->set->op_uniq_id = $op_uniq_id;
-			if(!$user_id = $this->pdo()->insert($insert)){
-				return false;
-			}
-
 			//  first-visit
 			$this->isFirstVisit = true;
+			
+			//  User registration for first time visitor.
+			$insert  = $this->config()->insert_user();
+			$user_id = $this->pdo()->insert($insert);
+			
+			//  Save user agent (Op-User-ID is Browser(cookie) related.)
+			$this->InitOpUserAgent();
 		}
 		
-		$this->SetSession('op_user_id',$user_id);
+		//  Update user info.
+		$this->InitOpUserInfo();
+		
+		//  Save op_user.user_id to session. (Init complete)
+		$this->SetSession(self::KEY_SESSION_USER_ID, $user_id );
+		
+		return true;
 	}
 	
 	function InitOpUserInfo()
 	{
-		if(!$user_id = $this->GetOpUserId()){
-			return false;
-		}
-		
 		//  First visit
 		if( $this->isFirstVisit ){
-			$insert = $this->config()->insert( self::TABLE_OP_USER_INFO );
-			$insert->set->user_id = $user_id;
+			$insert = $this->config()->insert_user_info();
 			$this->pdo()->insert($insert);
 		}
 		
 		// Re visit
 		if( $this->isReVisit ){
-			$update = $this->config()->update( self::TABLE_OP_USER_INFO );
-			$update->set->visits = '+1';
-			$update->where->user_id = $user_id;
-			$update->limit = 1;
+			$update = $this->config()->update_user_info();
 			$this->pdo()->update($update);
 		}
 	}
 	
 	function InitOpUserAgent()
 	{
-		$key = 'op_ua_id';
-		
-		//  Check session.
-		if( $op_ua_id = $this->GetSession($key) ){
-			return;
-		}
-		
-		//  Check cookie.
-		if( $op_ua_id = $this->GetCookie($key) ){
-			$this->SetSession($key,$op_ua_id);
-			return;
-		}
-		
-		//  Get user agent.
-		$ua  = $_SERVER['HTTP_USER_AGENT'];
-		$md5 = md5($ua);
-		
 		//  Save to user agent.
-		$insert = $this->config()->insert( self::TABLE_OP_USER_AGENT );
-		$insert->set->user_agent     = $ua;
-		$insert->set->user_agent_md5 = $md5;
-		$io = $this->pdo()->insert($insert);
+		$insert = $this->config()->insert_user_agent( self::TABLE_OP_USER_AGENT );
+		$op_ua_id = $this->pdo()->insert($insert);
 		
-		//  Get user agent id
-		$query = "id <- ".self::TABLE_OP_USER_AGENT.".user_agent_md5 = '$md5'";
-		$ua_id = $this->pdo()->quick($query);
-		$this->d($query);
-		
-		//  Set user agent
-		$update = $this->config()->select(self::TABLE_OP_USER_AGENT);
-		$update->set->user_agent_id = $ua_id;
-		$update->where->op_user_id  = $this->GetSession('op_user_id');
-		$update->limit = 1;
-		$this->pdo()->update($update);
-		
-		//  Save user agent to session and cookie.
-		if( $ua_id ){
-			$this->SetSession($key,$ua_id);
-			$this->SetCookie($key,$ua_id);
+		//  If error occourd.
+		if(!$op_ua_id){
+			$op_ua_id = -1;
 		}
+		
+		//  Save user agent to cookie.
+		$this->SetCookie( self::KEY_COOKIE_UA_ID, $op_ua_id );
+		
+		return $op_ua_id;
 	}
 	
 	function GetOpUserId()
 	{
-		return $this->GetSession('op_user_id');
+		return $this->GetSession( self::KEY_SESSION_USER_ID );
 	}
-	
-	function GetStatus()
+
+	function GetOpUaId()
 	{
-		
-	}
-	
-	function SetMessage($message)
-	{
-		return $this->SetSession('message',$message);
-	}
-	
-	function GetMessage()
-	{
-		return $this->GetSession('message');
+		return $this->GetCookie( self::KEY_COOKIE_UA_ID );
 	}
 	
 	function GetNickName()
 	{
 		return 'guest';
+	}
+
+	function SetMessage( $message )
+	{
+		$this->message = $message;
+		return null;
+	}
+	
+	function GetMessage()
+	{
+		return null;
 	}
 	
 	/**
@@ -178,10 +141,58 @@ class Model_OpUser extends Model_Model
 
 class ConfigOpUser extends ConfigModel
 {
+	const TABLE_OP_USER			 = 'op_user';
+	const TABLE_OP_USER_INFO	 = 'op_user_info';
+	const TABLE_OP_USER_AGENT	 = 'op_user_agent';
+	
 	static function database()
 	{
 		$config = parent::database();
 		$config->user     = 'op_model_opuser';
+		return $config;
+	}
+	
+	function select_user()
+	{
+		$config = parent::select( self::TABLE_OP_USER );
+		$config->where->op_uniq_id = $this->GetCookie( OnePiece5::KEY_COOKIE_UNIQ_ID);
+		$config->limit = 1;
+		return $config;
+	} 
+	
+	function insert_user()
+	{
+		$config = parent::insert( self::TABLE_OP_USER );
+		$config->set->op_uniq_id = $this->GetCookie( OnePiece5::KEY_COOKIE_UNIQ_ID );
+		return $config;
+	}
+	
+	function insert_user_info()
+	{
+		$config = parent::insert( self::TABLE_OP_USER_INFO );
+		$insert->set->user_id = $this->GetSession( OnePiece5::KEY_SESSION_USER_ID );
+		return $config;
+	}
+	
+	function insert_user_agent()
+	{
+		//  Get user agent.
+		$ua  = $_SERVER['HTTP_USER_AGENT'];
+		$md5 = md5($ua);
+		
+		//  Config
+		$config = parent::insert( self::TABLE_OP_USER_AGENT );
+		$config->set->user_agent     = $ua;
+	//	$config->set->user_agent_md5 = $md5;
+		return $config;
+	}
+
+	function update_user_info()
+	{
+		$config = parent::update( self::TABLE_OP_USER_INFO );
+		$config->set->visits = '+1';
+		$config->where->user_id = $this->GetSession( Model_OpUser::KEY_SESSION_USER_ID );
+		$config->limit = 1;
 		return $config;
 	}
 	
@@ -212,16 +223,22 @@ class ConfigOpUser extends ConfigModel
 		$table_name = 'op_user_info';
 		$config->table->{$table_name}->table   = $table_name;
 		$config->table->{$table_name}->comment = 'This is wizard test.';
-				
-			//  Columns
+			
+			//  Primary ID
 			$column_name = 'user_id';
 			$config->table->{$table_name}->column->{$column_name}->name = $column_name;
 			$config->table->{$table_name}->column->{$column_name}->ai   = true;
-				
+			
+			//  Visit frequency.
 			$column_name = 'visits';
 			$config->table->{$table_name}->column->{$column_name}->name = $column_name;
 			$config->table->{$table_name}->column->{$column_name}->type = 'int';
-				
+			
+			//  Messages
+			$column_name = 'message';
+			$config->table->{$table_name}->column->{$column_name}->name = $column_name;
+			$config->table->{$table_name}->column->{$column_name}->type = 'text';
+			
 			//  created, updated, deleted
 			$config->table->{$table_name}->column->merge(parent::Column());
 			
