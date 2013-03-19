@@ -124,22 +124,13 @@ abstract class NewWorld5 extends OnePiece5
 		//	absolute from current dir
 		$file_path = preg_replace("|$app_root|",'',$absolute_path);
 		
-		/*
-		$this->mark($absolute_path);
-		$this->mark( getcwd() );
-		$this->mark(dirname($_SERVER['SCRIPT_FILENAME']));
-		$this->mark($app_root);
-		$this->mark($file_path);
-		*/
-		
 		//	search controller
+		/*
 		$dirs = explode( '/', rtrim($file_path,'/') );
 		$args = array();
 		while( count($dirs) ){
 			
 			$file_name = rtrim($app_root,'/').'/'.trim(join('/',$dirs)).'/'.$controller;
-		//	$io = file_exists($file_name) ? 'true': 'false';
-		//	$this->mark("file_name = $file_name, dir = $dir, io = $io");
 			
 			if( file_exists($file_name) ){
 				break;
@@ -152,6 +143,9 @@ abstract class NewWorld5 extends OnePiece5
 		if(!count($args)){
 			$args[0] = null;
 		}
+		*/
+		
+		$this->_getController( $dirs, $args, $file_path, $controller );
 		
 		//  build
 		$route['path'] = '/'.join('/',$dirs);
@@ -163,6 +157,33 @@ abstract class NewWorld5 extends OnePiece5
 		$route = $this->Escape($route);
 		
 		return $route;
+	}
+	
+	private function _getController( &$dirs, &$args, $file_path, $controller )
+	{
+		//  Init
+		$app_root = $this->GetEnv('AppRoot');
+		$dirs = explode( '/', rtrim($file_path,'/') );
+		$args = array();
+		
+		//  Loop
+		while( count($dirs) ){
+			
+			$file_name = rtrim($app_root,'/').'/'.trim(join('/',$dirs)).'/'.$controller;
+				
+			if( file_exists($file_name) ){
+				break;
+			}
+				
+			$args[] = array_pop($dirs);
+		}
+		
+		// anti nortice error
+		if(!count($args)){
+			$args[0] = null;
+		}
+		
+		return true;
 	}
 	
 	function HtmlPassThrough( $match, $full_path )
