@@ -85,12 +85,6 @@ abstract class NewWorld5 extends OnePiece5
 	 */
 	function GetRoute($request_uri=null)
 	{
-		// controller file name
-		if(!$controller = $this->GetEnv('controller-name')){
-			$this->StackError('Does not set controller-name. Please call $app->SetEnv("controller-name","index.php");');
-			return false;
-		}
-		
 		// get request uri
 		if(!$request_uri){
 			$request_uri = $_SERVER['REQUEST_URI'];
@@ -159,8 +153,14 @@ abstract class NewWorld5 extends OnePiece5
 		return $route;
 	}
 	
-	private function _getController( &$dirs, &$args, $file_path, $controller )
+	private function _getController( &$dirs, &$args, $file_path, &$controller )
 	{
+		// controller file name
+		if(!$controller = $this->GetEnv('controller-name')){
+			$this->StackError('Does not set controller-name. Please call $app->SetEnv("controller-name","index.php");');
+			return false;
+		}
+		
 		//  Init
 		$app_root = $this->GetEnv('AppRoot');
 		$dirs = explode( '/', rtrim($file_path,'/') );
