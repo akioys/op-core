@@ -119,34 +119,13 @@ abstract class NewWorld5 extends OnePiece5
 		$file_path = preg_replace("|$app_root|",'',$absolute_path);
 		
 		//	search controller
-		/*
-		$dirs = explode( '/', rtrim($file_path,'/') );
-		$args = array();
-		while( count($dirs) ){
-			
-			$file_name = rtrim($app_root,'/').'/'.trim(join('/',$dirs)).'/'.$controller;
-			
-			if( file_exists($file_name) ){
-				break;
-			}
-			
-			$args[] = array_pop($dirs);
-		}
-		
-		// anti nortice error
-		if(!count($args)){
-			$args[0] = null;
-		}
-		*/
-		
 		$this->_getController( $dirs, $args, $file_path, $controller );
 		
 		//  build
 		$route['path'] = '/'.join('/',$dirs);
 		$route['file'] = $controller;
 		$route['args'] = array_reverse($args);
-		//$this->d($route);
-		
+				
 		//  escape
 		$route = $this->Escape($route);
 		
@@ -163,13 +142,14 @@ abstract class NewWorld5 extends OnePiece5
 		
 		//  Init
 		$app_root = $this->GetEnv('AppRoot');
+		$app_root = rtrim($app_root,'/').'/';
 		$dirs = explode( '/', rtrim($file_path,'/') );
 		$args = array();
 		
 		//  Loop
 		while( count($dirs) ){
 			
-			$file_name = rtrim($app_root,'/').'/'.trim(join('/',$dirs)).'/'.$controller;
+			$file_name = $app_root.trim(join('/',$dirs)).'/'.$controller;
 				
 			if( file_exists($file_name) ){
 				break;
@@ -212,7 +192,7 @@ abstract class NewWorld5 extends OnePiece5
 			$route['fullpath'] = $full_path;
 			$route['path'] = dirname($app_path);
 			$route['file'] = $file_name;
-			$route['args'] = null;
+			$route['args'] = array(null);
 			$route['pass'] = true;
 			$route['ctrl'] = null;
 			$route = $this->Escape($route);
