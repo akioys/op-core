@@ -39,6 +39,6 @@ class Model_File extends Model_Model
 			$files[] = $file;
 		}
 		
-		return $files;
+		return isset($files) ? $files: array();
 	}
 }
