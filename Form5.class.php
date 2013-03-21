@@ -420,6 +420,7 @@ class Form5 extends OnePiece5
 			return false;
 		}
 		
+		//  Get raw value
 		$value = $this->GetInputValueRaw( $input_name, $form_name, $joint );
 		
 		switch( $type = strtolower(gettype($value)) ){
@@ -479,8 +480,15 @@ class Form5 extends OnePiece5
 			$joint = isset($input->joint) ? $input->joint: '';
 		}
 		
-		//  GetSaveValue is search session
-		$value = $this->GetSaveValue( $input_name, $form_name );
+		//  If button
+		if( $input->type === 'submit' or $input->type === 'button' or $input->type === 'img' ){
+			$value = $this->GetRequest($input_name, $form_name);	
+		}else{
+			//  GetSaveValue is search session
+			$value = $this->GetSaveValue( $input_name, $form_name );
+		}
+		
+		//  If array
 		if(is_array($value)){
 			//  not check value is removed. 
 			$value = array_diff($value,array(''));
@@ -488,13 +496,9 @@ class Form5 extends OnePiece5
 		
 		//  If null, default value is used.
 		if( is_null($value) ){
-			$value = isset($input->value) ? $input->value: null; // this is null!! use to cookie routine.
+			$value = isset($input->value) ? $input->value: null;
 		}else{
-			/*
-			if( $input->type == 'file' ){
-				$this->d($value);
-			}
-			*/
+		//	$this->mark($value);
 		}
 		
 		return $value;
