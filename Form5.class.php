@@ -776,7 +776,6 @@ class Form5 extends OnePiece5
 		
 		if( isset($_FILES[$input->name]) ){
 			$_file = $_FILES[$input->name];
-			
 			$name  = $_file['name'];
 			$type  = $_file['type'];
 			$tmp   = $_file['tmp_name'];
@@ -786,7 +785,6 @@ class Form5 extends OnePiece5
 			// extention
 			$temp = explode('.',$name);
 			$ext  = array_pop($temp);
-			
 		}else{
 			$value = $this->GetRequest($input_name, $form_name);
 			if( is_array($value) ){
@@ -799,7 +797,6 @@ class Form5 extends OnePiece5
 		}
 		
 		switch($error){
-				
 			case 0:
 				$op_uniq_id = $this->GetCookie( self::KEY_COOKIE_UNIQ_ID );
 				
@@ -830,9 +827,10 @@ class Form5 extends OnePiece5
 				}else{
 					$path = sys_get_temp_dir() .DIRECTORY_SEPARATOR. md5($name . $op_uniq_id).".$ext";
 				}
-
+				
                 //  Check directory exists
                 if(!file_exists( dirname($path) )){
+                	$this->mark("Does not exists. ($path)");
                     if(!$io = mkdir( dirname($path), 0766, true ) ){                    	
                     	$this->StackError("Failed make directory. (".dirname($path).")");
                     	return false;
@@ -840,7 +838,10 @@ class Form5 extends OnePiece5
                 }
 				
 				//  file is copy
-                $io = copy($tmp, $path);
+                if(!$io = copy($tmp, $path)){
+                	$this->StackError("Does not copy at upload file. ($tmp, $path)");
+                	return false;
+                }
                 
 				//$this->mark("tmp: $tmp, path: $path, io: $io");
 				
