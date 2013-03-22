@@ -1674,13 +1674,13 @@ class Form5 extends OnePiece5
 	
 	function Label( $input_name, $form_name=null )
 	{
-		print $this->GetInputLabel( $input_name, $form_name=null );
+		print $this->GetInputLabel( $input_name, $form_name );
 		return 'This method(function) is print.';
 	}
 	
 	function InputLabel( $input_name, $form_name=null )
 	{
-		$label = $this->GetInputLabel( $input_name, $form_name=null );
+		$label = $this->GetInputLabel( $input_name, $form_name );
 		print $label;
 		return 'This method(function) is print.';
 	}
