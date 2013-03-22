@@ -496,9 +496,11 @@ class Form5 extends OnePiece5
 		
 		//  If null, default value is used.
 		if( is_null($value) ){
-			$value = isset($input->value) ? $input->value: null;
-		}else{
-		//	$this->mark($value);
+			if( !empty($input->cookie) ){
+				$value = $this->GetCookie($form_name.'/'.$input_name);
+			}else if( isset($input->value) ){
+				$value = $input->value;
+			}
 		}
 		
 		return $value;
@@ -696,6 +698,10 @@ class Form5 extends OnePiece5
 				
 				// save cookie
 				if( isset($input->cookie) and $input->cookie and !is_null($value) ){
+					//  Remove check index.
+					if( empty($value[0]) ){
+						unset($value[0]);
+					}
 					$this->SetCookie($form_name.'/'.$input_name, $value );
 				}
 			}else{
@@ -795,7 +801,7 @@ class Form5 extends OnePiece5
 		switch($error){
 				
 			case 0:
-				$op_uniq_id = $this->GetCookie( self::OP_UNIQ_ID );
+				$op_uniq_id = $this->GetCookie( self::KEY_COOKIE_UNIQ_ID );
 				
 				if( isset($input->save) and $input->save ){
 					if( isset($input->save->path) ){
