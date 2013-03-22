@@ -399,6 +399,14 @@ class Form5 extends OnePiece5
 	}
 	*/
 	
+	/**
+	 * Get value
+	 * 
+	 * @param string $input_name
+	 * @param string $form_name
+	 * @param string $joint
+	 * @return Ambigous <boolean, NULL, string, mixed, Ambigous, multitype:, string|array, stdClass, number>
+	 */
 	public function GetValue( $input_name, $form_name=null, $joint=null )
 	{
 		return $this->GetInputValue( $input_name, $form_name, $joint );
@@ -1732,30 +1740,55 @@ class Form5 extends OnePiece5
 		Dump::d($temp);
 	}
 	
+	/**
+	 * Print error message.
+	 * 
+	 * @param string $input_name
+	 * @param string $html
+	 * @param string $form_name
+	 */
 	function Error( $input_name, $html='span 0xff0000', $form_name=null )
 	{
-		print $this->GetInputError( $input_name, $html, $form_name=null );
+		print $this->GetInputError( $input_name, $form_name, $html );
 		return $this->i18n()->Get('This method(function) is print.');
 	}
 	
+	/*
 	function InputError( $input_name, $html='span 0xff0000', $form_name=null )
 	{
-		print $this->GetInputError( $input_name, $html, $form_name=null );
+		print $this->GetInputError( $input_name, $html, $form_name );
 		return $this->i18n()->Get('This method(function) is print.');
 	}
+	*/
 
+	/**
+	 * Get error message.
+	 * 
+	 * @param string $input_name
+	 * @param string $html
+	 * @param string $form_name
+	 * @return Ambigous <boolean, string>
+	 */
 	function GetError( $input_name, $html='span 0xff0000', $form_name=null )
     {
-        return $this->GetInputError( $input_name, $html, $form_name );
+        return $this->GetInputError( $input_name, $form_name, $html );
     }
 
-	function GetInputError( $input_name, $html='span 0xff0000', $form_name=null )
+    /**
+     * Get error message.
+     * 
+     * @param  string $input_name
+     * @param  string $form_name
+     * @param  string $html
+     * @return boolean|string
+     */
+	function GetInputError( $input_name, $form_name=null, $html='span 0xff0000' )
 	{
 		if(!$this->CheckConfig($form_name,$input_name)){
 			return false;
 		}
 		
-		if(isset($this->status->$form_name->error->$input_name)){
+		if( isset($this->status->$form_name->error->$input_name) ){
 			
 			$message = '';
 			$value2  = '';
