@@ -1827,25 +1827,17 @@ class Form5 extends OnePiece5
 		}
 	}
 	
+	function GetErrorList( $form_name )
+	{
+		return $this->status->$form_name->error;
+	}
+	
 	function SetInputError( $input_name, $form_name, $key, $value='' )
 	{
 		if( !$input_name or !$form_name or !$key /* or !$value or !strlen($value) */ ){
 			$this->StackError("One or more empty. form_name=$form_name, input_name=$input_name, key=$key, value=$value");
 			return false;
 		}
-
-		/*
-		if(!isset($this->status->$form_name->error)){
-			$this->status->$form_name->error = new Config();
-		}
-		*/
-		
-		/*
-		if(!isset($this->status->$form_name->error->$input_name)){
-			$this->status->$form_name->error->$input_name = new Config();
-		}
-		*/
-		
 		$this->status->$form_name->error->$input_name->$key = $value;
 	}
 	
