@@ -1638,16 +1638,22 @@ class Form5 extends OnePiece5
 		return $tag . $nl;
 	}
 	
-	function CreateOption( $args, $save_value )
+	function CreateOption( $options, $save_value )
 	{
-		$options = '';
-		foreach( $args as $option ){
-			//  
-			$value = $option->value;
+		$result = '';
+		foreach( $options as $option ){
+			//	
+			$value = isset($option->value) ? $option->value: null;
 			$label = isset($option->label) ? $option->label: $value;
-			$selected = $value == $save_value ? 'selected="selected"': '';
 			
-			//  attributes
+			//  defalut select
+			if( !empty($option->selected) or !empty($option->checked) ){
+				$selected = 'selected="selected"';
+			}else{
+				$selected = null;
+			}
+			
+			//	attributes
 			$attr = array();
 			foreach( $option as $key => $var ){
 				switch( $key ){
@@ -1659,11 +1665,11 @@ class Form5 extends OnePiece5
 			}
 			$attr = implode(' ', $attr);
 			
-			//  joint
-			$options .= sprintf('<option value="%s" %s %s>%s</option>', $value, $attr, $selected, $label);
+			//	joint
+			$result .= sprintf('<option value="%s" %s %s>%s</option>', $value, $attr, $selected, $label);
 		}
 		
-		return $options;
+		return $result;
 	}
 	
 	function GetInput( $input_name, $value=null, $form_name=null )
@@ -2421,7 +2427,7 @@ class Form5 extends OnePiece5
 //		$size   = $_FILES[$input->name]['size'];
 		list($type,$ext) = explode('/',$mime);
 		
-		if($type !== 'image'){
+		if( $type !== 'image' ){
 			$this->SetInputError( $input->name, $form_name, 'image', "not image ($type, ext=$ext)" );
 			return false;
 		}
