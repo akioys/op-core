@@ -2083,7 +2083,7 @@ __EOL__;
 					$args = array();
 					$args['to']		 = $this->GetEnv('admin-mail');
 					$args['subject'] = '[OnePiece] VIVRE ALERT';
-					$args['body']	 = 'REQUEST_URI='.$this->server('FULL_REQUEST_URI',1)."\n";
+					$args['body']	 = 'REQUEST_URI='. $_SERVER['REQUEST_URI'] ."\n";
 					$args['body']	.= $_SERVER['REMOTE_ADDR']."\n";
 					$args['body']	.= gethostbyaddr($_SERVER['REMOTE_ADDR'])."\n";
 					$args['body']	.= $_SERVER['HTTP_USER_AGENT']."\n";
