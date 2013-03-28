@@ -759,11 +759,7 @@ __EOL__;
 			case 'domain':
 				$key = 'HTTP_HOST';
 				break;
-			
-			case 'origin':
-				self::mark($key);
-				break;
-				
+					
 			default:
 				if( preg_match( '/^([a-z0-9]+)[-_]?(root|dir|mail)$/',$key, $match ) ){
 					$key = $match[1].'_'.$match[2];
@@ -893,7 +889,7 @@ __EOL__;
 		switch(strtolower($key)){
 			case 'url':
 				$scheme = $_SERVER['SERVER_PORT'] !== '443' ? 'http://': 'https://';
-				$domain = $_SERVER['HTTP_HOST'];
+				$domain = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR']: $_SERVER['HTTP_HOST']; 
 				$path   = $_SERVER['REQUEST_URI'];
 				$query  = $_SERVER['QUERY_STRING'] ? '?'.$_SERVER['QUERY_STRING']: null;
 				$result = $scheme.$domain.$path.$query;
@@ -1520,7 +1516,7 @@ __EOL__;
 	/**
 	 * Send mail method
 	 * 
-	 * @param  array|Config $config
+	 * @param  array|Config $config Mail config. (Config is convert to array)
 	 * @return boolean
 	 */
 	function Mail( $args )
