@@ -186,16 +186,21 @@ class Form5 extends OnePiece5
 		*/
 		
 		if( !$save_token and !$post_token ){
+			
 			$this->SetStatus( $form_name, self::STATUS_VISIT_FIRST );
 			return false;
+			
 		}else if(!$save_token and $post_token){
+			
 			$this->SetStatus( $form_name, self::STATUS_SESSION_DESTORY );
 			return false;
+			
 		}else if( $save_token and !$post_token ){
+			
 			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_EMPTY );
 			
 			if( $_SERVER['REQUEST_URI']{strlen($_SERVER['REQUEST_URI'])-1} !== '/' ){
-				//  Apatch is forward by real directory.
+				//  Apatch was transfer to real directory.
 				if( file_exists($_SERVER['DOCUMENT_ROOT'].$_SERVER['REQUEST_URI']) ){
 					$this->mark('Add to slash(/) at action tail.');
 				}
@@ -204,12 +209,17 @@ class Form5 extends OnePiece5
 			return null;
 			
 		}else if( $save_token !== $post_token ){
+			
 			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_UNMATCH );
 			return false;
+			
 		}else if( $save_token === $post_token ){
+			
 			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_MATCH );
 			return true;
+			
 		}else{
+			
 			$this->SetStatus( $form_name, self::STATUS_UNKNOWN_ERROR );
 			return false;
 		}
@@ -2229,6 +2239,7 @@ class Form5 extends OnePiece5
 				
 			// including decimal
 			case 'number':
+			case 'numeric':
 				if(is_array($value)){
 					$value = implode('',$value);
 				}
