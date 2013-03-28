@@ -404,18 +404,31 @@ class OnePiece5
 	 */
 	static function Admin()
 	{
-		$server_addr = @$_SERVER['SERVER_ADDR'];
-		$remote_addr = @$_SERVER['REMOTE_ADDR'];
+		static $server_addr;
+		if(!$server_addr){
+			$server_addr = isset($_SERVER['SERVER_ADDR']) ? $_SERVER['SERVER_ADDR']: '127.0.0.1';
+		}
 		
+		static $remote_addr;
+		if(!$remote_addr){
+			$remote_addr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR']: null;
+			$remote_addr = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR']: $remote_addr;
+		}
+		
+		//	localhost
+		/*
 		if( $server_addr == '127.0.0.1'){
 			$io = true;
 		}else
-
+		*/
+		
+		//	Identity
 		if( $server_addr == $remote_addr ){
 			$io = true;
 		}else
 		
-		if(self::GetEnv('admin-ip') == $remote_addr){
+		//	External access
+		if( self::GetEnv('admin-ip') == $remote_addr ){
 			$io = true;
 		}else
 		
