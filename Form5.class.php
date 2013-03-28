@@ -2212,7 +2212,7 @@ class Form5 extends OnePiece5
 
 			// Use for password
 			case 'password':
-				//  Array is convert string.
+				//  Array is convert to string.
 				if(is_array($value)){
 					$value = implode('',$value);
 				}
@@ -2290,13 +2290,13 @@ class Form5 extends OnePiece5
 					$io = true;
 					break;
 				}
-				
+				/*
 				if(!preg_match('/^[0-9]{1,4}-[0-9]{1,2}-[0-9]{1,2}$/',$date)){
 					$io = false;
 					$this->SetInputError( $input->name, $form_name, 'permit-date', join('-',$value) );
 					break;
 				}
-				
+				*/
 				$time = strtotime($date);
 				if(!$io = checkdate( date('m',$time), date('d',$time), date('Y',$time))){
 					$this->SetInputError( $input->name, $form_name, 'permit-date', join('-',$value) );
@@ -2394,13 +2394,6 @@ class Form5 extends OnePiece5
 	
 	function ValidateImage( $input, $form_name, $value )
 	{
-		/*
-		$this->d(Toolbox::toArray($input));
-		$this->d($value);
-		$this->d($_FILES);
-		$this->d($_FILES[$input->name]['tmp_name']);
-		*/
-		
 		if(!isset($_FILES[$input->name])){
 			$this->SetStatus($form_name,"NG: Does not find in \$_FILES. ({$input->name})");
 			return false;
@@ -2422,8 +2415,6 @@ class Form5 extends OnePiece5
 			$this->SetInputError( $input->name, $form_name, 'image', 'not match mime (camouflage)' );
 			return false;
 		}
-		
-		//$this->d($info);
 		
 //		$width  = $info[0];
 //		$height = $info[1];
