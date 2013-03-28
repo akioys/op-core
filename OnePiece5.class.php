@@ -404,18 +404,31 @@ class OnePiece5
 	 */
 	static function Admin()
 	{
-		$server_addr = @$_SERVER['SERVER_ADDR'];
-		$remote_addr = @$_SERVER['REMOTE_ADDR'];
+		static $server_addr;
+		if(!$server_addr){
+			$server_addr = isset($_SERVER['SERVER_ADDR']) ? $_SERVER['SERVER_ADDR']: '127.0.0.1';
+		}
 		
+		static $remote_addr;
+		if(!$remote_addr){
+			$remote_addr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR']: null;
+			$remote_addr = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR']: $remote_addr;
+		}
+		
+		//	localhost
+		/*
 		if( $server_addr == '127.0.0.1'){
 			$io = true;
 		}else
-
+		*/
+		
+		//	Identity
 		if( $server_addr == $remote_addr ){
 			$io = true;
 		}else
 		
-		if(self::GetEnv('admin-ip') == $remote_addr){
+		//	External access
+		if( self::GetEnv('admin-ip') == $remote_addr ){
 			$io = true;
 		}else
 		
@@ -432,7 +445,7 @@ class OnePiece5
 	 * @param string $message is message.
 	 * @param string $class is label use to print.
 	 */
-	function StackError( $args )
+	static function StackError( $args )
 	{
 		$encoding = mb_internal_encoding();
 		
@@ -2071,7 +2084,7 @@ __EOL__;
 	function Vivre( $register )
 	{
 		if( $register ){
-			// 　register
+			//	register
 			if($this->GetEnv('vivre')){
 				//	Double registration.
 				$this->mark("Vivre check is double booking");
@@ -2080,19 +2093,29 @@ __EOL__;
 				if( $this->admin() ){
 					$this->mark("VIVRE!!");
 				}else{
+					
+					$host  = $_SERVER['HTTP_HOST']; // SERVER_NAME, SERVER_ADDR
+					$xhost = $_SERVER['HTTP_X_FORWARDED_HOST']; // HTTP_X_FORWARDED_SERVER
+					$uri   = $_SERVER['REQUEST_URI'];
+					
+					$ip = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR']: $_SERVER['REMOTE_ADDR'];
+					$domain = gethostbyaddr($ip);
+					
+					$ua = $_SERVER['HTTP_USER_AGENT'];
+					
 					$args = array();
 					$args['to']		 = $this->GetEnv('admin-mail');
 					$args['subject'] = '[OnePiece] VIVRE ALERT';
-					$args['body']	 = 'REQUEST_URI='.$this->server('FULL_REQUEST_URI',1)."\n";
-					$args['body']	.= $_SERVER['REMOTE_ADDR']."\n";
-					$args['body']	.= gethostbyaddr($_SERVER['REMOTE_ADDR'])."\n";
-					$args['body']	.= $_SERVER['HTTP_USER_AGENT']."\n";
+					$args['body']	.= "HOST = $host \n";
+					$args['body']	.= "REQUEST_URI = {$xhost}{$uri} \n";
+					$args['body']	.= "VISITOR = $ip($domain) \n";
+					$args['body']	.= "USER AGENT = $ua \n";
 					$this->Mail($args);
 				}
 			}else{
 				$_SESSION[__CLASS__]['vivre'] = 1;
 			}
-
+			
 			//	Anti double registration.
 			$this->SetEnv('vivre',1);
 		}else{
