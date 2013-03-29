@@ -2102,12 +2102,12 @@ class Form5 extends OnePiece5
 	{
 		list( $min, $max ) = explode('-',$input->validate->range);
 		
-		if( $value < $min ){
+		if( $min and $value < $min ){
 			$this->SetInputError( $input->name, $form_name, 'small', $value );
 			return false;
 		}
 		
-		if( $value > $max ){
+		if( $max and $value > $max ){
 			$this->SetInputError( $input->name, $form_name, 'large', $value );
 			return false;
 		}
@@ -2238,6 +2238,7 @@ class Form5 extends OnePiece5
 				break;
 				
 			// including decimal
+			case 'number':
 			case 'numeric':
 				if(is_array($value)){
 					$value = implode('',$value);
