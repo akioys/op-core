@@ -2238,13 +2238,12 @@ class Form5 extends OnePiece5
 				break;
 				
 			// including decimal
-			case 'number':
 			case 'numeric':
 				if(is_array($value)){
 					$value = implode('',$value);
 				}
 				if(!$io = is_numeric($value)){
-					$this->SetInputError( $input->name, $form_name, 'permit-number', $value );
+					$this->SetInputError( $input->name, $form_name, 'permit-numeric', $value );
 				}
 				break;
 				
@@ -2253,8 +2252,16 @@ class Form5 extends OnePiece5
 				if(is_array($value)){
 					$value = implode('',$value);
 				}
-				if( $io = preg_match('/([0-9]*)?([^0-9]+)([0-9]*)?/',$value,$match)){
-					$this->SetInputError( $input->name, $form_name, 'permit-integer', $match[0] );
+				
+				//  Check numeric
+				if(!$io = is_numeric($value)){
+					$this->SetInputError( $input->name, $form_name, 'permit-integer', $value );
+					break;
+				}
+				
+				//  Check integer
+				if( $io = preg_match('/([^-0-9])/', $value, $match) ){
+					$this->SetInputError( $input->name, $form_name, 'permit-integer', $value );
 				}else{
 					$io = true;
 				}
