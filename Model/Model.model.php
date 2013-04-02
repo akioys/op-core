@@ -17,7 +17,7 @@ abstract class Model_Model extends OnePiece5
 		
 		//  init config
 		$this->config = new Config();
-		$this->config();
+	//	$this->config();
 	}
 
 	function Test()
@@ -66,7 +66,7 @@ abstract class Model_Model extends OnePiece5
 	function Config($name=null)
 	{
 		if(!$name){
-			return;
+		//	return;
 		}
 		
 		if(!$this->cmgr ){
