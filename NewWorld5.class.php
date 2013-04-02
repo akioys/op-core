@@ -467,7 +467,7 @@ abstract class NewWorld5 extends OnePiece5
 	function Location( $url, $exit=true )
 	{
 		$url = $this->ConvertUrl($url);
-	
+		
 		$location = $this->GetSession('Location');
 		if( $url === $location['referer'] ){
 			$this->StackError("Redirect is roop. ($url)");

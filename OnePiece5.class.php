@@ -759,11 +759,7 @@ __EOL__;
 			case 'domain':
 				$key = 'HTTP_HOST';
 				break;
-			
-			case 'origin':
-				self::mark($key);
-				break;
-				
+					
 			default:
 				if( preg_match( '/^([a-z0-9]+)[-_]?(root|dir|mail)$/',$key, $match ) ){
 					$key = $match[1].'_'.$match[2];
@@ -892,11 +888,7 @@ __EOL__;
 	{
 		switch(strtolower($key)){
 			case 'url':
-				$scheme = $_SERVER['SERVER_PORT'] !== '443' ? 'http://': 'https://';
-				$domain = $_SERVER['HTTP_HOST'];
-				$path   = $_SERVER['REQUEST_URI'];
-				$query  = $_SERVER['QUERY_STRING'] ? '?'.$_SERVER['QUERY_STRING']: null;
-				$result = $scheme.$domain.$path.$query;
+				$this->mark('Use GetURL method. (ex. $this->GetURL($config))');
 				break;
 				
 			default:
@@ -904,6 +896,31 @@ __EOL__;
 		}
 		
 		return self::Escape($result);
+	}
+	
+	function GetURL( $scheme=true, $path=true, $query=false )
+	{
+		$domain = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR']: $_SERVER['HTTP_HOST'];
+		
+		if( $scheme ){
+			$scheme = $_SERVER['SERVER_PORT'] !== '443' ? 'http://': 'https://';
+		}else{
+			$scheme = null;
+		}
+		
+		if( $path ){
+			$path = $_SERVER['REQUEST_URI'];
+		}else{
+			$path = null;
+		}
+		
+		if( $query ){
+			$query = $_SERVER['QUERY_STRING'] ? '?'.$_SERVER['QUERY_STRING']: null;
+		}else{
+			$query = null;
+		}
+		
+		return $scheme.$domain.$path.$query;
 	}
 
 	function InitSession()
@@ -1520,7 +1537,7 @@ __EOL__;
 	/**
 	 * Send mail method
 	 * 
-	 * @param  array|Config $config
+	 * @param  array|Config $config Mail config. (Config is convert to array)
 	 * @return boolean
 	 */
 	function Mail( $args )
@@ -1722,7 +1739,7 @@ __EOL__;
 	 * @param string $path
 	 * @return string
 	 */
-	function ConvertURL( $args )
+	function ConvertURL( $args, $domain=true )
 	{
 		if( preg_match('|^([a-z][a-z0-9]+):/(.*)|i',$args,$match) ){
 			switch($match[1]){
@@ -1754,12 +1771,19 @@ __EOL__;
 		//  create relative path from document root.
 		$doc_root = $this->GetEnv('doc-root');
 		
-		//  replace
+		//	replace
 		$patt = array(); 
 		$patt[] = '|^' . $doc_root . '|i';
 		$url = preg_replace($patt,'',$absolute);
 		
-		return '/' . ltrim($url,'/');
+		//	Added domain
+		if( $domain ){
+			if( is_bool($domain) ){
+				$domain = $this->GetURL( true, false, false);
+			}
+		}
+		
+		return rtrim($domain,'/').'/'.ltrim($url,'/');
 	}
 	
 	/**
@@ -1779,7 +1803,7 @@ __EOL__;
 				$this->StackError("$temp is not set.");
 			}
 		}else{
-			$url  = self::ConvertURL($path);
+			$url  = self::ConvertURL($path,false);
 			$path = $_SERVER['DOCUMENT_ROOT'] .'/'. ltrim($url,'/');
 		}
 		

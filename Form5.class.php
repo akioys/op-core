@@ -186,16 +186,21 @@ class Form5 extends OnePiece5
 		*/
 		
 		if( !$save_token and !$post_token ){
+			
 			$this->SetStatus( $form_name, self::STATUS_VISIT_FIRST );
 			return false;
+			
 		}else if(!$save_token and $post_token){
+			
 			$this->SetStatus( $form_name, self::STATUS_SESSION_DESTORY );
 			return false;
+			
 		}else if( $save_token and !$post_token ){
+			
 			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_EMPTY );
 			
 			if( $_SERVER['REQUEST_URI']{strlen($_SERVER['REQUEST_URI'])-1} !== '/' ){
-				//  Apatch is forward by real directory.
+				//  Apatch was transfer to real directory.
 				if( file_exists($_SERVER['DOCUMENT_ROOT'].$_SERVER['REQUEST_URI']) ){
 					$this->mark('Add to slash(/) at action tail.');
 				}
@@ -204,12 +209,17 @@ class Form5 extends OnePiece5
 			return null;
 			
 		}else if( $save_token !== $post_token ){
+			
 			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_UNMATCH );
 			return false;
+			
 		}else if( $save_token === $post_token ){
+			
 			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_MATCH );
 			return true;
+			
 		}else{
+			
 			$this->SetStatus( $form_name, self::STATUS_UNKNOWN_ERROR );
 			return false;
 		}
@@ -2092,12 +2102,12 @@ class Form5 extends OnePiece5
 	{
 		list( $min, $max ) = explode('-',$input->validate->range);
 		
-		if( $value < $min ){
+		if( $min and $value < $min ){
 			$this->SetInputError( $input->name, $form_name, 'small', $value );
 			return false;
 		}
 		
-		if( $value > $max ){
+		if( $max and $value > $max ){
 			$this->SetInputError( $input->name, $form_name, 'large', $value );
 			return false;
 		}
@@ -2229,11 +2239,12 @@ class Form5 extends OnePiece5
 				
 			// including decimal
 			case 'number':
+			case 'numeric':
 				if(is_array($value)){
 					$value = implode('',$value);
 				}
 				if(!$io = is_numeric($value)){
-					$this->SetInputError( $input->name, $form_name, 'permit-number', $value );
+					$this->SetInputError( $input->name, $form_name, 'permit-numeric', $value );
 				}
 				break;
 				
@@ -2242,8 +2253,16 @@ class Form5 extends OnePiece5
 				if(is_array($value)){
 					$value = implode('',$value);
 				}
-				if( $io = preg_match('/([0-9]*)?([^0-9]+)([0-9]*)?/',$value,$match)){
-					$this->SetInputError( $input->name, $form_name, 'permit-integer', $match[0] );
+				
+				//  Check numeric
+				if(!$io = is_numeric($value)){
+					$this->SetInputError( $input->name, $form_name, 'permit-integer', $value );
+					break;
+				}
+				
+				//  Check integer
+				if( $io = preg_match('/([^-0-9])/', $value, $match) ){
+					$this->SetInputError( $input->name, $form_name, 'permit-integer', $value );
 				}else{
 					$io = true;
 				}
