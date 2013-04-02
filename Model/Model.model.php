@@ -22,8 +22,8 @@ abstract class Model_Model extends OnePiece5
 
 	function Test()
 	{
-		$this->mark(__METHOD__ . ', '.get_class($this));
 		$this->mark( $this->GetCallerLine() );
+		$this->mark('Called test method: ' . get_class($this));
 		return true;
 	}
 	
