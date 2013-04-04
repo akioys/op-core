@@ -40,7 +40,7 @@ abstract class Model_Model extends OnePiece5
 			
 			//  database connection
 			if(!$io = $pdo->Connect($config)){
-
+				
 				//  Notice to admin
 				$config->myname = get_class($this);
 				$config->Caller = $this->GetCallerLine();
@@ -97,9 +97,10 @@ abstract class Model_Model extends OnePiece5
 
 class ConfigModel extends ConfigMgr
 {
-	const TABLE_PREFIX = 'op';
+//	const TABLE_PREFIX = 'op';
+	private $_table_prefix = 'op';
 	
-	static function database()
+	static function Database()
 	{
 		$password  = OnePiece5::GetEnv('admin-mail');
 		$password .= isset($this) ? get_class($this): null;
@@ -108,6 +109,16 @@ class ConfigModel extends ConfigMgr
 		$config->user     = 'op_model';
 		$config->password = md5( $password );
 		return $config;
+	}
+
+	function SetPrefix( $prefix )
+	{
+		$this->_table_prefix = $prefix;
+	}
+	
+	function GetTableName( $label )
+	{
+		return 'op' .'_'. $label;
 	}
 }
 
