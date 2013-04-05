@@ -127,6 +127,9 @@ class Wizard extends OnePiece5
 		//  Finish
 		$this->model('Log')->Set("FINISH: Wizard.", $io);
 		$this->model('Log')->Out();
+		
+		//	Exception
+		throw new OpModelException('Call Wizard.('.__LINE__.')');
 	}
 	
 	function DoWizard( Config $config )
