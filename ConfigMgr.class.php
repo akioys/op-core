@@ -183,7 +183,7 @@ abstract class ConfigMgr extends OnePiece5
 				$deleteds[] = isset($table_name) ? "$table_name.deleted": 'deleted';
 			}
 		}else{
-			$deleteds = null;
+			$deleteds = array();
 		}
 		
 		//	Create select config.
