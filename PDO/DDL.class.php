@@ -293,10 +293,11 @@ class DDL extends OnePiece5
 			$null		 = isset($temp['null'])	      ? $temp['null']: null;
 			
 			$ai			 = isset($temp['auto_increment']) ? $temp['auto_increment']: null;
-			$ai			 = isset($temp['a_i'])   ? $temp['a_i']  : null;
-			$ai			 = isset($temp['ai'])    ? $temp['ai']   : null;
-			$pkey		 = isset($temp['pkey'])  ? $temp['pkey'] : null;
-			$index		 = isset($temp['index']) ? $temp['index']: null;
+			$ai			 = isset($temp['a_i'])    ? $temp['a_i']  : null;
+			$ai			 = isset($temp['ai'])     ? $temp['ai']   : null;
+			$pkey		 = isset($temp['pkey'])   ? $temp['pkey'] : null;
+			$index		 = isset($temp['index'])  ? $temp['index']: null;
+			$unique		 = isset($temp['unique']) ? $temp['unique']: null;
 			$pkeys       = null;
 			
 			//	type
@@ -340,11 +341,20 @@ class DDL extends OnePiece5
 			}
 			
 			//	index
-			if( $index ){
+			if( empty($index) ){
+				$index = null;
+			}else if( $index === 'unique' ){
+				$unique = true;
+			}else{
 			//	$index_type = 'USING BTREE';
 			//	$indexes[] = sprintf('INDEX %s %s (%s)', 'index_'.count($indexes), $index_type, $name );
 				$indexes[] = $name;
-				$index = '';
+				$index = null;
+			}
+			
+			//	uniques
+			if( $unique ){
+				$uniques[] = $name;
 			}
 				
 			//  default
@@ -458,6 +468,11 @@ class DDL extends OnePiece5
 		if( $indexes ){
 		//	$column[] = join(',',$indexes);
 			$column[] = sprintf("INDEX( ".join(", ",$indexes)." )");
+		}
+		
+		// uniques
+		if( $uniques ){
+			$column[] = sprintf("UNIQUE( ".join(", ",$uniques)." )");
 		}
 		
 		return join(', ', $column);
