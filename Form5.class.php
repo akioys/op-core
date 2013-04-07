@@ -859,8 +859,7 @@ class Form5 extends OnePiece5
                 	return false;
                 }
                 
-				//$this->mark("tmp: $tmp, path: $path, io: $io");
-				
+			//	$this->mark("tmp: $tmp, path: $path, io: $io");
 				if( $io ){
 					$this->SetStatus( $form_name, "OK: file copy to $path");
 					$this->SetInputValue( $path, $input_name, $form_name );
@@ -1212,11 +1211,13 @@ class Form5 extends OnePiece5
 				$this->StackError("Empty $type value. ($form_name, $input_name)");
 			}
 			
-			//  
-			foreach( $input->options as $option_name => $option ){
-				if( !empty($option->selected) or !empty($option->checked) ){
-					if( isset($option->value) ){
-						$input->value = $option->value;
+			//	Options
+			if( isset($input->options) ){
+				foreach( $input->options as $option_name => $option ){
+					if( !empty($option->selected) or !empty($option->checked) ){
+						if( isset($option->value) ){
+							$input->value = $option->value;
+						}
 					}
 				}
 			}
@@ -1417,6 +1418,7 @@ class Form5 extends OnePiece5
 				case 'index':
 				case 'child':
 				case 'joint':
+				case 'group':
 					break;
 					
 				default:
@@ -1426,6 +1428,17 @@ class Form5 extends OnePiece5
 					$join[] = sprintf('%s="%s"',$key,$var);
 			}
 		}
+
+		/**
+		 * This comment out, to save memory usage.
+		//	init
+		if( empty($input->index) ){
+			$input->index = null;
+		}
+		if( empty($input->joint) ){
+			$input->joint = null;
+		}
+		*/
 		
         //  name
         if(empty($name)){
@@ -1439,10 +1452,10 @@ class Form5 extends OnePiece5
         }
 		
 		//  id
-		if(empty($id)){
-			$id = $form_name.'-'.$input_name;
+		if( empty($id) ){
+			$id = $form_name.'-'.$input_name;			
 			if( $type !== 'checkbox' or $type !== 'radio' ){
-				//  Why join value?
+				//  Create unique id.
 				if( isset($input->index) ){
 					$id .= '-'.$input->index;
 				}else if( isset($input->value) ){
@@ -1482,8 +1495,11 @@ class Form5 extends OnePiece5
 		}
 		*/
 
-		// get value
-		if( $type === 'submit' or $type === 'button' ){
+		// Value
+		if( !empty($input->group) ){
+		//	$this->mark( $value );
+		//	$this->d( Toolbox::toArray($input) );
+		}else if( $type === 'submit' or $type === 'button' ){
 			if( $value_default ){
 				$value = $value_default;
 			}
@@ -1494,15 +1510,15 @@ class Form5 extends OnePiece5
 		}else{			
 			$value = $this->GetInputValueRaw($input_name, $form_name);
 		}
-				
-		// get cookie
-		if( is_null($value) ){
+		
+		// get cookie 
+		if( !isset($value) or is_null($value) ){
 			$value = $this->GetCookie($form_name.'/'.$input_name);
 			if( is_null($value) and ('checkbox'!==$type and 'radio'!==$type) ){
 				$value = $value_default;
 			}
 		}
-		
+				
 		//  tail
 		$tail = $this->Decode($tail);
 		
@@ -1512,7 +1528,7 @@ class Form5 extends OnePiece5
 		
 		// radio
 		if('radio' === $type){
-			if( $value ){
+			if( $value and isset($input->value) ){
 				$checked = $input->value == $value ? true: false;
 			}else{
 				$checked = isset($checked) ? $checked: '';
@@ -1531,9 +1547,13 @@ class Form5 extends OnePiece5
 			$value = isset($input->value) ? $input->value: '';
 		}
 		
-		//  input group
-		if(is_array($value)){
-			$value = isset($value[$id]) ? $value[$id]: '';
+		//  input is group cace
+		if( is_array($value) ){
+			if( $type === 'group' ){
+				$value = join( $input->joint, $value );
+			}else{
+				$value = isset($value[$id]) ? $value[$id]: '';
+			}
 		}
 		
 		//  name
@@ -1583,30 +1603,46 @@ class Form5 extends OnePiece5
 				
 			default:
 				//  single or multi
-				if(isset($input->options)){
+				if( isset($input->options) ){
 					//  multi
+					
+					//	value of childs
+					if( $value and isset($input->joint) ){
+						$value_child = explode( $input->joint, $value );
+					}
+					
 					//  child
-					foreach($input->options as $index => $option){
+					foreach( $input->options as $index => $option ){
+						//	Create input config from parent input.
 						$child = Toolbox::Copy($input);
 						$child->child = true;
 						$child->index = $index;
 						unset($child->options);
 						
-						//  copy option value to child
-						foreach($option as $key => $var){
+						//  Copy of option's value. 
+						foreach( $option as $key => $var ){
 							$child->$key = $var;
 						}
 						
-						//  set to label
+						//	Set group flag
+						if( $input->type == 'group' ){
+							$child->group = true;
+						}
+						
+						//  Set to label
 						if( $child->type === 'radio' or $child->type === 'checkbox' ){
 							$child->label = isset($option->label) ? $option->label: $option->value;
+						}
+						
+						//	Set to value
+						if( isset($value_child) ){
+							$child->value = array_shift($value_child);
 						}
 						
 						//  default checked
 						if( isset($input->value) ){
 							if( $input->value == $child->value ){
 								$child->checked = true;
-//								$this->mark('$child->checked = true');
 							}
 						}
 						$tag .= $this->CreateInputTag($child, $form_name);
