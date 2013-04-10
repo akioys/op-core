@@ -646,6 +646,11 @@ class PDO5 extends OnePiece5
 		return $this->query( $qu, 'create' );
 	}
 	
+	function AddIndex( $conf )
+	{
+	//	ALTER TABLE `t_company` ADD INDEX `comp_name` ( `comp_name` ) 
+	}
+	
 	/**
 	 * 
 	 */
