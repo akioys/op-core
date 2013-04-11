@@ -215,9 +215,6 @@ abstract class ConfigMgr extends OnePiece5
 
 	function GenerateFormFromDatabase( $struct, $record=null )
 	{
-	//	$this->d($struct);
-		
-		
 		//  init form config
 		$config = new Config();
 		
@@ -247,7 +244,7 @@ abstract class ConfigMgr extends OnePiece5
 				case 'int':
 					$input->type  = 'text';
 					$input->convert = 'zen->han';
-					$input->validate->permit  = 'number';
+					$input->validate->permit  = 'numeric';
 					break;
 						
 				case 'char':

@@ -1225,7 +1225,7 @@ class Form5 extends OnePiece5
 		
 		//  added permit
 		if( isset($input->validate->range) ){
-			$input->validate->permit = 'number';
+			$input->validate->permit = 'numeric';
 			if(!isset($input->validate->length)){
 				$input->validate->length = '0-16';
 			}
@@ -2273,8 +2273,8 @@ class Form5 extends OnePiece5
 				}
 				break;
 				
-			// including decimal
-			case 'number':
+			//	including decimal
+			//	case 'number':
 			case 'numeric':
 				if(is_array($value)){
 					$value = implode('',$value);
@@ -2370,7 +2370,7 @@ class Form5 extends OnePiece5
 				
 			default:
                 $io = false;
-				$this->StackError("undefined permit key. ($key)");
+				$this->StackError("undefined permit key. ($input->name, $key)");
 		}
 		
 		if( $io ){
