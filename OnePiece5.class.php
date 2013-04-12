@@ -166,8 +166,12 @@ if(!function_exists('OnePieceErrorHandler')){
 		return true;
 	}
 	
-	$level = $_SERVER['HTTP_HOST'] === 'localhost' ? E_ALL | E_STRICT: error_reporting();
-	set_error_handler('OnePieceErrorHandler',$level);
+	if( isset($_SERVER['HTTP_HOST']) ){
+		$level = $_SERVER['HTTP_HOST'] === 'localhost' ? E_ALL | E_STRICT: error_reporting();
+		set_error_handler('OnePieceErrorHandler',$level);
+	}else{
+		//	Pacifista
+	}
 }
 
 if(!function_exists('OnePieceExceptionHandler')){
@@ -558,7 +562,7 @@ __EOL__;
 			$ua   = $this->GetEnv('UserAgent');
 			$ip   = $this->GetEnv('RemoteIp');
 			$href = $this->GEtEnv('href');
-			$host = gethostbyaddr($ip);
+			$host = $ip ? gethostbyaddr($ip): null;
 			$date = date('Y-m-d H:i:s');
 			$url  = $this->GetEnv('url');
 			
