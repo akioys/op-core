@@ -114,7 +114,7 @@ abstract class ConfigMgr extends OnePiece5
 		return $prefix.$table;;
 	}
 	
-	static function database()
+	static function Database()
 	{
 		$config = new Config();
 		$config->driver   = 'mysql';
@@ -183,7 +183,7 @@ abstract class ConfigMgr extends OnePiece5
 				$deleteds[] = isset($table_name) ? "$table_name.deleted": 'deleted';
 			}
 		}else{
-			$deleteds = null;
+			$deleteds = array();
 		}
 		
 		//	Create select config.

@@ -190,7 +190,18 @@ class PDO5 extends OnePiece5
 		$options = array();
 		
 		try {
-			$dns = "{$this->driver}:host={$this->host}";
+			//	Supports PHP 5.1 ( USE db_name is not supports. )
+			$db  = $this->database ? 'dbname='.$this->database.';': null;
+			if( $this->charset ){
+				if( $this->driver == 'mysql' ){
+					$options[PDO::MYSQL_ATTR_INIT_COMMAND] = "SET NAMES '{$this->charset}'";
+				}
+			}
+			
+			//	Create DNS
+			$dns = "{$this->driver}:{$db}host={$this->host}";
+			
+			//	Create PDO
 			if(!$this->pdo = new PDO( $dns, $this->user, $password, $options )){
 				$this->StackError("Can not connect database. ( $dns, {$this->user} )");
 				return false;
@@ -225,6 +236,9 @@ class PDO5 extends OnePiece5
 			$this->StackError($me);
 			return false;
 		}
+		
+		//	Quote
+		$db_name = ConfigSQL::Quote( $db_name, $this->driver );
 		
 		if( $this->query("USE $db_name") === false){
 			$me = "Database select is failed.";
@@ -646,6 +660,11 @@ class PDO5 extends OnePiece5
 		return $this->query( $qu, 'create' );
 	}
 	
+	function AddIndex( $conf )
+	{
+	//	ALTER TABLE `t_company` ADD INDEX `comp_name` ( `comp_name` ) 
+	}
+	
 	/**
 	 * 
 	 */
@@ -840,6 +859,7 @@ class ConfigSQL extends OnePiece5
 			case 'mysql':
 				$ql = $qr = '`';
 				break;
+			default:
 		}
 		return array($ql,$qr);
 	}
