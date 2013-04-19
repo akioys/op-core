@@ -5,13 +5,23 @@ abstract class ConfigMgr extends OnePiece5
 	protected $config;
 	protected $_init_pdo;
 	
+	protected function Set( $key, $var )
+	{
+		$this->config->$key = $var;
+	}
+	
+	protected function Get( $key )
+	{
+		return isset($this->config->$key) ? $this->config->$key: null;
+	}
+	
 	function config()
 	{
-		$this->mark('Your misstake','misstake');
+		$this->mark('Your misstake','misstake'); // TODO: Whta is this?
 		return $this;
 	}
 	
-	function Init($config=null)
+	function init($config=null)
 	{
 		parent::Init();
 		$this->config = new Config();
@@ -25,16 +35,6 @@ abstract class ConfigMgr extends OnePiece5
 			$this->_init_pdo = true;
 		}
 		return parent::pdo($name);
-	}
-	
-	protected function Set( $key, $var )
-	{
-		$this->config->$key = $var;
-	}
-	
-	protected function Get( $key )
-	{
-		return isset($this->config->$key) ? $this->config->$key: null;
 	}
 
 	function form_prefix( $value=null )
