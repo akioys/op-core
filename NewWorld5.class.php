@@ -24,12 +24,7 @@ abstract class NewWorld5 extends OnePiece5
 		//  output is buffering.
 		$io = ob_start();
 		$io = parent::__construct($args);
-
-		//$this->StackLog('START');
-		
-		//  init
-		//$this->Init();
-		
+				
 		//  Vivre
 		$this->vivre(true);
 		
@@ -46,6 +41,13 @@ abstract class NewWorld5 extends OnePiece5
 		
 		//  flush buffer
 		ob_end_flush();
+		
+		//  Check content
+		if( $this->content ){
+			$this->p('![ .big .red [Does not call ![ .bold ["Content"]] method. Please call to ![ .bold ["Content"]] method from layout.]]');
+			$this->p('![ .big .red [Example: <?php $this->Content(); ?>]]');
+			$this->content();
+		}
 		
 		//  Vivre
 		$this->vivre(false);
@@ -273,15 +275,6 @@ abstract class NewWorld5 extends OnePiece5
 		//  layout
 		$this->doLayout();
 		
-		//  
-		if( $this->content ){
-			$message = 'Does not call Content-method. Please call to Content-method from layout.'.PHP_EOL.
-					   'Example: <?php $this->Content(); ?>';
-			$this->p("![ .big .bold .red [$message]]");
-			print $this->content;
-			$this->content = '';
-		}
-		
 		return true;
 	}
 	
@@ -302,7 +295,6 @@ abstract class NewWorld5 extends OnePiece5
 			$this->content .= $this->GetTemplate($path);
 		}catch( Exception $e ){
 			$this->StackError($e);
-		//	$this->StackError(__METHOD__);
 		}
 		
 		return true;
@@ -345,13 +337,10 @@ abstract class NewWorld5 extends OnePiece5
 	function doLayout()
 	{
 		//  check the layout is set. 
-		if( $layout = $this->GetEnv('layout') ){
-			//	layout has been set.
-		}else{
-			//  does not set layout.
-			print $this->content;
+		if(!$layout = $this->GetEnv('layout') ){
+			//  Does not set layout.
 			if( $this->admin() ){
-				$this->mark("![ .gray [Hint: layout uses \$app->SetEnv('layout','app:/path/to/your/self')]]");
+				$this->p("![ .gray .small [Hint: layout uses \$app->SetEnv('layout','app:/path/to/your/self')]]");
 			}
 			return;
 		}
