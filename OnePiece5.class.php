@@ -1,4 +1,19 @@
 <?php
+
+/**
+ * Added "op-root" to include_path.
+ */
+if( ! isset($_SERVER['OnePiece5']) ){
+	$_SERVER['OnePiece5'] = array();
+	
+	// Added op-root to include_path.
+	$op_root = dirname(__FILE__);
+	$include_path = ini_get('include_path');
+	$include_path = trim( $include_path, PATH_SEPARATOR );
+	$include_path .= PATH_SEPARATOR . $op_root;
+	ini_set('include_path',$include_path);		
+}
+
 /**
  * TODO: We (will|should) support to spl_autoload_register
  * @see http://www.php.net/manual/ja/function.spl-autoload-register.php
@@ -39,7 +54,9 @@ if(!function_exists('__autoload')){
 		// check
 		foreach( $dirs as $dir ){
 			$file_path = rtrim($dir,DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $file_name;
+		
 		//	print $file_path . '<br/>' . PHP_EOL;
+		
 			if( file_exists($file_path) ){
 				include_once($file_path);
 				break;
@@ -105,7 +122,7 @@ if(!function_exists('OnePieceShutdown')){
 		}
 		
 		// Session reset
-		if( $_SERVER['REMOTE_ADDR'] == '127.0.0.1' ){
+		if( getenv('REMOTE_ADDR') == '127.0.0.1' ){
 			$rand = rand( 0, 1000);
 			if( 1 == $rand ){
 				$_SESSION = array();
@@ -113,7 +130,7 @@ if(!function_exists('OnePieceShutdown')){
 			}
 		}
 		
-		if( isset($_SERVER['OnePiece5']['env']['cli']) and $_SERVER['OnePiece5']['env']['cli'] ){
+		if( OnePiece5::GetEnv('cli') ){
 			print PHP_EOL . '/* OnePiece is shutdown. */' . PHP_EOL;
 		}else{
 			// Toolbox
@@ -229,13 +246,6 @@ class OnePiece5
 		$save_level = error_reporting();
 		error_reporting( E_ALL );
 		ini_set('display_errors',1);
-		
-		// Added op-root to include_path.
-		$op_root = dirname(__FILE__);
-		$include_path = ini_get('include_path');
-		$include_path = trim( $include_path, PATH_SEPARATOR );
-		$include_path .= PATH_SEPARATOR . $op_root;
-		ini_set('include_path',$include_path);
 		
 		//  unique id
 		if(!$this->GetCookie( self::KEY_COOKIE_UNIQ_ID )){
@@ -558,13 +568,13 @@ __EOL__;
 		}
 		
 		// admmin
-		if( !self::Admin() or self::GetEnv('cli') ){
+		if( !self::Admin() or !self::GetEnv('Pacifista') ){
 			$ua   = $this->GetEnv('UserAgent');
 			$ip   = $this->GetEnv('RemoteIp');
 			$href = $this->GEtEnv('href');
 			$host = $ip ? gethostbyaddr($ip): null;
 			$date = date('Y-m-d H:i:s');
-			$url  = $this->GetEnv('url');
+			$url  = $this->GetURL('url');
 			
 			//  The same mail is not delivered repeatedly.
 			$key = 'mail-notify-' . md5($errors[0]['trace']);
@@ -601,8 +611,6 @@ __EOL__;
 			$mail['subject'] = $subject;
 			$mail['message'] = html_entity_decode( $message, ENT_QUOTES, 'utf-8');
 			self::Mail($mail);
-			
-			$this->d($mail);
 		}else{
 			print $javascript . $nl;
 			print $print;
@@ -892,7 +900,11 @@ __EOL__;
 	{
 		switch(strtolower($key)){
 			case 'url':
+				if(empty($this)){
+					print OnePiece5::GetCallerLine();
+				}
 				$this->mark('Use GetURL method. (ex. $this->GetURL($config))');
+				$result = null;
 				break;
 				
 			default:
@@ -1134,8 +1146,13 @@ __EOL__;
 				$file = __FILE__;
 			}
 			
-			// Path is shortten
-			$file = self::CompressPath($file);
+			// Path is shorten
+			if( self::GetEnv('Pacifista') ){
+				//	Does not shorten.
+				$file = trim($file,"\t");
+			}else{
+				$file = self::CompressPath($file);
+			}
 			
 			// method
 			$method = "$class$type$func($args)";
@@ -1300,7 +1317,11 @@ __EOL__;
 	 */
 	static function P( $str='OnePiece!', $tag='p', $attr=null)
 	{
-		print self::Html( $str, $tag, $attr );
+		if( self::GetEnv('cli') ){
+			print trim(strip_tags(self::Html( $str, $tag, $attr ))).PHP_EOL;
+		}else{
+			print self::Html( $str, $tag, $attr );
+		}
 	}
 	
 	/**
@@ -1320,7 +1341,16 @@ __EOL__;
 			}
 		}
 		
+		//	Call line.
 		$line = self::GetCallerLine();
+		
+		//	CLI
+		if( $this->GetEnv('cli') ){
+			$this->p($line);
+			var_dump($args);
+			return;
+		}
+		
 		if( class_exists('Dump',true) ){
 			self::p($line, 'div', array('class' => array('OnePiece','small','bold','mark'), 
 			                            'style' => array('color'=>'black',
