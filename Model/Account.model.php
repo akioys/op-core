@@ -66,7 +66,7 @@ class AccountConfig extends ConfigMgr
 {
 	private $table_prefix = 'op';
 	private $table_name   = 'account';
-	private $limit_time   = 60 * 5; // five minutes.
+	private $limit_time   = 600; // ten minutes.
 	private $limit_count  = 10; // failed.
 	
 	function limit_date()
