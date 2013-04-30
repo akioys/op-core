@@ -138,8 +138,15 @@ abstract class NewWorld5 extends OnePiece5
 	{
 		// controller file name
 		if(!$controller = $this->GetEnv('controller-name')){
-			$this->StackError('Does not set controller-name. Please call $app->SetEnv("controller-name","index.php");');
+			$m = 'Does not set controller-name. Please call $app->SetEnv("controller-name","index.php");';
+		//	$this->StackError($m);
+			throw new OpNwException($m);
+			
+			/*
+			$dirs = array();
+			$args = array();
 			return false;
+			*/
 		}
 		
 		//  Init
@@ -318,7 +325,8 @@ abstract class NewWorld5 extends OnePiece5
 		
 		//  Search settings file, and execute settings.
 		$save_dir = getcwd();
-		foreach(explode('/', $route['path']) as $dir){
+		
+		foreach(explode('/', rtrim($route['path'],'/') ) as $dir){
 			$dirs[] = $dir;
 			$path = $app_root.join('/',$dirs)."/$setting";
 			
@@ -373,11 +381,18 @@ abstract class NewWorld5 extends OnePiece5
 		//  include controller
 		if( file_exists($path) ){
 			//  OK
-			include($path);
+			if(!include($path) ){
+				throw new OpNwException("include is failed. ($path)");
+			}
+			if(!isset($_layout)){
+				throw new OpNwException("Not set \$_layout variable.");
+			}
 		}else{
 			//  NG
 			print $this->content;
-			$this->StackError("does not exists layout controller.($path)",'layout');
+			$m = "does not exists layout controller.($path)";
+			$this->StackError( $m,'layout');
+			throw new OpNwException($m);
 			return;
 		}
 		
@@ -510,4 +525,10 @@ abstract class NewWorld5 extends OnePiece5
 		}
 	}
 }
+
+class OpNwException extends OpException
+{
+	
+}
+
 
