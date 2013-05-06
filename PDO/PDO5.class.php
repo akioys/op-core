@@ -6,6 +6,7 @@
  */
 class PDO5 extends OnePiece5
 {
+	/* @var $pdo PDO */
 	private $pdo = null;
 	private $dcl = null;
 	private $ddl = null;
@@ -782,7 +783,12 @@ class PDO5 extends OnePiece5
 		
 		//  new id
 		$id = $this->pdo->lastInsertId(/* $name */);
-			
+		
+		//	Does not auto increments
+		if( $id === '0' ){
+			$id = true;
+		}
+		
 		return $id;
 	}
 	
