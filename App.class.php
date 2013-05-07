@@ -33,6 +33,11 @@ class App extends NewWorld5
 	function Config( $cmgr=null )
 	{
 		if( isset( $this->cmgr ) ){
+			/*
+			$a = get_class($this->cmgr);
+			$b = get_class($cmgr);
+			$this->StackError("Already instance( $a, $b )");
+			*/
 			return $this->cmgr;
 		}
 		
