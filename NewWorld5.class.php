@@ -494,6 +494,11 @@ abstract class NewWorld5 extends OnePiece5
 		return $io;
 	}
 	
+	function Forward()
+	{
+		
+	}
+	
 	function GetContent()
 	{
 		return $this->content;
