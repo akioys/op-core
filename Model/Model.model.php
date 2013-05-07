@@ -49,7 +49,7 @@ abstract class Model_Model extends OnePiece5
 				if( method_exists( $this, 'Selftest') ){
 					$this->Selftest();
 				}else{
-					$this->d($config);
+					$config->d();
 				}
 			}
 		}

@@ -13,7 +13,9 @@ class Form5 extends OnePiece5
 		parent::Init();
 		$this->status = new Config();
 		$this->config = new Config();
-//		$io = session_regenerate_id(true);
+		if( $this->admin() ){
+			$io = session_regenerate_id(true);
+		}
 	}
 	
 	private function GetRequest( $input_name, $form_name )
@@ -84,9 +86,6 @@ class Form5 extends OnePiece5
 	
 	public function Secure( $form_name )
 	{
-//		$this->mark( $this->GetCallerLine() );
-//		$this->mark( $this->status->$form_name->message );
-		
 		if(!$this->CheckConfig( $form_name )){
 			return false;
 		}
@@ -371,7 +370,9 @@ class Form5 extends OnePiece5
 		$value = $this->GetInputValue( $input_name, $form_name, $joint );
 		
 		//  Get config.
-		$input = $this->GetConfig( $form_name, $input_name );
+		if(!$input = $this->GetConfig( $form_name, $input_name )){
+			return "form_name=$form_name, input_name=$input_name";
+		}
 		
 		if( in_array( $input->type, array('select','checkbox','radio') ) ){
 			//  

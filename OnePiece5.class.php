@@ -253,8 +253,8 @@ class OnePiece5
 		}
 		
 		//  init
-		$this->InitEnv($args);
-		$this->InitLocale($this->GetEnv('locale'));
+		$this->_InitEnv($args);
+		$this->_InitLocale($this->GetEnv('locale'));
 		
 		//  mark_label
 		if( isset($_GET['mark_label']) ){
@@ -475,10 +475,6 @@ class OnePiece5
 			$code     = $e->getCode();
 			$incident = "$file [$line]";
 			
-		//	dump::d($traceArr[0]);
-			
-		//	$trace    = self::GetCallerLine( 0, -1, 'trace');
-			
 			$file = $traceArr[0]['file'];
 			$line = $traceArr[0]['line'];
 			$func = $traceArr[0]['function'];
@@ -492,9 +488,6 @@ class OnePiece5
 			$message  = self::Escape( $args, $encoding );
 			$trace    = self::GetCallerLine( 0, -1, 'trace');
 		}
-		
-//		self::d($incident);
-//		self::d($trace);
 		
 		$error['incident'] = $incident;
 		$error['message']  = $message;
@@ -671,7 +664,7 @@ __EOL__;
 	 * @param string $locale lang_territory.codeset@modifier
 	 * @return void
 	 */
-	private function InitLocale( $locale=null ){
+	private function _InitLocale( $locale=null ){
 		
 		// @todo We will support to de_DE@euro
 		
@@ -830,7 +823,7 @@ __EOL__;
 	/**
 	 * 
 	 */
-	private function InitEnv($args=array('InitEnv'=>true))
+	private function _InitEnv($args=array('InitEnv'=>true))
 	{
 		if(!is_array($args)){
 			$args = Toolbox::toArray($args);
@@ -1204,15 +1197,8 @@ __EOL__;
 		$app_root = $app_root ? rtrim($app_root,'/') : ' ';
 		$doc_root = $doc_root ? rtrim($doc_root,'/') : ' ';
 		
-		/*
-		print "path=$path<br/>";
-		print "op_root=$op_root<br/>";
-		print "app_root=$app_root<br/>";
-		print "doc_root=$doc_root<br/>";
-		*/
-		
 		$patt = array("|^$app_root|","|^$doc_root|","|^$op_root|");
-		$repl = array('![.bold[App ROOT : ]]','![.bold[Doc ROOT : ]]','![.bold[OP ROOT : ]]');
+		$repl = array('App:','Doc:','OP:');
 		$path = preg_replace( $patt, $repl, $path );
 		
 		//  easy-to-read. (op:OnePiece.class.php & app:/template/form.phtml)
