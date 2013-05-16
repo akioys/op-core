@@ -1771,8 +1771,6 @@ __EOL__;
 					
 				case 'dot':
 					$route = $this->GetEnv('route');
-				//	$this->d( $route );
-				//	$tmp_root = getcwd() . '/';
 					$tmp_root = rtrim( $route['path'], '/' ) . '/'; 
 					break;
 					
@@ -1788,6 +1786,10 @@ __EOL__;
 			//  create absolute path. 
 			$absolute = $tmp_root . $match[2];
 		}else{
+			
+			//	replace document root.
+			$args = preg_replace( '|^'.rtrim($this->GetEnv('doc-root'),'/').'|', '', $args );
+			
 			return $args;
 		}
 		
@@ -1817,6 +1819,9 @@ __EOL__;
 	 */
 	function ConvertPath( $path )
 	{
+		if( preg_match('|^([a-zA-Z]:)?/|',$path) ){
+			//  OK
+		}else
 		if( preg_match('/^(op|site):\//',$path,$match) ){
 			//  Does not relate document-root.
 			$temp = $match[1].'-root';
