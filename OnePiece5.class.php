@@ -329,7 +329,7 @@ class OnePiece5
 			}
 		}
 		$argument = join(', ',$join);
-		$message = sprintf('Catch magic method __call: function %s(%s)', $name, $argument );
+		$message = sprintf('Does not exists this function: %s(%s)', $name, $argument );
 		self::StackError($message);
 	}
 	
