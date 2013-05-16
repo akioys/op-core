@@ -810,6 +810,9 @@ class Form5 extends OnePiece5
 				}else{
 					$error = 4;
 				}
+			}else if( is_null($value) ){
+				$this->mark("$input_name, $form_name");
+				return true;
 			}
 		}
 		
@@ -817,7 +820,9 @@ class Form5 extends OnePiece5
 			case 0:
 				$op_uniq_id = $this->GetCookie( self::KEY_COOKIE_UNIQ_ID );
 				
-				if( isset($input->save) and $input->save ){
+				if( empty($input->save) ){
+					$path = sys_get_temp_dir() .DIRECTORY_SEPARATOR. md5($name . $op_uniq_id).".$ext";
+				}else{
 					if( isset($input->save->path) ){
 						//  hard path
 						$path = $this->ConvertPath( $input->save->path );
@@ -841,14 +846,12 @@ class Form5 extends OnePiece5
 							$path = $dir .DIRECTORY_SEPARATOR. md5($name . $op_uniq_id).".$ext";
 						}
 					}
-				}else{
-					$path = sys_get_temp_dir() .DIRECTORY_SEPARATOR. md5($name . $op_uniq_id).".$ext";
 				}
 				
                 //  Check directory exists
-                if(!file_exists( dirname($path) )){
-                	$this->mark("Does not exists. ($path)");
-                    if(!$io = mkdir( dirname($path), 0766, true ) ){                    	
+                if(!file_exists( $dirname = dirname($path) )){
+                	$this->mark("Does not exists directory. ($dirname)");
+                    if(!$io = mkdir( $dirname, 0766, true ) ){            	
                     	$this->StackError("Failed make directory. (".dirname($path).")");
                     	return false;
                     }
