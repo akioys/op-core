@@ -199,7 +199,7 @@ if(!function_exists('OnePieceExceptionHandler')){
 		$op = new OnePiece5();
 		$op->StackError( $e->getMessage() );
 		printf('<div><p>[%s] %s</p><p>%s : %s</p></div>', get_class($e), $e->GetMessage(), $e->GetFile(), $e->GetLine() );
-		dump::d(Toolbox::toArray($e));
+	//	dump::d(Toolbox::toArray($e));
 	}
 	set_exception_handler('OnePieceExceptionHandler');
 }

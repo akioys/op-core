@@ -1243,6 +1243,9 @@ class Form5 extends OnePiece5
 		
 		//  required
 		if( isset($input->required) and $input->required ){
+			if(empty($input->validate)){
+				$input->validate = new Config();
+			}
 			$input->validate->required = true;
 		}
 		
