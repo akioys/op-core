@@ -32,7 +32,7 @@ class App extends NewWorld5
 	 */
 	function Config( $cmgr=null )
 	{
-		if( isset( $this->cmgr ) ){
+		if( /*isset( $this->cmgr )*/ $this->cmgr instanceof ConfigMgr ){
 			/*
 			$a = get_class($this->cmgr);
 			$b = get_class($cmgr);
