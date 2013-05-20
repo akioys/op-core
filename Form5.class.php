@@ -13,7 +13,9 @@ class Form5 extends OnePiece5
 		parent::Init();
 		$this->status = new Config();
 		$this->config = new Config();
-//		$io = session_regenerate_id(true);
+		if( $this->admin() ){
+			$io = session_regenerate_id(true);
+	}
 	}
 	
 	private function GetRequest( $input_name, $form_name )
@@ -84,9 +86,6 @@ class Form5 extends OnePiece5
 	
 	public function Secure( $form_name )
 	{
-//		$this->mark( $this->GetCallerLine() );
-//		$this->mark( $this->status->$form_name->message );
-		
 		if(!$this->CheckConfig( $form_name )){
 			return false;
 		}
@@ -186,16 +185,21 @@ class Form5 extends OnePiece5
 		*/
 		
 		if( !$save_token and !$post_token ){
+			
 			$this->SetStatus( $form_name, self::STATUS_VISIT_FIRST );
 			return false;
+			
 		}else if(!$save_token and $post_token){
+			
 			$this->SetStatus( $form_name, self::STATUS_SESSION_DESTORY );
 			return false;
+			
 		}else if( $save_token and !$post_token ){
+			
 			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_EMPTY );
 			
 			if( $_SERVER['REQUEST_URI']{strlen($_SERVER['REQUEST_URI'])-1} !== '/' ){
-				//  Apatch is forward by real directory.
+				//  Apatch was transfer to real directory.
 				if( file_exists($_SERVER['DOCUMENT_ROOT'].$_SERVER['REQUEST_URI']) ){
 					$this->mark('Add to slash(/) at action tail.');
 				}
@@ -204,12 +208,17 @@ class Form5 extends OnePiece5
 			return null;
 			
 		}else if( $save_token !== $post_token ){
+			
 			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_UNMATCH );
 			return false;
+			
 		}else if( $save_token === $post_token ){
+			
 			$this->SetStatus( $form_name, self::STATUS_TOKEN_KEY_MATCH );
 			return true;
+			
 		}else{
+			
 			$this->SetStatus( $form_name, self::STATUS_UNKNOWN_ERROR );
 			return false;
 		}
@@ -361,7 +370,9 @@ class Form5 extends OnePiece5
 		$value = $this->GetInputValue( $input_name, $form_name, $joint );
 		
 		//  Get config
-		$input = $this->GetConfig( $form_name, $input_name );
+		if(!$input = $this->GetConfig( $form_name, $input_name )){
+			return "form_name=$form_name, input_name=$input_name";
+		}
 		
 		//  Supports the options value (Get option's label)
 		if( in_array( $input->type, array('select','checkbox','radio') ) ){
@@ -406,7 +417,7 @@ class Form5 extends OnePiece5
 	 * @param string $input_name
 	 * @param string $form_name
 	 * @param string $joint
-	 * @return Ambigous <boolean, NULL, string, mixed, Ambigous, multitype:, string|array, stdClass, number>
+	 * @return Ambigous <boolean, NULL, string, mixed, Ambigous, multitype:, string|array, number>
 	 */
 	public function GetValue( $input_name, $form_name=null, $joint=null )
 	{
@@ -802,6 +813,9 @@ class Form5 extends OnePiece5
 				}else{
 					$error = 4;
 				}
+			}else if( is_null($value) ){
+				$this->mark("$input_name, $form_name");
+				return true;
 			}
 		}
 		
@@ -809,7 +823,9 @@ class Form5 extends OnePiece5
 			case 0:
 				$op_uniq_id = $this->GetCookie( self::KEY_COOKIE_UNIQ_ID );
 				
-				if( isset($input->save) and $input->save ){
+				if( empty($input->save) ){
+					$path = sys_get_temp_dir() .DIRECTORY_SEPARATOR. md5($name . $op_uniq_id).".$ext";
+				}else{
 					if( isset($input->save->path) ){
 						//  hard path
 						$path = $this->ConvertPath( $input->save->path );
@@ -833,14 +849,12 @@ class Form5 extends OnePiece5
 							$path = $dir .DIRECTORY_SEPARATOR. md5($name . $op_uniq_id).".$ext";
 						}
 					}
-				}else{
-					$path = sys_get_temp_dir() .DIRECTORY_SEPARATOR. md5($name . $op_uniq_id).".$ext";
 				}
 				
                 //  Check directory exists
-                if(!file_exists( dirname($path) )){
-                	$this->mark("Does not exists. ($path)");
-                    if(!$io = mkdir( dirname($path), 0766, true ) ){                    	
+                if(!file_exists( $dirname = dirname($path) )){
+                	$this->mark("Does not exists directory. ($dirname)");
+                    if(!$io = mkdir( $dirname, 0766, true ) ){            	
                     	$this->StackError("Failed make directory. (".dirname($path).")");
                     	return false;
                     }
@@ -852,8 +866,7 @@ class Form5 extends OnePiece5
                 	return false;
                 }
                 
-				//$this->mark("tmp: $tmp, path: $path, io: $io");
-				
+			//	$this->mark("tmp: $tmp, path: $path, io: $io");
 				if( $io ){
 					$this->SetStatus( $form_name, "OK: file copy to $path");
 					$this->SetInputValue( $path, $input_name, $form_name );
@@ -1205,7 +1218,8 @@ class Form5 extends OnePiece5
 				$this->StackError("Empty $type value. ($form_name, $input_name)");
 			}
 			
-			//  
+			//	Options
+			if( isset($input->options) ){
 			foreach( $input->options as $option_name => $option ){
 				if( !empty($option->selected) or !empty($option->checked) ){
 					if( isset($option->value) ){
@@ -1214,10 +1228,11 @@ class Form5 extends OnePiece5
 				}
 			}
 		}
+		}
 		
 		//  added permit
 		if( isset($input->validate->range) ){
-			$input->validate->permit = 'number';
+			$input->validate->permit = 'numeric';
 			if(!isset($input->validate->length)){
 				$input->validate->length = '0-16';
 			}
@@ -1234,6 +1249,9 @@ class Form5 extends OnePiece5
 		
 		//  required
 		if( isset($input->required) and $input->required ){
+			if(empty($input->validate)){
+				$input->validate = new Config();
+			}
 			$input->validate->required = true;
 		}
 		
@@ -1410,6 +1428,7 @@ class Form5 extends OnePiece5
 				case 'index':
 				case 'child':
 				case 'joint':
+				case 'group':
 					break;
 					
 				default:
@@ -1419,6 +1438,17 @@ class Form5 extends OnePiece5
 					$join[] = sprintf('%s="%s"',$key,$var);
 			}
 		}
+
+		/**
+		 * This comment out, to save memory usage.
+		//	init
+		if( empty($input->index) ){
+			$input->index = null;
+		}
+		if( empty($input->joint) ){
+			$input->joint = null;
+		}
+		*/
 		
         //  name
         if(empty($name)){
@@ -1432,10 +1462,10 @@ class Form5 extends OnePiece5
         }
 		
 		//  id
-		if(empty($id)){
-			$id = $form_name.'-'.$input_name;
+		if( empty($id) ){
+			$id = $form_name.'-'.$input_name;			
 			if( $type !== 'checkbox' or $type !== 'radio' ){
-				//  Why join value?
+				//  Create unique id.
 				if( isset($input->index) ){
 					$id .= '-'.$input->index;
 				}else if( isset($input->value) ){
@@ -1475,8 +1505,11 @@ class Form5 extends OnePiece5
 		}
 		*/
 
-		// get value
-		if( $type === 'submit' or $type === 'button' ){
+		// Value
+		if( !empty($input->group) ){
+		//	$this->mark( $value );
+		//	$this->d( Toolbox::toArray($input) );
+		}else if( $type === 'submit' or $type === 'button' ){
 			if( $value_default ){
 				$value = $value_default;
 			}
@@ -1488,8 +1521,8 @@ class Form5 extends OnePiece5
 			$value = $this->GetInputValueRaw($input_name, $form_name);
 		}
 				
-		// get cookie
-		if( is_null($value) ){
+		// get cookie 
+		if( !isset($value) or is_null($value) ){
 			$value = $this->GetCookie($form_name.'/'.$input_name);
 			if( is_null($value) and ('checkbox'!==$type and 'radio'!==$type) ){
 				$value = $value_default;
@@ -1505,7 +1538,7 @@ class Form5 extends OnePiece5
 		
 		// radio
 		if('radio' === $type){
-			if( $value ){
+			if( $value and isset($input->value) ){
 				$checked = $input->value == $value ? true: false;
 			}else{
 				$checked = isset($checked) ? $checked: '';
@@ -1524,9 +1557,13 @@ class Form5 extends OnePiece5
 			$value = isset($input->value) ? $input->value: '';
 		}
 		
-		//  input group
-		if(is_array($value)){
+		//  input is group cace
+		if( is_array($value) ){
+			if( $type === 'group' ){
+				$value = join( $input->joint, $value );
+			}else{
 			$value = isset($value[$id]) ? $value[$id]: '';
+		}
 		}
 		
 		//  name
@@ -1576,30 +1613,46 @@ class Form5 extends OnePiece5
 				
 			default:
 				//  single or multi
-				if(isset($input->options)){
+				if( isset($input->options) ){
 					//  multi
+					
+					//	value of childs
+					if( $value and isset($input->joint) ){
+						$value_child = explode( $input->joint, $value );
+					}
+					
 					//  child
-					foreach($input->options as $index => $option){
+					foreach( $input->options as $index => $option ){
+						//	Create input config from parent input.
 						$child = Toolbox::Copy($input);
 						$child->child = true;
 						$child->index = $index;
 						unset($child->options);
 						
-						//  copy option value to child
-						foreach($option as $key => $var){
+						//  Copy of option's value. 
+						foreach( $option as $key => $var ){
 							$child->$key = $var;
 						}
 						
-						//  set to label
+						//	Set group flag
+						if( $input->type == 'group' ){
+							$child->group = true;
+						}
+						
+						//  Set to label
 						if( $child->type === 'radio' or $child->type === 'checkbox' ){
 							$child->label = isset($option->label) ? $option->label: $option->value;
+						}
+						
+						//	Set to value
+						if( isset($value_child) ){
+							$child->value = array_shift($value_child);
 						}
 						
 						//  default checked
 						if( isset($input->value) ){
 							if( $input->value == $child->value ){
 								$child->checked = true;
-//								$this->mark('$child->checked = true');
 							}
 						}
 						$tag .= $this->CreateInputTag($child, $form_name);
@@ -2096,12 +2149,12 @@ class Form5 extends OnePiece5
 	{
 		list( $min, $max ) = explode('-',$input->validate->range);
 		
-		if( $value < $min ){
+		if( $min and $value < $min ){
 			$this->SetInputError( $input->name, $form_name, 'small', $value );
 			return false;
 		}
 		
-		if( $value > $max ){
+		if( $max and $value > $max ){
 			$this->SetInputError( $input->name, $form_name, 'large', $value );
 			return false;
 		}
@@ -2216,7 +2269,7 @@ class Form5 extends OnePiece5
 
 			// Use for password
 			case 'password':
-				//  Array is convert string.
+				//  Array is convert to string.
 				if(is_array($value)){
 					$value = implode('',$value);
 				}
@@ -2232,12 +2285,13 @@ class Form5 extends OnePiece5
 				break;
 				
 			// including decimal
-			case 'number':
+			//	case 'number':
+			case 'numeric':
 				if(is_array($value)){
 					$value = implode('',$value);
 				}
 				if(!$io = is_numeric($value)){
-					$this->SetInputError( $input->name, $form_name, 'permit-number', $value );
+					$this->SetInputError( $input->name, $form_name, 'permit-numeric', $value );
 				}
 				break;
 				
@@ -2246,8 +2300,16 @@ class Form5 extends OnePiece5
 				if(is_array($value)){
 					$value = implode('',$value);
 				}
-				if( $io = preg_match('/([0-9]*)?([^0-9]+)([0-9]*)?/',$value,$match)){
-					$this->SetInputError( $input->name, $form_name, 'permit-integer', $match[0] );
+				
+				//  Check numeric
+				if(!$io = is_numeric($value)){
+					$this->SetInputError( $input->name, $form_name, 'permit-integer', $value );
+					break;
+				}
+				
+				//  Check integer
+				if( $io = preg_match('/([^-0-9])/', $value, $match) ){
+					$this->SetInputError( $input->name, $form_name, 'permit-integer', $value );
 				}else{
 					$io = true;
 				}
@@ -2294,13 +2356,13 @@ class Form5 extends OnePiece5
 					$io = true;
 					break;
 				}
-				
+				/*
 				if(!preg_match('/^[0-9]{1,4}-[0-9]{1,2}-[0-9]{1,2}$/',$date)){
 					$io = false;
 					$this->SetInputError( $input->name, $form_name, 'permit-date', join('-',$value) );
 					break;
 				}
-				
+				*/
 				$time = strtotime($date);
 				if(!$io = checkdate( date('m',$time), date('d',$time), date('Y',$time))){
 					$this->SetInputError( $input->name, $form_name, 'permit-date', join('-',$value) );
@@ -2319,7 +2381,7 @@ class Form5 extends OnePiece5
 				
 			default:
                 $io = false;
-				$this->StackError("undefined permit key. ($key)");
+				$this->StackError("undefined permit key. ($input->name, $key)");
 		}
 		
 		if( $io ){
@@ -2398,13 +2460,6 @@ class Form5 extends OnePiece5
 	
 	function ValidateImage( $input, $form_name, $value )
 	{
-		/*
-		$this->d(Toolbox::toArray($input));
-		$this->d($value);
-		$this->d($_FILES);
-		$this->d($_FILES[$input->name]['tmp_name']);
-		*/
-		
 		if(!isset($_FILES[$input->name])){
 			$this->SetStatus($form_name,"NG: Does not find in \$_FILES. ({$input->name})");
 			return false;
@@ -2426,8 +2481,6 @@ class Form5 extends OnePiece5
 			$this->SetInputError( $input->name, $form_name, 'image', 'not match mime (camouflage)' );
 			return false;
 		}
-		
-		//$this->d($info);
 		
 //		$width  = $info[0];
 //		$height = $info[1];

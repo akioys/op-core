@@ -1,7 +1,12 @@
 <?php
-
+/**
+ * 
+ * @author Tomoaki Nagahara <tomoaki.nagahara@gmail.com>
+ *
+ */
 class PDO5 extends OnePiece5
 {
+	/* @var $pdo PDO */
 	private $pdo = null;
 	private $dcl = null;
 	private $ddl = null;
@@ -84,36 +89,6 @@ class PDO5 extends OnePiece5
 	{
 		return $this->qus;
 	}
-	
-	/*
-	function GetQuote( $driver )
-	{
-		switch( strtolower($driver) ){
-			case 'mysql':
-				$ql = $qr = '`';
-				break;
-		}
-		return array($ql,$qr);
-	}
-	
-	function Quote( $var, $driver )
-	{
-		list( $ql, $qr ) = self::GetQuote($driver);
-		
-		if( is_array($var) ){
-			foreach( $var as $tmp ){
-				$safe[] = $this->Quote($tmp);
-			}
-		}else if( strpos($var,'.') ){
-			$temp = explode('.',$var);
-			$this->d($temp);
-			$safe = $ql.trim($temp[0]).$qr.'.'.$ql.trim($temp[1]).$qr;
-		}else{
-			$safe = $ql.trim($var).$qr;
-		}
-		return $safe;
-	}
-	*/
 	
 	function Query( $qu, $key=null )
 	{
@@ -216,7 +191,18 @@ class PDO5 extends OnePiece5
 		$options = array();
 		
 		try {
-			$dns = "{$this->driver}:host={$this->host}";
+			//	Supports PHP 5.1 ( USE db_name is not supports. )
+			$db  = $this->database ? 'dbname='.$this->database.';': null;
+			if( $this->charset ){
+				if( $this->driver == 'mysql' ){
+					$options[PDO::MYSQL_ATTR_INIT_COMMAND] = "SET NAMES '{$this->charset}'";
+				}
+			}
+			
+			//	Create DNS
+			$dns = "{$this->driver}:{$db}host={$this->host}";
+			
+			//	Create PDO
 			if(!$this->pdo = new PDO( $dns, $this->user, $password, $options )){
 				$this->StackError("Can not connect database. ( $dns, {$this->user} )");
 				return false;
@@ -227,9 +213,11 @@ class PDO5 extends OnePiece5
 		}
 		
 		//  Database select
+		/*
 		if( $this->database ){
 			$this->Database( $this->database, $this->charset );
 		}
+		*/
 		
 		//  connected flag
 		$this->isConnect = true;
@@ -237,8 +225,18 @@ class PDO5 extends OnePiece5
 		return true;
 	}
 	
-	function Database( $db_name, $charset=null )
+	function Database( $db_name, $charset=null, $locale=null )
 	{
+		return $this->SetDatabase( $db_name, $charset, $locale );
+	}
+	
+	function SetDatabase( $db_name, $charset=null, $locale=null )
+	{
+		//	
+		if( version_compare(PHP_VERSION, '5.1.0', '<') ){
+			$this->mark('This PHP version is not supported?('.PHP_VERSION.')');
+		}
+		
 		if(!is_string($db_name)){
 			$type = gettype($db_name);
 			$me = "Database name is not string. ($type)";
@@ -246,6 +244,9 @@ class PDO5 extends OnePiece5
 			$this->StackError($me);
 			return false;
 		}
+		
+		//	Quote
+		$db_name = ConfigSQL::Quote( $db_name, $this->driver );
 		
 		if( $this->query("USE $db_name") === false){
 			$me = "Database select is failed.";
@@ -255,14 +256,27 @@ class PDO5 extends OnePiece5
 		}
 		
 		if( $charset ){
-			//  Set charset
-			$charset = $this->ConvertCharset($charset);
-			if( $this->query("SET NAMES $charset") === false ){
-				return false;
-			}
+			$this->SetCharset($charset);
+		}
+		
+		if( $locale ){
+			$this->SetLocale($locale);
 		}
 		
 		return true;
+	}
+	
+	function SetCharset( $charset )
+	{
+		$charset = $this->ConvertCharset($charset);
+		$io = $this->query("SET NAMES '$charset'");
+		return $io !== false ? true: false;
+	}
+	
+	function SetLocale( $locale )
+	{
+		$io = $this->query("SET lc_time_names = '$locale'");
+		return $io !== false ? true: false;
 	}
 	
 	function GetDatabaseList($config=null)
@@ -654,6 +668,11 @@ class PDO5 extends OnePiece5
 		return $this->query( $qu, 'create' );
 	}
 	
+	function AddIndex( $conf )
+	{
+	//	ALTER TABLE `t_company` ADD INDEX `comp_name` ( `comp_name` ) 
+	}
+	
 	/**
 	 * 
 	 */
@@ -764,7 +783,12 @@ class PDO5 extends OnePiece5
 		
 		//  new id
 		$id = $this->pdo->lastInsertId(/* $name */);
-			
+		
+		//	Does not auto increments
+		if( $id === '0' ){
+			$id = true;
+		}
+		
 		return $id;
 	}
 	
@@ -848,6 +872,7 @@ class ConfigSQL extends OnePiece5
 			case 'mysql':
 				$ql = $qr = '`';
 				break;
+			default:
 		}
 		return array($ql,$qr);
 	}

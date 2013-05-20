@@ -1,4 +1,19 @@
 <?php
+
+/**
+ * Added "op-root" to include_path.
+ */
+if( ! isset($_SERVER['OnePiece5']) ){
+	$_SERVER['OnePiece5'] = array();
+	
+	// Added op-root to include_path.
+	$op_root = dirname(__FILE__);
+	$include_path = ini_get('include_path');
+	$include_path = trim( $include_path, PATH_SEPARATOR );
+	$include_path .= PATH_SEPARATOR . $op_root;
+	ini_set('include_path',$include_path);		
+}
+
 /**
  * TODO: We (will|should) support to spl_autoload_register
  * @see http://www.php.net/manual/ja/function.spl-autoload-register.php
@@ -39,7 +54,9 @@ if(!function_exists('__autoload')){
 		// check
 		foreach( $dirs as $dir ){
 			$file_path = rtrim($dir,DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $file_name;
+		
 		//	print $file_path . '<br/>' . PHP_EOL;
+		
 			if( file_exists($file_path) ){
 				include_once($file_path);
 				break;
@@ -105,7 +122,7 @@ if(!function_exists('OnePieceShutdown')){
 		}
 		
 		// Session reset
-		if( $_SERVER['REMOTE_ADDR'] == '127.0.0.1' ){
+		if( getenv('REMOTE_ADDR') == '127.0.0.1' ){
 			$rand = rand( 0, 1000);
 			if( 1 == $rand ){
 				$_SESSION = array();
@@ -113,7 +130,7 @@ if(!function_exists('OnePieceShutdown')){
 			}
 		}
 		
-		if( isset($_SERVER['OnePiece5']['env']['cli']) and $_SERVER['OnePiece5']['env']['cli'] ){
+		if( OnePiece5::GetEnv('cli') ){
 			print PHP_EOL . '/* OnePiece is shutdown. */' . PHP_EOL;
 		}else{
 			// Toolbox
@@ -166,8 +183,12 @@ if(!function_exists('OnePieceErrorHandler')){
 		return true;
 	}
 	
-	$level = $_SERVER['HTTP_HOST'] === 'localhost' ? E_ALL | E_STRICT: error_reporting();
-	set_error_handler('OnePieceErrorHandler',$level);
+	if( isset($_SERVER['HTTP_HOST']) ){
+		$level = $_SERVER['HTTP_HOST'] === 'localhost' ? E_ALL | E_STRICT: error_reporting();
+		set_error_handler('OnePieceErrorHandler',$level);
+	}else{
+		//	Pacifista
+	}
 }
 
 if(!function_exists('OnePieceExceptionHandler')){
@@ -178,7 +199,7 @@ if(!function_exists('OnePieceExceptionHandler')){
 		$op = new OnePiece5();
 		$op->StackError( $e->getMessage() );
 		printf('<div><p>[%s] %s</p><p>%s : %s</p></div>', get_class($e), $e->GetMessage(), $e->GetFile(), $e->GetLine() );
-		dump::d(Toolbox::toArray($e));
+	//	dump::d(Toolbox::toArray($e));
 	}
 	set_exception_handler('OnePieceExceptionHandler');
 }
@@ -226,21 +247,14 @@ class OnePiece5
 		error_reporting( E_ALL );
 		ini_set('display_errors',1);
 		
-		// Added op-root to include_path.
-		$op_root = dirname(__FILE__);
-		$include_path = ini_get('include_path');
-		$include_path = trim( $include_path, PATH_SEPARATOR );
-		$include_path .= PATH_SEPARATOR . $op_root;
-		ini_set('include_path',$include_path);
-		
 		//  unique id
 		if(!$this->GetCookie( self::KEY_COOKIE_UNIQ_ID )){
 			$this->SetCookie( self::KEY_COOKIE_UNIQ_ID, md5(microtime() + $_SERVER['REMOTE_ADDR']));
 		}
 		
 		//  init
-		$this->InitEnv($args);
-		$this->InitLocale($this->GetEnv('locale'));
+		$this->_InitEnv($args);
+		$this->_InitLocale($this->GetEnv('locale'));
 		
 		//  mark_label
 		if( isset($_GET['mark_label']) ){
@@ -315,7 +329,7 @@ class OnePiece5
 			}
 		}
 		$argument = join(', ',$join);
-		$message = sprintf('Catch magic method __call: function %s(%s)', $name, $argument );
+		$message = sprintf('Does not exists this function: %s(%s)', $name, $argument );
 		self::StackError($message);
 	}
 	
@@ -404,18 +418,31 @@ class OnePiece5
 	 */
 	static function Admin()
 	{
-		$server_addr = @$_SERVER['SERVER_ADDR'];
-		$remote_addr = @$_SERVER['REMOTE_ADDR'];
+		static $server_addr;
+		if(!$server_addr){
+			$server_addr = isset($_SERVER['SERVER_ADDR']) ? $_SERVER['SERVER_ADDR']: '127.0.0.1';
+		}
 		
+		static $remote_addr;
+		if(!$remote_addr){
+			$remote_addr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR']: null;
+			$remote_addr = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR']: $remote_addr;
+		}
+		
+		//	localhost
+		/*
 		if( $server_addr == '127.0.0.1'){
 			$io = true;
 		}else
-
+		*/
+		
+		//	Identity
 		if( $server_addr == $remote_addr ){
 			$io = true;
 		}else
 		
-		if(self::GetEnv('admin-ip') == $remote_addr){
+		//	External access
+		if( self::GetEnv('admin-ip') == $remote_addr ){
 			$io = true;
 		}else
 		
@@ -448,10 +475,6 @@ class OnePiece5
 			$code     = $e->getCode();
 			$incident = "$file [$line]";
 			
-		//	dump::d($traceArr[0]);
-			
-		//	$trace    = self::GetCallerLine( 0, -1, 'trace');
-			
 			$file = $traceArr[0]['file'];
 			$line = $traceArr[0]['line'];
 			$func = $traceArr[0]['function'];
@@ -465,9 +488,6 @@ class OnePiece5
 			$message  = self::Escape( $args, $encoding );
 			$trace    = self::GetCallerLine( 0, -1, 'trace');
 		}
-		
-//		self::d($incident);
-//		self::d($trace);
 		
 		$error['incident'] = $incident;
 		$error['message']  = $message;
@@ -540,14 +560,16 @@ __EOL__;
 			$print = strip_tags( $print, null );
 		}
 		
-		// admmin
-		if( !self::Admin() or self::GetEnv('cli') ){
+		// Finish
+		if( self::GetEnv('Pacifista') ){
+			print strip_tags( html_entity_decode( $print, ENT_QUOTES, $this->GetEnv('charset') ) );
+		}else if( !self::Admin() ){
 			$ua   = $this->GetEnv('UserAgent');
 			$ip   = $this->GetEnv('RemoteIp');
 			$href = $this->GEtEnv('href');
-			$host = gethostbyaddr($ip);
+			$host = $ip ? gethostbyaddr($ip): null;
 			$date = date('Y-m-d H:i:s');
-			$url  = $this->GetEnv('url');
+			$url  = $this->GetURL('url');
 			
 			//  The same mail is not delivered repeatedly.
 			$key = 'mail-notify-' . md5($errors[0]['trace']);
@@ -584,8 +606,6 @@ __EOL__;
 			$mail['subject'] = $subject;
 			$mail['message'] = html_entity_decode( $message, ENT_QUOTES, 'utf-8');
 			self::Mail($mail);
-			
-			$this->d($mail);
 		}else{
 			print $javascript . $nl;
 			print $print;
@@ -644,7 +664,7 @@ __EOL__;
 	 * @param string $locale lang_territory.codeset@modifier
 	 * @return void
 	 */
-	private function InitLocale( $locale=null ){
+	private function _InitLocale( $locale=null ){
 		
 		// @todo We will support to de_DE@euro
 		
@@ -746,11 +766,7 @@ __EOL__;
 			case 'domain':
 				$key = 'HTTP_HOST';
 				break;
-			
-			case 'origin':
-				self::mark($key);
-				break;
-				
+					
 			default:
 				if( preg_match( '/^([a-z0-9]+)[-_]?(root|dir|mail)$/',$key, $match ) ){
 					$key = $match[1].'_'.$match[2];
@@ -807,7 +823,7 @@ __EOL__;
 	/**
 	 * 
 	 */
-	private function InitEnv($args=array('InitEnv'=>true))
+	private function _InitEnv($args=array('InitEnv'=>true))
 	{
 		if(!is_array($args)){
 			$args = Toolbox::toArray($args);
@@ -879,11 +895,11 @@ __EOL__;
 	{
 		switch(strtolower($key)){
 			case 'url':
-				$scheme = $_SERVER['SERVER_PORT'] !== '443' ? 'http://': 'https://';
-				$domain = $_SERVER['HTTP_HOST'];
-				$path   = $_SERVER['REQUEST_URI'];
-				$query  = $_SERVER['QUERY_STRING'] ? '?'.$_SERVER['QUERY_STRING']: null;
-				$result = $scheme.$domain.$path.$query;
+				if(empty($this)){
+					print OnePiece5::GetCallerLine();
+				}
+				$this->mark('Use GetURL method. (ex. $this->GetURL($config))');
+				$result = null;
 				break;
 				
 			default:
@@ -891,6 +907,31 @@ __EOL__;
 		}
 		
 		return self::Escape($result);
+	}
+	
+	function GetURL( $scheme=true, $path=true, $query=false )
+	{
+		$domain = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR']: $_SERVER['HTTP_HOST'];
+		
+		if( $scheme ){
+			$scheme = $_SERVER['SERVER_PORT'] !== '443' ? 'http://': 'https://';
+		}else{
+			$scheme = null;
+		}
+		
+		if( $path ){
+			$path = $_SERVER['REQUEST_URI'];
+		}else{
+			$path = null;
+		}
+		
+		if( $query ){
+			$query = $_SERVER['QUERY_STRING'] ? '?'.$_SERVER['QUERY_STRING']: null;
+		}else{
+			$query = null;
+		}
+		
+		return $scheme.$domain.$path.$query;
 	}
 
 	function InitSession()
@@ -1099,8 +1140,13 @@ __EOL__;
 				$file = __FILE__;
 			}
 			
-			// Path is shortten
-			$file = self::CompressPath($file);
+			// Path is shorten
+			if( self::GetEnv('Pacifista') ){
+				//	Does not shorten.
+				$file = trim($file,"\t");
+			}else{
+				$file = self::CompressPath($file);
+			}
 			
 			// method
 			$method = "$class$type$func($args)";
@@ -1150,15 +1196,8 @@ __EOL__;
 		$app_root = $app_root ? rtrim($app_root,'/') : ' ';
 		$doc_root = $doc_root ? rtrim($doc_root,'/') : ' ';
 		
-		/*
-		print "path=$path<br/>";
-		print "op_root=$op_root<br/>";
-		print "app_root=$app_root<br/>";
-		print "doc_root=$doc_root<br/>";
-		*/
-		
 		$patt = array("|^$app_root|","|^$doc_root|","|^$op_root|");
-		$repl = array('![.bold[App ROOT : ]]','![.bold[Doc ROOT : ]]','![.bold[OP ROOT : ]]');
+		$repl = array('App:','Doc:','OP:');
 		$path = preg_replace( $patt, $repl, $path );
 		
 		//  easy-to-read. (op:OnePiece.class.php & app:/template/form.phtml)
@@ -1210,11 +1249,11 @@ __EOL__;
 		$nl = self::GetEnv('nl');
 		$attr['class'] = array('OnePiece','mark');
 		$attr['style'] = array('font-size'=>'9pt','background-color'=>'white');
-		$string = self::Html("$nl\t$call_line - $str $memory$nl",'div',$attr);
+		$string = self::Html("$nl$call_line - $str $memory$nl",'div',$attr);
 		if( self::GetEnv('cli') ){
 			$string = strip_tags($string);
 			if( self::GetEnv('css') ){
-				$string = "/* ". trim($string) ." */".PHP_EOL;
+				$string = "/* ". trim($string) ." */$nl";
 			}
 		}
 		
@@ -1265,7 +1304,11 @@ __EOL__;
 	 */
 	static function P( $str='OnePiece!', $tag='p', $attr=null)
 	{
-		print self::Html( $str, $tag, $attr );
+		if( self::GetEnv('cli') ){
+			print trim(strip_tags(self::Html( $str, $tag, $attr ))).PHP_EOL;
+		}else{
+			print self::Html( $str, $tag, $attr );
+		}
 	}
 	
 	/**
@@ -1285,7 +1328,16 @@ __EOL__;
 			}
 		}
 		
+		//	Call line.
 		$line = self::GetCallerLine();
+		
+		//	CLI
+		if( $this->GetEnv('cli') ){
+			$this->p($line);
+			var_dump($args);
+			return;
+		}
+		
 		if( class_exists('Dump',true) ){
 			self::p($line, 'div', array('class' => array('OnePiece','small','bold','mark'), 
 			                            'style' => array('color'=>'black',
@@ -1516,7 +1568,7 @@ __EOL__;
 	/**
 	 * Send mail method
 	 * 
-	 * @param  array|Config $config
+	 * @param  array|Config $config Mail config. (Config is convert to array)
 	 * @return boolean
 	 */
 	function Mail( $args )
@@ -1718,7 +1770,7 @@ __EOL__;
 	 * @param string $path
 	 * @return string
 	 */
-	function ConvertURL( $args )
+	function ConvertURL( $args, $domain=true )
 	{
 		if( preg_match('|^([a-z][a-z0-9]+):/(.*)|i',$args,$match) ){
 			switch($match[1]){
@@ -1728,15 +1780,14 @@ __EOL__;
 					
 				case 'dot':
 					$route = $this->GetEnv('route');
-				//	$this->d( $route );
-				//	$tmp_root = getcwd() . '/';
 					$tmp_root = rtrim( $route['path'], '/' ) . '/'; 
 					break;
+					
 				default:
 					$tmp_root = $this->GetEnv( $match[1] . '_root' );
 			}
 			
-			//  Anti Windows
+			//  Windows
 			if( PHP_OS == 'WINNT' ){
 				$tmp_root = str_replace( '\\', '/', $tmp_root );
 			}
@@ -1744,18 +1795,29 @@ __EOL__;
 			//  create absolute path. 
 			$absolute = $tmp_root . $match[2];
 		}else{
+			
+			//	replace document root.
+			$args = preg_replace( '|^'.rtrim($this->GetEnv('doc-root'),'/').'|', '', $args );
+			
 			return $args;
 		}
 		
 		//  create relative path from document root.
 		$doc_root = $this->GetEnv('doc-root');
 		
-		//  replace
+		//	replace
 		$patt = array(); 
 		$patt[] = '|^' . $doc_root . '|i';
 		$url = preg_replace($patt,'',$absolute);
 		
-		return '/' . ltrim($url,'/');
+		//	Added domain
+		if( $domain ){
+			if( is_bool($domain) ){
+				$domain = $this->GetURL( true, false, false);
+			}
+		}
+		
+		return rtrim($domain,'/').'/'.ltrim($url,'/');
 	}
 	
 	/**
@@ -1766,6 +1828,9 @@ __EOL__;
 	 */
 	function ConvertPath( $path )
 	{
+		if( preg_match('|^([a-zA-Z]:)?/|',$path) ){
+			//  OK
+		}else
 		if( preg_match('/^(op|site):\//',$path,$match) ){
 			//  Does not relate document-root.
 			$temp = $match[1].'-root';
@@ -1775,8 +1840,10 @@ __EOL__;
 				$this->StackError("$temp is not set.");
 			}
 		}else{
-			$url  = self::ConvertURL($path);
-			$path = $_SERVER['DOCUMENT_ROOT'] .'/'. ltrim($url,'/');
+			$url  = self::ConvertURL($path,false);
+			if(!$this->GetEnv('Pacifista')){
+				$path = $_SERVER['DOCUMENT_ROOT'] .'/'. ltrim($url,'/');
+			}
 		}
 		
 		return $path;
@@ -1814,6 +1881,8 @@ __EOL__;
 			$path = self::ConvertPath("op:/Model/{$name}.model.php");
 			if( $io = file_exists($path) ){
 				$io = include_once($path);
+			}else{
+			//	$this->mark($path);
 			}
 			
 			//  include from user dir
@@ -1822,6 +1891,8 @@ __EOL__;
 				$path  = self::ConvertPath("{$model_dir}{$name}.model.php");
 				if( $io = file_exists($path) ){
 					$io = include_once($path);
+				}else{
+					$this->mark($path);
 				}
 			}
 			
@@ -2070,7 +2141,7 @@ __EOL__;
 	function Vivre( $register )
 	{
 		if( $register ){
-			// 　register
+			//	register
 			if($this->GetEnv('vivre')){
 				//	Double registration.
 				$this->mark("Vivre check is double booking");
@@ -2079,19 +2150,29 @@ __EOL__;
 				if( $this->admin() ){
 					$this->mark("VIVRE!!");
 				}else{
+					
+					$host  = $_SERVER['HTTP_HOST']; // SERVER_NAME, SERVER_ADDR
+					$xhost = $_SERVER['HTTP_X_FORWARDED_HOST']; // HTTP_X_FORWARDED_SERVER
+					$uri   = $_SERVER['REQUEST_URI'];
+					
+					$ip = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR']: $_SERVER['REMOTE_ADDR'];
+					$domain = gethostbyaddr($ip);
+					
+					$ua = $_SERVER['HTTP_USER_AGENT'];
+					
 					$args = array();
 					$args['to']		 = $this->GetEnv('admin-mail');
 					$args['subject'] = '[OnePiece] VIVRE ALERT';
-					$args['body']	 = 'REQUEST_URI='.$this->server('FULL_REQUEST_URI',1)."\n";
-					$args['body']	.= $_SERVER['REMOTE_ADDR']."\n";
-					$args['body']	.= gethostbyaddr($_SERVER['REMOTE_ADDR'])."\n";
-					$args['body']	.= $_SERVER['HTTP_USER_AGENT']."\n";
+					$args['body']	.= "HOST = $host \n";
+					$args['body']	.= "REQUEST_URI = {$xhost}{$uri} \n";
+					$args['body']	.= "VISITOR = $ip($domain) \n";
+					$args['body']	.= "USER AGENT = $ua \n";
 					$this->Mail($args);
 				}
 			}else{
 				$_SESSION[__CLASS__]['vivre'] = 1;
 			}
-
+			
 			//	Anti double registration.
 			$this->SetEnv('vivre',1);
 		}else{
