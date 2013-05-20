@@ -120,7 +120,7 @@ class PDO5 extends OnePiece5
 							$result = false;
 						}
 						break;
-					
+						
 					case 'update':
 						$result = $st->rowCount();
 						break;
@@ -694,9 +694,7 @@ class PDO5 extends OnePiece5
 		}
 		
 		//  execute
-		if(!$count = $this->query($qu,'count')){
-			return false;
-		}
+		$count = $this->query($qu,'count');
 		
 		return $count;
 	}
