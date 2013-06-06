@@ -88,7 +88,12 @@ abstract class NewWorld5 extends OnePiece5
 	function GetRoute($request_uri=null)
 	{
 		// get request uri
-		if(!$request_uri){
+		if( $request_uri ){
+			if( preg_match( '|^http://|', $request_uri ) ){
+				$this->mark("![ .red [Domain name is not required. 
+						Please Document root path. ($request_uri)]]");
+			}
+		}else{
 			$request_uri = $_SERVER['REQUEST_URI'];
 		}
 		
@@ -501,7 +506,9 @@ abstract class NewWorld5 extends OnePiece5
 	function Forward( $url )
 	{
 		//	Convert URL
-		$url = $this->ConvertUrl($url);
+		$url = $this->ConvertPath($url);
+		$app_root = rtrim($this->GetEnv('app-root'),'/');
+		$url = preg_replace( "|^$app_root|", '', $url );
 		
 		//	Before route
 		$route_old = $this->GetEnv('route');
