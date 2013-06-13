@@ -443,6 +443,14 @@ class Form5 extends OnePiece5
 		//  Get raw value
 		$value = $this->GetInputValueRaw( $input_name, $form_name, $joint );
 		
+		//	TODO: Please add comment.
+		switch( $type = strtolower($input->type) ){
+			case 'file':
+				//  Convert to Document-root-path from Full-path.
+				return str_replace( rtrim($_SERVER['DOCUMENT_ROOT'],'/'), '', $value);
+		}
+		
+		//	TODO: Please add comment.
 		switch( $type = strtolower(gettype($value)) ){
 			case 'null':
 				return null;
@@ -457,13 +465,8 @@ class Form5 extends OnePiece5
 			default:
 				$this->mark("undefined type. ($type)");
 		}
-
-		switch( $type = strtolower($input->type) ){
-			case 'file':
-				//  Convert Full-path to Document-root-path.
-				return str_replace( rtrim($_SERVER['DOCUMENT_ROOT'],'/'), '', $value);
-		}
 		
+		//	TODO: Please add comment.
 		if( is_array($value) ){
 			if( strlen(join('',$value)) ){
 				//  joint
@@ -779,11 +782,11 @@ class Form5 extends OnePiece5
 					
 					return false;
 				}
-			
+				
 				//  Reset form config. 
 				$this->SetInputValue( null, $input_name, $form_name );
 			
-				//	TODO: SetInputValue　Fails permit=image case.
+				//	TODO: SetInputValue　Fails permit=image case. (This English is not through...)
 				$_SESSION['OnePiece5']['Form5']['form'][$form_name][$input_name]['value'] = '';
 				
 				//  Status
@@ -824,7 +827,7 @@ class Form5 extends OnePiece5
 				$op_uniq_id = $this->GetCookie( self::KEY_COOKIE_UNIQ_ID );
 				
 				if( empty($input->save) ){
-					$path = sys_get_temp_dir() .DIRECTORY_SEPARATOR. md5($name . $op_uniq_id).".$ext";
+					$path = sys_get_temp_dir() .'/'. md5($name . $op_uniq_id).".$ext";
 				}else{
 					if( isset($input->save->path) ){
 						//  hard path
@@ -844,9 +847,8 @@ class Form5 extends OnePiece5
 						if( isset($input->save->name) ){
 							$name = $input->save->name;
 							$path = $dir.'/'.$name.'.'.$ext;
-                            //$this->mark(" $dir, $name, $ext ");
 						}else{
-							$path = $dir .DIRECTORY_SEPARATOR. md5($name . $op_uniq_id).".$ext";
+							$path = $dir .'/'. md5($name . $op_uniq_id).".$ext";
 						}
 					}
 				}
