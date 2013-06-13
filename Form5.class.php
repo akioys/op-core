@@ -402,14 +402,6 @@ class Form5 extends OnePiece5
 		
 		return 'This method(function) is print.';
 	}
-
-	/*
-    public function InputValue( $input_name, $form_name=null, $joint=null )
-	{
-		print $this->GetInputValue( $input_name, $form_name, $joint );
-		return 'This method(function) is print.';
-	}
-	*/
 	
 	/**
 	 * Get value
@@ -1511,7 +1503,8 @@ class Form5 extends OnePiece5
 		if( !empty($input->group) ){
 		//	$this->mark( $value );
 		//	$this->d( Toolbox::toArray($input) );
-		}else if( $type === 'submit' or $type === 'button' ){
+		}else if( $type === 'submit' or $type === 'button' or $type === 'file' ){
+			//	Over write input label.
 			if( $value_default ){
 				$value = $value_default;
 			}
@@ -1591,6 +1584,7 @@ class Form5 extends OnePiece5
 			case 'file':
 				//  remove checkbox
 				$value = $this->GetInputValue($input_name);
+				
 				if( is_string($value) and $value ){
 					if( method_exists( $this, 'GetInputConfigRemover')){
 						//  If you can method over ride.
@@ -1602,7 +1596,7 @@ class Form5 extends OnePiece5
 						$remover->name    = $input->name;
 						$remover->type    = 'checkbox';
 						$remover->value   = $value;
-						$remover->label   = $value;
+						$remover->label   = $value_default ? $value_default: $value;
 						$remover->checked = true;
 					}
 					//  Create remover
