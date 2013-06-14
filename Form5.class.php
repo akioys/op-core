@@ -13,9 +13,11 @@ class Form5 extends OnePiece5
 		parent::Init();
 		$this->status = new Config();
 		$this->config = new Config();
+		
+		//	Test implements.
 		if( $this->admin() ){
 			$io = session_regenerate_id(true);
-	}
+		}
 	}
 	
 	private function GetRequest( $input_name, $form_name )
@@ -34,10 +36,17 @@ class Form5 extends OnePiece5
 				$input = $form->input->$input_name;
 			}
 		}
-
+		
 		//  If case of file upload.
 		if( isset($_FILES[$input_name]) ){
-			$request = $_FILES[$input_name]['name']."({$_FILES[$input_name]['type']})";
+		//	$this->d( $_FILES[$input_name] );
+			
+			if( $_FILES[$input_name]['size'] == 0 ){
+				$request = null;
+			}else{
+				$request = $_FILES[$input_name]['name']."({$_FILES[$input_name]['type']})";
+			}
+			
 		}else{
 			$request = Toolbox::GetRequest( $input_name, $form->method );
 		}
@@ -904,6 +913,9 @@ class Form5 extends OnePiece5
 	
 	/*******************************************************************************/
 	
+	/**
+	 * Convert to Form-Config from Array.
+	 */
 	private function GenerateConfig( $args )
 	{
 		if( is_null($args) ){
@@ -925,12 +937,7 @@ class Form5 extends OnePiece5
 				break;
 				
 			default:
-				$this->stackError('Undefined args type.');
-
-				$this->mark($type);
-				$this->d($args);
-				$this->d(Toolbox::toArray($config));
-				
+				$this->stackError('Undefined args type.');				
 		}
 		
 		return $config;
@@ -943,8 +950,6 @@ class Form5 extends OnePiece5
 	 */
 	private function GenerateConfigFromPath($path)
 	{
-		$this->mark(__METHOD__.": $path");
-		
 		//  Convert from abstract path to absolute path.
 		$path = $this->ConvertPath($path);
 		
@@ -974,29 +979,10 @@ class Form5 extends OnePiece5
 		if(isset($_forms)){
 			$config = Toolbox::toObject($_forms);
 		}else if(isset($_form)){
-//			$config->{$_form['name']} = Toolbox::toObject($_form);
 			$config = Toolbox::toObject($_form);
 		}else if(isset($config)){
 			// OK
 		}else{
-			/*
-			include($path);
-			if(isset($_forms)){
-				$config = Toolbox::toObject($_forms);
-			}else if(isset($_form)){
-
-			//	$config->default = Toolbox::toObject($_form);
-				$config = Toolbox::toObject($_form);
-				
-				
-			}else if(isset($config)){
-				// OK
-			}else{
-				$this->StackError('Does not find form config.');
-				return false;
-			}
-			*/
-
 			$this->StackError('Does not find form config.');
 			return false;
 		}
@@ -2015,7 +2001,7 @@ class Form5 extends OnePiece5
 			// send value
 			$value = $this->GetRequest( $input->name, $form_name );
 		}
-
+			
 		//  trim
 		if(!empty($input->trim)){
 			$this->SetStatus($form_name,"XX: trim ({$input->name})");
