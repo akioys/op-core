@@ -1935,7 +1935,7 @@ class Form5 extends OnePiece5
 		}
 		
 		//  validate
-		if(isset($input->validate)){
+		if(!empty($input->validate)){
 			if(!$this->CheckValidate($input, $form_name, $value)){					
 				return false;
 			}
@@ -2017,7 +2017,7 @@ class Form5 extends OnePiece5
 		}
 
 		//  trim
-		if( isset($input->trim) and $input->trim ){
+		if(!empty($input->trim)){
 			$this->SetStatus($form_name,"XX: trim ({$input->name})");
 			//  normal
 			$value = trim($value);
@@ -2033,7 +2033,7 @@ class Form5 extends OnePiece5
 		}
 		
 		// check required
-		if( isset($input->validate->required) and $input->validate->required ){
+		if(!empty($input->validate->required)){
 			if(!$this->ValidateRequied($input, $form_name, $value)){
 				return false;
 			}
