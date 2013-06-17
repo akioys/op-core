@@ -356,9 +356,11 @@ abstract class NewWorld5 extends OnePiece5
 	{
 		//  check the layout is set. 
 		if(!$layout = $this->GetEnv('layout') ){
-			//  Does not set layout.
-			if( $this->admin() ){
-				$this->p("![ .gray .small [Hint: layout uses \$app->SetEnv('layout','app:/path/to/your/self')]]");
+			if(is_null($layout)){
+				//  Does not set layout.
+				if( $this->admin() ){
+					$this->p("![ .gray .small [Hint: layout uses \$app->SetEnv('layout','app:/path/to/your/self')]]");
+				}
 			}
 			return;
 		}
