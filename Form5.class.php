@@ -1160,10 +1160,15 @@ class Form5 extends OnePiece5
 		}
 		
 		//  str to lower
+		/*
 		if( isset($input->name) ){
 			$input->name = strtolower($input->name);
 			$input_name  = $input->name;
 		}
+		*/
+		
+		//	Stop the convert to lowercase.
+		$input_name = $input->name;
 		
 		if( isset($input->type) ){
 			$input->type = strtolower($input->type);
