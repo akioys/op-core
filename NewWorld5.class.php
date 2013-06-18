@@ -15,9 +15,10 @@ abstract class NewWorld5 extends OnePiece5
 	 * 
 	 * @var array
 	 */
-	private $isDispatch = null;
-	private $routeTable = null;
-	private $content    = null;
+	private $isDispatch	 = null;
+	private $routeTable	 = null;
+	private $content	 = null;
+	private $json		 = null;
 	
 	function __construct($args=array())
 	{
@@ -44,9 +45,15 @@ abstract class NewWorld5 extends OnePiece5
 		
 		//  Check content
 		if( $this->content ){
-			$this->p('![ .big .red [Does not call ![ .bold ["Content"]] method. Please call to ![ .bold ["Content"]] method from layout.]]');
-			$this->p('![ .big .red [Example: <?php $this->Content(); ?>]]');
-			$this->content();
+			if( $this->GetEnv('cli') ){
+				//	CLI mode
+				$this->SendJson();
+			}else{
+				//	HTML mode
+				$this->p('![ .big .red [Does not call ![ .bold ["Content"]] method. Please call to ![ .bold ["Content"]] method from layout.]]');
+				$this->p('![ .big .red [Example: <?php $this->Content(); ?>]]');
+				$this->content();
+			}
 		}
 		
 		//  Vivre
@@ -144,14 +151,7 @@ abstract class NewWorld5 extends OnePiece5
 		// controller file name
 		if(!$controller = $this->GetEnv('controller-name')){
 			$m = 'Does not set controller-name. Please call $app->SetEnv("controller-name","index.php");';
-		//	$this->StackError($m);
 			throw new OpNwException($m);
-			
-			/*
-			$dirs = array();
-			$args = array();
-			return false;
-			*/
 		}
 		
 		//  Init
@@ -172,7 +172,7 @@ abstract class NewWorld5 extends OnePiece5
 			$args[] = array_pop($dirs);
 		}
 		
-		// anti nortice error
+		// Suppression of notice error.
 		if(!count($args)){
 			$args[0] = null;
 		}
@@ -293,7 +293,7 @@ abstract class NewWorld5 extends OnePiece5
 	}
 	
 	function doContent()
-	{	
+	{
 		//  route
 		if(!$route = $this->GetEnv('route')){
 			$this->StackError('Empty route.');
@@ -354,6 +354,10 @@ abstract class NewWorld5 extends OnePiece5
 	
 	function doLayout()
 	{
+		if( $this->GetEnv('cli') ){
+			return true;
+		}
+		
 		//  check the layout is set. 
 		if(!$layout = $this->GetEnv('layout') ){
 			if(is_null($layout)){
@@ -362,7 +366,7 @@ abstract class NewWorld5 extends OnePiece5
 					$this->p("![ .gray .small [Hint: layout uses \$app->SetEnv('layout','app:/path/to/your/self')]]");
 				}
 			}
-			return;
+			return false;
 		}
 		
 		//  get controller name
@@ -561,6 +565,42 @@ abstract class NewWorld5 extends OnePiece5
 		}else{
 			$this->StackError('Does not set env "NotFound" page path. Please call $this->SetEnv("NotFound").');
 		}
+	}
+	
+	/**
+	 * Set environment value.
+	 * 
+	 * @param string $key
+	 * @param boolen|string|array $var
+	 */
+	static function SetEnv( $key, $var )
+	{
+		switch( strtolower($key) ){
+			case 'json':
+				parent::SetEnv( 'cli', true );
+				break;
+		}
+		parent::SetEnv( $key , $var );
+	}
+	
+	function SetJson( $key, $var )
+	{
+		static $init = null;
+		if( !$init ){
+			$this->SetEnv('json',true);
+		}
+		$this->json[$key] = $var;
+	}
+	
+	function GetJson( $key )
+	{
+		return $this->json[$key];
+	}
+	
+	function SendJson()
+	{
+		header('Content-type: application/json');
+		print json_encode($this->json);
 	}
 }
 

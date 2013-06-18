@@ -131,7 +131,11 @@ if(!function_exists('OnePieceShutdown')){
 		}
 		
 		if( OnePiece5::GetEnv('cli') ){
-			print PHP_EOL . '/* OnePiece is shutdown. */' . PHP_EOL;
+			if( OnePiece5::GetEnv('json') ){
+				//	JSON
+			}else{
+				print PHP_EOL . '/* OnePiece is shutdown. */' . PHP_EOL;
+			}
 		}else{
 			// Toolbox
 			Toolbox::PrintStyleSheet();
@@ -766,7 +770,7 @@ __EOL__;
 			case 'domain':
 				$key = 'HTTP_HOST';
 				break;
-					
+				
 			default:
 				if( preg_match( '/^([a-z0-9]+)[-_]?(root|dir|mail)$/',$key, $match ) ){
 					$key = $match[1].'_'.$match[2];
